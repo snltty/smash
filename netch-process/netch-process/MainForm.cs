@@ -12,6 +12,8 @@ namespace netch_process
         Icon iconGray = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream(@"netch_process.public.icon-gray.ico"));
         string name = "netch进程劫持代理";
 
+        Config config = new Config();
+
         public MainForm()
         {
             StartPosition = FormStartPosition.CenterScreen;
@@ -129,11 +131,11 @@ namespace netch_process
             if (has == false)
             {
                 isStartUp = false;
-                notifyIcon.ContextMenuStrip.Items[1].Image = unright;
+                notifyIcon.ContextMenuStrip.Items[0].Image = unright;
             }
             else
             {
-                notifyIcon.ContextMenuStrip.Items[1].Image = right;
+                notifyIcon.ContextMenuStrip.Items[0].Image = right;
                 isStartUp = true;
             }
         }
@@ -144,7 +146,7 @@ namespace netch_process
         ProxySettingForm proxyWin = null;
         private void OnProxySettingClick(object sender, EventArgs e)
         {
-            proxyWin = new ProxySettingForm();
+            proxyWin = new ProxySettingForm(config);
             proxyWin.ShowDialog();
             proxyWin.FormClosed += (object sender, FormClosedEventArgs e) =>
             {
@@ -155,7 +157,7 @@ namespace netch_process
         OptionsForm optionsWin = null;
         private void OnOptionsSettingClick(object sender, EventArgs e)
         {
-            optionsWin = new OptionsForm();
+            optionsWin = new OptionsForm(config);
             optionsWin.ShowDialog();
             optionsWin.FormClosed += (object sender, FormClosedEventArgs e) =>
             {

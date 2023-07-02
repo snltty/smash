@@ -28,115 +28,248 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ProxySettingForm));
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.textBox3 = new System.Windows.Forms.TextBox();
-            this.label3 = new System.Windows.Forms.Label();
-            this.textBox2 = new System.Windows.Forms.TextBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.saveBtn = new System.Windows.Forms.Button();
-            this.groupBox1.SuspendLayout();
-            this.SuspendLayout();
+            groupBox1 = new GroupBox();
+            btnClear = new Button();
+            inputName = new TextBox();
+            label4 = new Label();
+            inputPassword = new TextBox();
+            label3 = new Label();
+            inputUserName = new TextBox();
+            label2 = new Label();
+            inputHost = new TextBox();
+            label1 = new Label();
+            btnSave = new Button();
+            proxysView = new DataGridView();
+            contextMenu = new ContextMenuStrip(components);
+            使用ToolStripMenuItem = new ToolStripMenuItem();
+            删除ToolStripMenuItem = new ToolStripMenuItem();
+            groupBox2 = new GroupBox();
+            useHost = new Label();
+            useName = new Label();
+            groupBox1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)proxysView).BeginInit();
+            contextMenu.SuspendLayout();
+            groupBox2.SuspendLayout();
+            SuspendLayout();
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.textBox3);
-            this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Controls.Add(this.textBox2);
-            this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Controls.Add(this.textBox1);
-            this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Controls.Add(this.saveBtn);
-            this.groupBox1.Location = new System.Drawing.Point(12, 12);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(220, 152);
-            this.groupBox1.TabIndex = 2;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "代理设置";
+            groupBox1.Controls.Add(btnClear);
+            groupBox1.Controls.Add(inputName);
+            groupBox1.Controls.Add(label4);
+            groupBox1.Controls.Add(inputPassword);
+            groupBox1.Controls.Add(label3);
+            groupBox1.Controls.Add(inputUserName);
+            groupBox1.Controls.Add(label2);
+            groupBox1.Controls.Add(inputHost);
+            groupBox1.Controls.Add(label1);
+            groupBox1.Controls.Add(btnSave);
+            groupBox1.Location = new Point(225, 323);
+            groupBox1.Margin = new Padding(6, 5, 6, 5);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Padding = new Padding(6, 5, 6, 5);
+            groupBox1.Size = new Size(692, 205);
+            groupBox1.TabIndex = 2;
+            groupBox1.TabStop = false;
+            groupBox1.Text = "代理设置";
             // 
-            // textBox3
+            // btnClear
             // 
-            this.textBox3.Location = new System.Drawing.Point(63, 89);
-            this.textBox3.Name = "textBox3";
-            this.textBox3.Size = new System.Drawing.Size(151, 23);
-            this.textBox3.TabIndex = 15;
+            btnClear.Location = new Point(180, 142);
+            btnClear.Margin = new Padding(6, 5, 6, 5);
+            btnClear.Name = "btnClear";
+            btnClear.Size = new Size(140, 42);
+            btnClear.TabIndex = 18;
+            btnClear.Text = "清空表单";
+            btnClear.UseVisualStyleBackColor = true;
+            btnClear.Click += btnClear_Click;
+            // 
+            // inputName
+            // 
+            inputName.Location = new Point(80, 35);
+            inputName.Margin = new Padding(6, 5, 6, 5);
+            inputName.Name = "inputName";
+            inputName.Size = new Size(208, 38);
+            inputName.TabIndex = 17;
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(18, 38);
+            label4.Margin = new Padding(6, 0, 6, 0);
+            label4.Name = "label4";
+            label4.Size = new Size(62, 31);
+            label4.TabIndex = 16;
+            label4.Text = "名称";
+            // 
+            // inputPassword
+            // 
+            inputPassword.Location = new Point(359, 86);
+            inputPassword.Margin = new Padding(6, 5, 6, 5);
+            inputPassword.Name = "inputPassword";
+            inputPassword.Size = new Size(321, 38);
+            inputPassword.TabIndex = 15;
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(9, 92);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(48, 17);
-            this.label3.TabIndex = 14;
-            this.label3.Text = "密    码";
+            label3.AutoSize = true;
+            label3.Location = new Point(297, 87);
+            label3.Margin = new Padding(6, 0, 6, 0);
+            label3.Name = "label3";
+            label3.Size = new Size(62, 31);
+            label3.TabIndex = 14;
+            label3.Text = "密码";
             // 
-            // textBox2
+            // inputUserName
             // 
-            this.textBox2.Location = new System.Drawing.Point(63, 57);
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(151, 23);
-            this.textBox2.TabIndex = 13;
+            inputUserName.Location = new Point(80, 86);
+            inputUserName.Margin = new Padding(6, 5, 6, 5);
+            inputUserName.Name = "inputUserName";
+            inputUserName.Size = new Size(208, 38);
+            inputUserName.TabIndex = 13;
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(9, 60);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(48, 17);
-            this.label2.TabIndex = 12;
-            this.label2.Text = "账    号";
+            label2.AutoSize = true;
+            label2.Location = new Point(18, 89);
+            label2.Margin = new Padding(6, 0, 6, 0);
+            label2.Name = "label2";
+            label2.Size = new Size(62, 31);
+            label2.TabIndex = 12;
+            label2.Text = "账号";
             // 
-            // textBox1
+            // inputHost
             // 
-            this.textBox1.Location = new System.Drawing.Point(63, 26);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(151, 23);
-            this.textBox1.TabIndex = 11;
+            inputHost.Location = new Point(359, 33);
+            inputHost.Margin = new Padding(6, 5, 6, 5);
+            inputHost.Name = "inputHost";
+            inputHost.Size = new Size(321, 38);
+            inputHost.TabIndex = 11;
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(9, 29);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(48, 17);
-            this.label1.TabIndex = 10;
-            this.label1.Text = "socks5";
+            label1.AutoSize = true;
+            label1.Location = new Point(297, 36);
+            label1.Margin = new Padding(6, 0, 6, 0);
+            label1.Name = "label1";
+            label1.Size = new Size(62, 31);
+            label1.TabIndex = 10;
+            label1.Text = "主机";
             // 
-            // saveBtn
+            // btnSave
             // 
-            this.saveBtn.Location = new System.Drawing.Point(79, 119);
-            this.saveBtn.Name = "saveBtn";
-            this.saveBtn.Size = new System.Drawing.Size(70, 23);
-            this.saveBtn.TabIndex = 9;
-            this.saveBtn.Text = "保存更改";
-            this.saveBtn.UseVisualStyleBackColor = true;
+            btnSave.Location = new Point(332, 142);
+            btnSave.Margin = new Padding(6, 5, 6, 5);
+            btnSave.Name = "btnSave";
+            btnSave.Size = new Size(140, 42);
+            btnSave.TabIndex = 9;
+            btnSave.Text = "保存更改";
+            btnSave.UseVisualStyleBackColor = true;
+            btnSave.Click += btnSave_Click;
+            // 
+            // proxysView
+            // 
+            proxysView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            proxysView.Location = new Point(14, 15);
+            proxysView.Name = "proxysView";
+            proxysView.RowHeadersWidth = 82;
+            proxysView.RowTemplate.Height = 40;
+            proxysView.Size = new Size(904, 300);
+            proxysView.TabIndex = 3;
+            // 
+            // contextMenu
+            // 
+            contextMenu.ImageScalingSize = new Size(32, 32);
+            contextMenu.Items.AddRange(new ToolStripItem[] { 使用ToolStripMenuItem, 删除ToolStripMenuItem });
+            contextMenu.Name = "contextMenu";
+            contextMenu.Size = new Size(137, 80);
+            // 
+            // 使用ToolStripMenuItem
+            // 
+            使用ToolStripMenuItem.Name = "使用ToolStripMenuItem";
+            使用ToolStripMenuItem.Size = new Size(136, 38);
+            使用ToolStripMenuItem.Text = "使用";
+            使用ToolStripMenuItem.Click += 使用ToolStripMenuItem_Click;
+            // 
+            // 删除ToolStripMenuItem
+            // 
+            删除ToolStripMenuItem.Name = "删除ToolStripMenuItem";
+            删除ToolStripMenuItem.Size = new Size(136, 38);
+            删除ToolStripMenuItem.Text = "删除";
+            删除ToolStripMenuItem.Click += 删除ToolStripMenuItem_Click;
+            // 
+            // groupBox2
+            // 
+            groupBox2.Controls.Add(useHost);
+            groupBox2.Controls.Add(useName);
+            groupBox2.Location = new Point(14, 324);
+            groupBox2.Name = "groupBox2";
+            groupBox2.Size = new Size(202, 204);
+            groupBox2.TabIndex = 4;
+            groupBox2.TabStop = false;
+            groupBox2.Text = "当前使用";
+            // 
+            // useHost
+            // 
+            useHost.AutoSize = true;
+            useHost.Location = new Point(6, 88);
+            useHost.Name = "useHost";
+            useHost.Size = new Size(82, 31);
+            useHost.TabIndex = 1;
+            useHost.Text = "label5";
+            // 
+            // useName
+            // 
+            useName.AutoSize = true;
+            useName.Location = new Point(5, 41);
+            useName.Name = "useName";
+            useName.Size = new Size(82, 31);
+            useName.TabIndex = 0;
+            useName.Text = "label5";
             // 
             // ProxySettingForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(243, 173);
-            this.Controls.Add(this.groupBox1);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "ProxySettingForm";
-            this.Text = "代理设置";
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            this.ResumeLayout(false);
-
+            AutoScaleDimensions = new SizeF(14F, 31F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(932, 543);
+            Controls.Add(groupBox2);
+            Controls.Add(proxysView);
+            Controls.Add(groupBox1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            Margin = new Padding(6, 5, 6, 5);
+            Name = "ProxySettingForm";
+            Text = "代理设置";
+            FormClosing += OnFormClosing;
+            groupBox1.ResumeLayout(false);
+            groupBox1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)proxysView).EndInit();
+            contextMenu.ResumeLayout(false);
+            groupBox2.ResumeLayout(false);
+            groupBox2.PerformLayout();
+            ResumeLayout(false);
         }
 
         #endregion
 
         private GroupBox groupBox1;
-        private Button saveBtn;
-        private TextBox textBox3;
+        private Button btnSave;
+        private TextBox inputPassword;
         private Label label3;
-        private TextBox textBox2;
+        private TextBox inputUserName;
         private Label label2;
-        private TextBox textBox1;
+        private TextBox inputHost;
         private Label label1;
+        private DataGridView proxysView;
+        private ContextMenuStrip contextMenu;
+        private ToolStripMenuItem 使用ToolStripMenuItem;
+        private ToolStripMenuItem 删除ToolStripMenuItem;
+        private TextBox inputName;
+        private Label label4;
+        private Button btnClear;
+        private GroupBox groupBox2;
+        private Label useHost;
+        private Label useName;
     }
 }

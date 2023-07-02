@@ -29,169 +29,182 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(OptionsForm));
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.radioButton1 = new System.Windows.Forms.RadioButton();
-            this.dnsProxy = new System.Windows.Forms.RadioButton();
-            this.saveBtn = new System.Windows.Forms.Button();
-            this.filterSubProcess = new System.Windows.Forms.CheckBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.filterOnlyDNS = new System.Windows.Forms.CheckBox();
-            this.dnsServer = new System.Windows.Forms.TextBox();
-            this.filterDNS = new System.Windows.Forms.CheckBox();
-            this.filterUDP = new System.Windows.Forms.CheckBox();
-            this.filterTcp = new System.Windows.Forms.CheckBox();
-            this.groupBox1.SuspendLayout();
-            this.panel1.SuspendLayout();
-            this.SuspendLayout();
+            groupBox1 = new GroupBox();
+            panel1 = new Panel();
+            dnsOnly = new RadioButton();
+            dnsProxy = new RadioButton();
+            saveBtn = new Button();
+            filterSubProcess = new CheckBox();
+            label2 = new Label();
+            filterOnlyDNS = new CheckBox();
+            dnsServer = new TextBox();
+            filterDNS = new CheckBox();
+            filterUDP = new CheckBox();
+            filterTcp = new CheckBox();
+            groupBox1.SuspendLayout();
+            panel1.SuspendLayout();
+            SuspendLayout();
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.panel1);
-            this.groupBox1.Controls.Add(this.saveBtn);
-            this.groupBox1.Controls.Add(this.filterSubProcess);
-            this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Controls.Add(this.filterOnlyDNS);
-            this.groupBox1.Controls.Add(this.dnsServer);
-            this.groupBox1.Controls.Add(this.filterDNS);
-            this.groupBox1.Controls.Add(this.filterUDP);
-            this.groupBox1.Controls.Add(this.filterTcp);
-            this.groupBox1.Location = new System.Drawing.Point(12, 6);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(333, 141);
-            this.groupBox1.TabIndex = 1;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "选项设置";
+            groupBox1.Controls.Add(panel1);
+            groupBox1.Controls.Add(saveBtn);
+            groupBox1.Controls.Add(filterSubProcess);
+            groupBox1.Controls.Add(label2);
+            groupBox1.Controls.Add(filterOnlyDNS);
+            groupBox1.Controls.Add(dnsServer);
+            groupBox1.Controls.Add(filterDNS);
+            groupBox1.Controls.Add(filterUDP);
+            groupBox1.Controls.Add(filterTcp);
+            groupBox1.Location = new Point(24, 11);
+            groupBox1.Margin = new Padding(6, 5, 6, 5);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Padding = new Padding(6, 5, 6, 5);
+            groupBox1.Size = new Size(666, 257);
+            groupBox1.TabIndex = 1;
+            groupBox1.TabStop = false;
+            groupBox1.Text = "选项设置";
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(this.radioButton1);
-            this.panel1.Controls.Add(this.dnsProxy);
-            this.panel1.Location = new System.Drawing.Point(5, 66);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(218, 25);
-            this.panel1.TabIndex = 2;
+            panel1.Controls.Add(dnsOnly);
+            panel1.Controls.Add(dnsProxy);
+            panel1.Location = new Point(10, 120);
+            panel1.Margin = new Padding(6, 5, 6, 5);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(436, 46);
+            panel1.TabIndex = 2;
             // 
-            // radioButton1
+            // dnsOnly
             // 
-            this.radioButton1.AutoSize = true;
-            this.radioButton1.Location = new System.Drawing.Point(107, 2);
-            this.radioButton1.Name = "radioButton1";
-            this.radioButton1.Size = new System.Drawing.Size(112, 21);
-            this.radioButton1.TabIndex = 2;
-            this.radioButton1.TabStop = true;
-            this.radioButton1.Text = "服务器处理DNS";
-            this.radioButton1.UseVisualStyleBackColor = true;
+            dnsOnly.AutoSize = true;
+            dnsOnly.Location = new Point(214, 4);
+            dnsOnly.Margin = new Padding(6, 5, 6, 5);
+            dnsOnly.Name = "dnsOnly";
+            dnsOnly.Size = new Size(217, 35);
+            dnsOnly.TabIndex = 2;
+            dnsOnly.TabStop = true;
+            dnsOnly.Text = "服务器处理DNS";
+            dnsOnly.UseVisualStyleBackColor = true;
             // 
             // dnsProxy
             // 
-            this.dnsProxy.AutoSize = true;
-            this.dnsProxy.Location = new System.Drawing.Point(1, 2);
-            this.dnsProxy.Name = "dnsProxy";
-            this.dnsProxy.Size = new System.Drawing.Size(100, 21);
-            this.dnsProxy.TabIndex = 1;
-            this.dnsProxy.TabStop = true;
-            this.dnsProxy.Text = "代理处理DNS";
-            this.dnsProxy.UseVisualStyleBackColor = true;
+            dnsProxy.AutoSize = true;
+            dnsProxy.Location = new Point(2, 4);
+            dnsProxy.Margin = new Padding(6, 5, 6, 5);
+            dnsProxy.Name = "dnsProxy";
+            dnsProxy.Size = new Size(193, 35);
+            dnsProxy.TabIndex = 1;
+            dnsProxy.TabStop = true;
+            dnsProxy.Text = "代理处理DNS";
+            dnsProxy.UseVisualStyleBackColor = true;
             // 
             // saveBtn
             // 
-            this.saveBtn.Location = new System.Drawing.Point(135, 112);
-            this.saveBtn.Name = "saveBtn";
-            this.saveBtn.Size = new System.Drawing.Size(70, 23);
-            this.saveBtn.TabIndex = 9;
-            this.saveBtn.Text = "保存更改";
-            this.saveBtn.UseVisualStyleBackColor = true;
+            saveBtn.Location = new Point(270, 204);
+            saveBtn.Margin = new Padding(6, 5, 6, 5);
+            saveBtn.Name = "saveBtn";
+            saveBtn.Size = new Size(140, 42);
+            saveBtn.TabIndex = 9;
+            saveBtn.Text = "保存更改";
+            saveBtn.UseVisualStyleBackColor = true;
+            saveBtn.Click += saveBtn_Click;
             // 
             // filterSubProcess
             // 
-            this.filterSubProcess.AutoSize = true;
-            this.filterSubProcess.Location = new System.Drawing.Point(231, 22);
-            this.filterSubProcess.Name = "filterSubProcess";
-            this.filterSubProcess.Size = new System.Drawing.Size(87, 21);
-            this.filterSubProcess.TabIndex = 8;
-            this.filterSubProcess.Text = "处理子进程";
-            this.filterSubProcess.UseVisualStyleBackColor = true;
+            filterSubProcess.AutoSize = true;
+            filterSubProcess.Location = new Point(462, 40);
+            filterSubProcess.Margin = new Padding(6, 5, 6, 5);
+            filterSubProcess.Name = "filterSubProcess";
+            filterSubProcess.Size = new Size(166, 35);
+            filterSubProcess.TabIndex = 8;
+            filterSubProcess.Text = "处理子进程";
+            filterSubProcess.UseVisualStyleBackColor = true;
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.label2.Location = new System.Drawing.Point(3, 92);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(324, 17);
-            this.label2.TabIndex = 7;
-            this.label2.Text = "通过代理处理DNS请求，或者将DNS请求指向指定的服务器";
+            label2.AutoSize = true;
+            label2.ForeColor = SystemColors.ControlDarkDark;
+            label2.Location = new Point(6, 168);
+            label2.Margin = new Padding(6, 0, 6, 0);
+            label2.Name = "label2";
+            label2.Size = new Size(646, 31);
+            label2.TabIndex = 7;
+            label2.Text = "通过代理处理DNS请求，或者将DNS请求指向指定的服务器";
             // 
             // filterOnlyDNS
             // 
-            this.filterOnlyDNS.AutoSize = true;
-            this.filterOnlyDNS.Location = new System.Drawing.Point(112, 43);
-            this.filterOnlyDNS.Name = "filterOnlyDNS";
-            this.filterOnlyDNS.Size = new System.Drawing.Size(101, 21);
-            this.filterOnlyDNS.TabIndex = 5;
-            this.filterOnlyDNS.Text = "处理进程DNS";
-            this.filterOnlyDNS.UseVisualStyleBackColor = true;
+            filterOnlyDNS.AutoSize = true;
+            filterOnlyDNS.Location = new Point(224, 78);
+            filterOnlyDNS.Margin = new Padding(6, 5, 6, 5);
+            filterOnlyDNS.Name = "filterOnlyDNS";
+            filterOnlyDNS.Size = new Size(194, 35);
+            filterOnlyDNS.TabIndex = 5;
+            filterOnlyDNS.Text = "处理进程DNS";
+            filterOnlyDNS.UseVisualStyleBackColor = true;
             // 
             // dnsServer
             // 
-            this.dnsServer.Location = new System.Drawing.Point(230, 67);
-            this.dnsServer.Name = "dnsServer";
-            this.dnsServer.Size = new System.Drawing.Size(95, 23);
-            this.dnsServer.TabIndex = 4;
+            dnsServer.Location = new Point(460, 122);
+            dnsServer.Margin = new Padding(6, 5, 6, 5);
+            dnsServer.Name = "dnsServer";
+            dnsServer.Size = new Size(186, 38);
+            dnsServer.TabIndex = 4;
             // 
             // filterDNS
             // 
-            this.filterDNS.AutoSize = true;
-            this.filterDNS.Location = new System.Drawing.Point(6, 45);
-            this.filterDNS.Name = "filterDNS";
-            this.filterDNS.Size = new System.Drawing.Size(77, 21);
-            this.filterDNS.TabIndex = 2;
-            this.filterDNS.Text = "处理DNS";
-            this.filterDNS.UseVisualStyleBackColor = true;
+            filterDNS.AutoSize = true;
+            filterDNS.Location = new Point(12, 82);
+            filterDNS.Margin = new Padding(6, 5, 6, 5);
+            filterDNS.Name = "filterDNS";
+            filterDNS.Size = new Size(146, 35);
+            filterDNS.TabIndex = 2;
+            filterDNS.Text = "处理DNS";
+            filterDNS.UseVisualStyleBackColor = true;
             // 
             // filterUDP
             // 
-            this.filterUDP.AutoSize = true;
-            this.filterUDP.Location = new System.Drawing.Point(112, 22);
-            this.filterUDP.Name = "filterUDP";
-            this.filterUDP.Size = new System.Drawing.Size(76, 21);
-            this.filterUDP.TabIndex = 1;
-            this.filterUDP.Text = "处理UDP";
-            this.filterUDP.UseVisualStyleBackColor = true;
+            filterUDP.AutoSize = true;
+            filterUDP.Location = new Point(224, 40);
+            filterUDP.Margin = new Padding(6, 5, 6, 5);
+            filterUDP.Name = "filterUDP";
+            filterUDP.Size = new Size(145, 35);
+            filterUDP.TabIndex = 1;
+            filterUDP.Text = "处理UDP";
+            filterUDP.UseVisualStyleBackColor = true;
             // 
             // filterTcp
             // 
-            this.filterTcp.AutoSize = true;
-            this.filterTcp.Location = new System.Drawing.Point(6, 22);
-            this.filterTcp.Name = "filterTcp";
-            this.filterTcp.Size = new System.Drawing.Size(73, 21);
-            this.filterTcp.TabIndex = 0;
-            this.filterTcp.Text = "处理TCP";
-            this.filterTcp.UseVisualStyleBackColor = true;
+            filterTcp.AutoSize = true;
+            filterTcp.Location = new Point(12, 40);
+            filterTcp.Margin = new Padding(6, 5, 6, 5);
+            filterTcp.Name = "filterTcp";
+            filterTcp.Size = new Size(139, 35);
+            filterTcp.TabIndex = 0;
+            filterTcp.Text = "处理TCP";
+            filterTcp.UseVisualStyleBackColor = true;
             // 
-            // Options
+            // OptionsForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(356, 155);
-            this.Controls.Add(this.groupBox1);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "Options";
-            this.Text = "选项设置";
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            this.panel1.ResumeLayout(false);
-            this.panel1.PerformLayout();
-            this.ResumeLayout(false);
-
+            AutoScaleDimensions = new SizeF(14F, 31F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(712, 283);
+            Controls.Add(groupBox1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            Margin = new Padding(6, 5, 6, 5);
+            Name = "OptionsForm";
+            Text = "选项设置";
+            groupBox1.ResumeLayout(false);
+            groupBox1.PerformLayout();
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
+            ResumeLayout(false);
         }
 
         #endregion
 
         private GroupBox groupBox1;
         private Panel panel1;
-        private RadioButton radioButton1;
         private RadioButton dnsProxy;
         private Button saveBtn;
         private CheckBox filterSubProcess;
@@ -201,5 +214,6 @@
         private CheckBox filterDNS;
         private CheckBox filterUDP;
         private CheckBox filterTcp;
+        private RadioButton dnsOnly;
     }
 }

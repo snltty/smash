@@ -29,97 +29,110 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.files = new System.Windows.Forms.ListView();
-            this.startBtn = new System.Windows.Forms.Button();
-            this.mainMenu = new System.Windows.Forms.MenuStrip();
-            this.代理设置ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.选项设置ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.关于ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.groupBox1.SuspendLayout();
-            this.mainMenu.SuspendLayout();
-            this.SuspendLayout();
+            groupBox1 = new GroupBox();
+            comboBox1 = new ComboBox();
+            files = new ListView();
+            startBtn = new Button();
+            mainMenu = new MenuStrip();
+            代理设置ToolStripMenuItem = new ToolStripMenuItem();
+            选项设置ToolStripMenuItem = new ToolStripMenuItem();
+            关于ToolStripMenuItem = new ToolStripMenuItem();
+            groupBox1.SuspendLayout();
+            mainMenu.SuspendLayout();
+            SuspendLayout();
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.files);
-            this.groupBox1.Location = new System.Drawing.Point(12, 184);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(333, 205);
-            this.groupBox1.TabIndex = 1;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "选择进程";
+            groupBox1.Controls.Add(comboBox1);
+            groupBox1.Controls.Add(files);
+            groupBox1.Location = new Point(24, 48);
+            groupBox1.Margin = new Padding(6, 5, 6, 5);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Padding = new Padding(6, 5, 6, 5);
+            groupBox1.Size = new Size(385, 468);
+            groupBox1.TabIndex = 1;
+            groupBox1.TabStop = false;
+            groupBox1.Text = "选择进程";
+            // 
+            // comboBox1
+            // 
+            comboBox1.FormattingEnabled = true;
+            comboBox1.Location = new Point(9, 50);
+            comboBox1.Name = "comboBox1";
+            comboBox1.Size = new Size(364, 39);
+            comboBox1.TabIndex = 1;
             // 
             // files
             // 
-            this.files.Location = new System.Drawing.Point(4, 22);
-            this.files.Name = "files";
-            this.files.Size = new System.Drawing.Size(185, 205);
-            this.files.TabIndex = 0;
-            this.files.UseCompatibleStateImageBehavior = false;
+            files.Location = new Point(9, 97);
+            files.Margin = new Padding(6, 5, 6, 5);
+            files.Name = "files";
+            files.Size = new Size(364, 360);
+            files.TabIndex = 0;
+            files.UseCompatibleStateImageBehavior = false;
             // 
             // startBtn
             // 
-            this.startBtn.Location = new System.Drawing.Point(142, 395);
-            this.startBtn.Name = "startBtn";
-            this.startBtn.Size = new System.Drawing.Size(94, 43);
-            this.startBtn.TabIndex = 2;
-            this.startBtn.Text = "启动驱动";
-            this.startBtn.UseVisualStyleBackColor = true;
+            startBtn.Location = new Point(113, 526);
+            startBtn.Margin = new Padding(6, 5, 6, 5);
+            startBtn.Name = "startBtn";
+            startBtn.Size = new Size(188, 78);
+            startBtn.TabIndex = 2;
+            startBtn.Text = "启动驱动";
+            startBtn.UseVisualStyleBackColor = true;
             // 
             // mainMenu
             // 
-            this.mainMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.代理设置ToolStripMenuItem,
-            this.选项设置ToolStripMenuItem,
-            this.关于ToolStripMenuItem});
-            this.mainMenu.Location = new System.Drawing.Point(0, 0);
-            this.mainMenu.Name = "mainMenu";
-            this.mainMenu.Size = new System.Drawing.Size(354, 25);
-            this.mainMenu.TabIndex = 3;
-            this.mainMenu.Text = "主菜单";
+            mainMenu.ImageScalingSize = new Size(32, 32);
+            mainMenu.Items.AddRange(new ToolStripItem[] { 代理设置ToolStripMenuItem, 选项设置ToolStripMenuItem, 关于ToolStripMenuItem });
+            mainMenu.Location = new Point(0, 0);
+            mainMenu.Name = "mainMenu";
+            mainMenu.Padding = new Padding(12, 4, 0, 4);
+            mainMenu.Size = new Size(430, 43);
+            mainMenu.TabIndex = 3;
+            mainMenu.Text = "主菜单";
             // 
             // 代理设置ToolStripMenuItem
             // 
-            this.代理设置ToolStripMenuItem.Name = "代理设置ToolStripMenuItem";
-            this.代理设置ToolStripMenuItem.Size = new System.Drawing.Size(68, 21);
-            this.代理设置ToolStripMenuItem.Text = "代理设置";
-            this.代理设置ToolStripMenuItem.Click += new System.EventHandler(this.OnProxySettingClick);
+            代理设置ToolStripMenuItem.Name = "代理设置ToolStripMenuItem";
+            代理设置ToolStripMenuItem.Size = new Size(130, 35);
+            代理设置ToolStripMenuItem.Text = "代理设置";
+            代理设置ToolStripMenuItem.Click += OnProxySettingClick;
             // 
             // 选项设置ToolStripMenuItem
             // 
-            this.选项设置ToolStripMenuItem.Name = "选项设置ToolStripMenuItem";
-            this.选项设置ToolStripMenuItem.Size = new System.Drawing.Size(68, 21);
-            this.选项设置ToolStripMenuItem.Text = "选项设置";
-            this.选项设置ToolStripMenuItem.Click += new System.EventHandler(this.OnOptionsSettingClick);
+            选项设置ToolStripMenuItem.Name = "选项设置ToolStripMenuItem";
+            选项设置ToolStripMenuItem.Size = new Size(130, 35);
+            选项设置ToolStripMenuItem.Text = "选项设置";
+            选项设置ToolStripMenuItem.Click += OnOptionsSettingClick;
             // 
             // 关于ToolStripMenuItem
             // 
-            this.关于ToolStripMenuItem.Name = "关于ToolStripMenuItem";
-            this.关于ToolStripMenuItem.Size = new System.Drawing.Size(44, 21);
-            this.关于ToolStripMenuItem.Text = "关于";
-            this.关于ToolStripMenuItem.Click += new System.EventHandler(this.OnAboutClick);
+            关于ToolStripMenuItem.Name = "关于ToolStripMenuItem";
+            关于ToolStripMenuItem.Size = new Size(82, 35);
+            关于ToolStripMenuItem.Text = "关于";
+            关于ToolStripMenuItem.Click += OnAboutClick;
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(354, 450);
-            this.Controls.Add(this.startBtn);
-            this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.mainMenu);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MainMenuStrip = this.mainMenu;
-            this.Name = "MainForm";
-            this.Text = "netch-process";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Closing);
-            this.groupBox1.ResumeLayout(false);
-            this.mainMenu.ResumeLayout(false);
-            this.mainMenu.PerformLayout();
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new SizeF(14F, 31F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(430, 628);
+            Controls.Add(startBtn);
+            Controls.Add(groupBox1);
+            Controls.Add(mainMenu);
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            MainMenuStrip = mainMenu;
+            Margin = new Padding(6, 5, 6, 5);
+            Name = "MainForm";
+            Text = "netch-process";
+            FormClosing += Closing;
+            groupBox1.ResumeLayout(false);
+            mainMenu.ResumeLayout(false);
+            mainMenu.PerformLayout();
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -130,5 +143,6 @@
         private ToolStripMenuItem 代理设置ToolStripMenuItem;
         private ToolStripMenuItem 选项设置ToolStripMenuItem;
         private ToolStripMenuItem 关于ToolStripMenuItem;
+        private ComboBox comboBox1;
     }
 }

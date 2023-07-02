@@ -218,13 +218,34 @@ public class Config
     /// 是否代理处理DNS
     /// </summary>
     public bool DNSProxy { get; set; } = false;
-    public string DNSHost { get; set; } = $"1.1.1.1";
+    public string DNSHost { get; set; } = $"8.8.8.8";
     public int DNSPort { get; set; } = 53;
 
 
 
+    public string ProxyName { get; set; } = string.Empty;
     public string ProxyHost { get; set; } = $"127.0.0.1";
     public int ProxyPort { get; set; } = 5413;
     public string ProxyUserName { get; set; } = string.Empty;
     public string ProxyPassword { get; set; } = string.Empty;
+
+    public List<ProxyInfo> Proxys { get; set; } = new List<ProxyInfo> {
+        new ProxyInfo{ Host="8.8.8.8:5413" },
+        new ProxyInfo{ Host="127.0.0.1:5414" },
+    };
+
+    public void Save()
+    {
+
+    }
+}
+
+
+public class ProxyInfo
+{
+    public string Name { get; set; }
+    public string Host { get; set; }
+    public string UserName { get; set; }
+    public string Password { get; set; }
+    public long Delay { get; set; }
 }
