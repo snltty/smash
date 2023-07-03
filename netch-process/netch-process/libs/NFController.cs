@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 using System.Text;
 using static netch_process.libs.Redirector;
 
@@ -16,6 +17,17 @@ public class NFController
 
     public async Task StartAsync()
     {
+
+        if (config.Proxy == null || string.IsNullOrWhiteSpace(config.Proxy.Host) || config.Proxy.Port == 0)
+        {
+            throw new Exception($"proxy invalid!");
+        }
+        if (config.Process == null || config.Process.FileNames.Count == 0)
+        {
+            throw new Exception($"process invalid!");
+        }
+        IPAddress ip = Helper.GetHostIp(config.Proxy.Host) ?? throw new Exception("proxy host invalid!");
+
         CheckDriver();
 
         Dial(NameList.AIO_FILTERLOOPBACK, config.FilterLoopback);
@@ -39,10 +51,12 @@ public class NFController
         }
 
         // Server
-        Dial(NameList.AIO_TGTHOST, config.ProxyHost);
-        Dial(NameList.AIO_TGTPORT, config.ProxyPort.ToString());
-        Dial(NameList.AIO_TGTUSER, config.ProxyUserName);
-        Dial(NameList.AIO_TGTPASS, config.ProxyPassword);
+        Dial(NameList.AIO_TGTHOST, ip.ToString());
+        Dial(NameList.AIO_TGTPORT, config.Proxy.Port.ToString());
+        Dial(NameList.AIO_TGTUSER, config.Proxy.UserName);
+        Dial(NameList.AIO_TGTPASS, config.Proxy.Password);
+
+        DialRule(config.Process.FileNames.ToArray(), Array.Empty<string>());
 
         if (!await InitAsync())
             throw new Exception("Redirector start failed.");
@@ -64,6 +78,7 @@ public class NFController
             foreach (var item in addNames)
             {
                 Dial(NameList.AIO_ADDNAME, item);
+
             }
         }
         if (passNames != null)
@@ -172,8 +187,9 @@ public class NFController
 
 }
 
-public class Config
+public sealed class Config
 {
+    #region 劫持选项
     /// <summary>
     /// 处理TCP
     /// </summary>
@@ -220,32 +236,54 @@ public class Config
     public bool DNSProxy { get; set; } = false;
     public string DNSHost { get; set; } = $"8.8.8.8";
     public int DNSPort { get; set; } = 53;
+    #endregion
 
-
-
-    public string ProxyName { get; set; } = string.Empty;
-    public string ProxyHost { get; set; } = $"127.0.0.1";
-    public int ProxyPort { get; set; } = 5413;
-    public string ProxyUserName { get; set; } = string.Empty;
-    public string ProxyPassword { get; set; } = string.Empty;
-
+    #region 代理
+    public ProxyInfo Proxy { get; set; } = new ProxyInfo { Host = "127.0.0.1", Port = 5413, Name = "默认", Password = string.Empty, UserName = string.Empty };
     public List<ProxyInfo> Proxys { get; set; } = new List<ProxyInfo> {
-        new ProxyInfo{ Host="8.8.8.8:5413" },
-        new ProxyInfo{ Host="127.0.0.1:5414" },
+        new ProxyInfo{ Host = "127.0.0.1", Port = 5413, Name = "默认", Password = string.Empty, UserName = string.Empty },
     };
+    #endregion
 
+    #region 进程
+    public ProcessInfo Process { get; set; } = new ProcessInfo { Name = "浏览器", FileNames = new List<string> { "chrome.exe" } };
+    public List<ProcessInfo> Processs { get; set; } = new List<ProcessInfo> {
+         new ProcessInfo{ Name="浏览器", FileNames = new List<string>{"chrome.exe" } }
+    };
+    #endregion
+
+
+    public bool Running { get; set; }
+
+
+    static string fileName = "config.json";
     public void Save()
     {
-
+        File.WriteAllText(fileName, System.Text.Json.JsonSerializer.Serialize(this));
+    }
+    public static Config Load()
+    {
+        if (File.Exists(fileName) == false)
+        {
+            return new Config();
+        }
+        return System.Text.Json.JsonSerializer.Deserialize<Config>(File.ReadAllText(fileName));
     }
 }
 
 
-public class ProxyInfo
+public sealed class ProxyInfo
 {
     public string Name { get; set; }
     public string Host { get; set; }
+    public int Port { get; set; }
     public string UserName { get; set; }
     public string Password { get; set; }
     public long Delay { get; set; }
+}
+
+public sealed class ProcessInfo
+{
+    public string Name { get; set; }
+    public List<string> FileNames { get; set; } = new List<string>();
 }

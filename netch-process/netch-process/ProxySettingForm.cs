@@ -22,9 +22,21 @@ namespace netch_process
             proxysView.ContextMenuStrip = contextMenu;
             proxysView.CellMouseUp += ProxysView_CellMouseUp;
             proxysView.SelectionChanged += ProxysView_SelectionChanged;
+            proxysView.CellFormatting += ProxysView_CellFormatting;
 
             ShowUsed();
             Ping();
+        }
+
+        private void ProxysView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.ColumnIndex == 4)
+            {
+                if (e.Value != null && e.Value.ToString().Length > 0)
+                {
+                    e.Value = new string('*', e.Value.ToString().Length);
+                }
+            }
         }
         private void BindData()
         {
@@ -32,6 +44,7 @@ namespace netch_process
             proxysView.DataSource = config.Proxys;
             proxysView.Columns["Name"].HeaderText = "名称";
             proxysView.Columns["Host"].HeaderText = "主机";
+            proxysView.Columns["Port"].HeaderText = "端口";
             proxysView.Columns["UserName"].HeaderText = "账号";
             proxysView.Columns["Password"].HeaderText = "密码";
             proxysView.Columns["Delay"].HeaderText = "延迟";
@@ -46,6 +59,7 @@ namespace netch_process
                 proxy = proxysView.SelectedRows[0].DataBoundItem as ProxyInfo;
                 inputName.Text = proxy.Name;
                 inputHost.Text = proxy.Host;
+                inputPort.Text = proxy.Port.ToString();
                 inputUserName.Text = proxy.UserName;
                 inputPassword.Text = proxy.Password;
             }
@@ -54,6 +68,7 @@ namespace netch_process
                 proxy = null;
                 inputName.Text = string.Empty;
                 inputHost.Text = string.Empty;
+                inputPort.Text = string.Empty;
                 inputUserName.Text = string.Empty;
                 inputPassword.Text = string.Empty;
             }
@@ -78,14 +93,21 @@ namespace netch_process
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(inputHost.Text) || string.IsNullOrWhiteSpace(inputName.Text))
+            if (string.IsNullOrWhiteSpace(inputHost.Text) || string.IsNullOrWhiteSpace(inputName.Text) || string.IsNullOrWhiteSpace(inputPort.Text))
             {
                 MessageBox.Show("名称，主机，必填");
                 return;
             }
-            if (IPEndPoint.TryParse(inputHost.Text, out _) == false)
+
+            IPAddress ip = Helper.GetHostIp(inputHost.Text);
+            if (ip == null)
             {
                 MessageBox.Show("主机无效");
+                return;
+            }
+            if (int.TryParse(inputPort.Text, out int port) == false)
+            {
+                MessageBox.Show("端口无效");
                 return;
             }
 
@@ -93,6 +115,7 @@ namespace netch_process
             {
                 proxy.Name = inputName.Text;
                 proxy.Host = inputHost.Text;
+                proxy.Port = port;
                 proxy.UserName = inputUserName.Text;
                 proxy.Password = inputPassword.Text;
             }
@@ -102,6 +125,7 @@ namespace netch_process
                 {
                     Name = inputName.Text,
                     Host = inputHost.Text,
+                    Port = port,
                     UserName = inputUserName.Text,
                     Password = inputPassword.Text
                 });
@@ -114,6 +138,7 @@ namespace netch_process
 
         private void 删除ToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (config.Proxys.Count == 1) return;
             config.Proxys.Remove(proxy);
             BindData();
             btnClear.PerformClick();
@@ -121,22 +146,17 @@ namespace netch_process
 
         private void ShowUsed()
         {
-            if (string.IsNullOrWhiteSpace(config.ProxyHost) && config.Proxys.Count > 0)
+            if (config.Proxy == null && config.Proxys.Count > 0)
             {
                 Use(config.Proxys.FirstOrDefault());
             }
-            useName.Text = config.ProxyName;
-            useHost.Text = $"{config.ProxyHost}:{config.ProxyPort}";
+            useName.Text = config.Proxy.Name;
+            useHost.Text = $"{config.Proxy.Host}:{config.Proxy.Port}";
         }
         private void Use(ProxyInfo proxy)
         {
             if (proxy == null) return;
-            config.ProxyName = proxy.Name;
-            if (IPEndPoint.TryParse(proxy.Host, out IPEndPoint ep))
-            {
-                config.ProxyHost = ep.Address.ToString();
-                config.ProxyPort = ep.Port;
-            }
+            config.Proxy = proxy;
         }
 
         private void 使用ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -161,24 +181,25 @@ namespace netch_process
                 {
                     foreach (ProxyInfo item in config.Proxys)
                     {
-                        if (IPEndPoint.TryParse(item.Host, out IPEndPoint ep))
+                        IPAddress ip = Helper.GetHostIp(item.Host);
+                        if (ip == null) continue;
+
+                        using Ping ping = new Ping();
+                        _ = ping.SendPingAsync(ip).ContinueWith((res, obj) =>
                         {
-                            using Ping ping = new Ping();
-                            _ = ping.SendPingAsync(ep.Address).ContinueWith((res, obj) =>
+                            ProxyInfo proxy = obj as ProxyInfo;
+                            PingReply delay = res.Result;
+                            if (delay.Status == IPStatus.Success)
                             {
-                                ProxyInfo proxy = obj as ProxyInfo;
-                                PingReply delay = res.Result;
-                                if (delay.Status == IPStatus.Success)
-                                {
-                                    proxy.Delay = delay.RoundtripTime;
-                                }
-                                else
-                                {
-                                    proxy.Delay = -1;
-                                }
-                               
-                            }, item);
-                        }
+                                proxy.Delay = delay.RoundtripTime;
+                            }
+                            else
+                            {
+                                proxy.Delay = -1;
+                            }
+
+                        }, item);
+
 
                     }
                     await Task.Delay(1000);
@@ -189,6 +210,11 @@ namespace netch_process
         private void OnFormClosing(object sender, FormClosingEventArgs e)
         {
             CancelPing();
+        }
+
+        private void showPassword_CheckedChanged(object sender, EventArgs e)
+        {
+            inputPassword.PasswordChar = showPassword.Checked ? '\0' : '*';
         }
     }
 }

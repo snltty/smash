@@ -33,7 +33,7 @@
             panel1 = new Panel();
             dnsOnly = new RadioButton();
             dnsProxy = new RadioButton();
-            saveBtn = new Button();
+            btnSave = new Button();
             filterSubProcess = new CheckBox();
             label2 = new Label();
             filterOnlyDNS = new CheckBox();
@@ -48,7 +48,7 @@
             // groupBox1
             // 
             groupBox1.Controls.Add(panel1);
-            groupBox1.Controls.Add(saveBtn);
+            groupBox1.Controls.Add(btnSave);
             groupBox1.Controls.Add(filterSubProcess);
             groupBox1.Controls.Add(label2);
             groupBox1.Controls.Add(filterOnlyDNS);
@@ -99,16 +99,16 @@
             dnsProxy.Text = "代理处理DNS";
             dnsProxy.UseVisualStyleBackColor = true;
             // 
-            // saveBtn
+            // btnSave
             // 
-            saveBtn.Location = new Point(270, 204);
-            saveBtn.Margin = new Padding(6, 5, 6, 5);
-            saveBtn.Name = "saveBtn";
-            saveBtn.Size = new Size(140, 42);
-            saveBtn.TabIndex = 9;
-            saveBtn.Text = "保存更改";
-            saveBtn.UseVisualStyleBackColor = true;
-            saveBtn.Click += saveBtn_Click;
+            btnSave.Location = new Point(270, 204);
+            btnSave.Margin = new Padding(6, 5, 6, 5);
+            btnSave.Name = "btnSave";
+            btnSave.Size = new Size(140, 42);
+            btnSave.TabIndex = 9;
+            btnSave.Text = "保存更改";
+            btnSave.UseVisualStyleBackColor = true;
+            btnSave.Click += saveBtn_Click;
             // 
             // filterSubProcess
             // 
@@ -206,7 +206,7 @@
         private GroupBox groupBox1;
         private Panel panel1;
         private RadioButton dnsProxy;
-        private Button saveBtn;
+        private Button btnSave;
         private CheckBox filterSubProcess;
         private Label label2;
         private CheckBox filterOnlyDNS;

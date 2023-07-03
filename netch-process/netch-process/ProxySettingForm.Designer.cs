@@ -31,6 +31,8 @@
             components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ProxySettingForm));
             groupBox1 = new GroupBox();
+            showPassword = new CheckBox();
+            inputPort = new TextBox();
             btnClear = new Button();
             inputName = new TextBox();
             label4 = new Label();
@@ -56,6 +58,8 @@
             // 
             // groupBox1
             // 
+            groupBox1.Controls.Add(showPassword);
+            groupBox1.Controls.Add(inputPort);
             groupBox1.Controls.Add(btnClear);
             groupBox1.Controls.Add(inputName);
             groupBox1.Controls.Add(label4);
@@ -75,6 +79,24 @@
             groupBox1.TabStop = false;
             groupBox1.Text = "代理设置";
             // 
+            // showPassword
+            // 
+            showPassword.AutoSize = true;
+            showPassword.Location = new Point(553, 89);
+            showPassword.Name = "showPassword";
+            showPassword.Size = new Size(142, 35);
+            showPassword.TabIndex = 20;
+            showPassword.Text = "显示密码";
+            showPassword.UseVisualStyleBackColor = true;
+            showPassword.CheckedChanged += showPassword_CheckedChanged;
+            // 
+            // inputPort
+            // 
+            inputPort.Location = new Point(553, 34);
+            inputPort.Name = "inputPort";
+            inputPort.Size = new Size(130, 38);
+            inputPort.TabIndex = 19;
+            // 
             // btnClear
             // 
             btnClear.Location = new Point(180, 142);
@@ -91,7 +113,7 @@
             inputName.Location = new Point(80, 35);
             inputName.Margin = new Padding(6, 5, 6, 5);
             inputName.Name = "inputName";
-            inputName.Size = new Size(208, 38);
+            inputName.Size = new Size(181, 38);
             inputName.TabIndex = 17;
             // 
             // label4
@@ -106,16 +128,17 @@
             // 
             // inputPassword
             // 
-            inputPassword.Location = new Point(359, 86);
+            inputPassword.Location = new Point(338, 86);
             inputPassword.Margin = new Padding(6, 5, 6, 5);
             inputPassword.Name = "inputPassword";
-            inputPassword.Size = new Size(321, 38);
+            inputPassword.PasswordChar = '*';
+            inputPassword.Size = new Size(206, 38);
             inputPassword.TabIndex = 15;
             // 
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(297, 87);
+            label3.Location = new Point(276, 87);
             label3.Margin = new Padding(6, 0, 6, 0);
             label3.Name = "label3";
             label3.Size = new Size(62, 31);
@@ -127,7 +150,7 @@
             inputUserName.Location = new Point(80, 86);
             inputUserName.Margin = new Padding(6, 5, 6, 5);
             inputUserName.Name = "inputUserName";
-            inputUserName.Size = new Size(208, 38);
+            inputUserName.Size = new Size(181, 38);
             inputUserName.TabIndex = 13;
             // 
             // label2
@@ -142,16 +165,16 @@
             // 
             // inputHost
             // 
-            inputHost.Location = new Point(359, 33);
+            inputHost.Location = new Point(338, 35);
             inputHost.Margin = new Padding(6, 5, 6, 5);
             inputHost.Name = "inputHost";
-            inputHost.Size = new Size(321, 38);
+            inputHost.Size = new Size(206, 38);
             inputHost.TabIndex = 11;
             // 
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(297, 36);
+            label1.Location = new Point(276, 38);
             label1.Margin = new Padding(6, 0, 6, 0);
             label1.Name = "label1";
             label1.Size = new Size(62, 31);
@@ -271,5 +294,7 @@
         private GroupBox groupBox2;
         private Label useHost;
         private Label useName;
+        private TextBox inputPort;
+        private CheckBox showPassword;
     }
 }

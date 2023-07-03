@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Reflection;
+using System.Runtime;
 using netch_process.libs;
 
 namespace netch_process
@@ -13,15 +15,22 @@ namespace netch_process
         string name = "netch进程劫持代理";
 
         Config config = new Config();
+        NFController nFController;
 
         public MainForm()
         {
+            config = Config.Load();
+            nFController = new NFController(config);
+
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             MinimizeBox = false;
             InitializeComponent();
             InitialTray();
+            BindInfo();
+
+
         }
 
         #region 托盘
@@ -36,7 +45,8 @@ namespace netch_process
             notifyIcon.Visible = true;
 
             notifyIcon.ContextMenuStrip = new ContextMenuStrip();
-            notifyIcon.ContextMenuStrip.Items.Add("自启动", unright, StartUp);
+            notifyIcon.ContextMenuStrip.Items.Add("程序自启动", unright, StartUp);
+            notifyIcon.ContextMenuStrip.Items.Add("启动进程驱动", unright, Switch);
             notifyIcon.ContextMenuStrip.Items.Add("退出", null, Close);
             notifyIcon.DoubleClick += ContextMenuStrip_MouseDoubleClick;
 
@@ -151,6 +161,7 @@ namespace netch_process
             proxyWin.FormClosed += (object sender, FormClosedEventArgs e) =>
             {
                 proxyWin = null;
+                BindInfo();
             };
         }
 
@@ -162,6 +173,7 @@ namespace netch_process
             optionsWin.FormClosed += (object sender, FormClosedEventArgs e) =>
             {
                 optionsWin = null;
+                BindInfo();
             };
         }
 
@@ -173,8 +185,164 @@ namespace netch_process
             aboutWin.FormClosed += (object sender, FormClosedEventArgs e) =>
             {
                 aboutWin = null;
+                BindInfo();
             };
         }
+
+        ProcessForm processWin = null;
+        private void OnProcessClick(object sender, EventArgs e)
+        {
+            processWin = new ProcessForm(config);
+            processWin.ShowDialog();
+            processWin.FormClosed += (object sender, FormClosedEventArgs e) =>
+            {
+                processWin = null;
+                BindInfo();
+            };
+        }
+
         #endregion
+
+
+        private void BindInfo()
+        {
+            BindGroup();
+            BindProxy();
+        }
+
+        private void cmbGroup_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cmbGroup.SelectedItem != null)
+            {
+                config.Process = config.Processs.FirstOrDefault(c => c.Name == cmbGroup.SelectedItem.ToString());
+            }
+            BindFileNames();
+        }
+        private void BindGroup()
+        {
+            cmbGroup.DataSource = null;
+            cmbGroup.DataSource = config.Processs.Select(c => c.Name).ToList();
+        }
+        private void BindFileNames()
+        {
+            listProcess.DataSource = null;
+            if (config.Process == null) return;
+            listProcess.DataSource = config.Process.FileNames;
+            listProcess.ClearSelected();
+        }
+
+        private void BindProxy()
+        {
+            cmbProxy.DataSource = null;
+            if (config.Proxy != null)
+            {
+                cmbProxy.DataSource = config.Proxys.Select(c => c.Name).ToList();
+            }
+        }
+        private void cmbProxy_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cmbProxy.SelectedItem != null)
+            {
+                config.Proxy = config.Proxys.FirstOrDefault(c => c.Name == cmbProxy.SelectedItem.ToString());
+                labelProxy.Text = $"{config.Proxy.Host}:{config.Proxy.Port}";
+            }
+        }
+
+        bool starting = false;
+        bool running = false;
+        private void SetButtonTest()
+        {
+            this.Invoke(() =>
+            {
+                if (starting)
+                {
+                    startBtn.Text = "正在操作";
+                }
+                else if (running)
+                {
+                    startBtn.Text = "停止驱动";
+                    notifyIcon.Icon = icon;
+                    notifyIcon.ContextMenuStrip.Items[1].Image = right;
+                }
+                else
+                {
+                    startBtn.Text = "启动驱动";
+                    notifyIcon.Icon = iconGray;
+                    notifyIcon.ContextMenuStrip.Items[1].Image = unright;
+                }
+            });
+        }
+
+        private void Switch(object sender, EventArgs e)
+        {
+            if (running)
+            {
+                Stop();
+            }
+            else
+            {
+                Start();
+            }
+        }
+        private void Start()
+        {
+            if (starting) return;
+
+            starting = true;
+            SetButtonTest();
+            Task.Run(async () =>
+            {
+                try
+                {
+                    nFController.ClearRule();
+                    await nFController.StartAsync();
+                    starting = false;
+                    running = true;
+                    config.Running = true;
+                }
+                catch (Exception ex)
+                {
+                    starting = false;
+                    MessageBox.Show(ex.Message);
+                }
+                SetButtonTest();
+            });
+        }
+        private void Stop()
+        {
+            if (starting) return;
+            starting = true;
+            SetButtonTest();
+            Task.Run(async () =>
+            {
+                try
+                {
+                    nFController.ClearRule();
+                    await nFController.StopAsync();
+                    starting = false;
+                    running = false;
+                    config.Running = false;
+                }
+                catch (Exception ex)
+                {
+                    starting = false;
+                    MessageBox.Show(ex.Message);
+                }
+                SetButtonTest();
+            });
+        }
+
+        private void startBtn_Click(object sender, EventArgs e)
+        {
+            Switch(null, null);
+        }
+
+        private void OnWinLoad(object sender, EventArgs e)
+        {
+            if (config.Running)
+            {
+                Start();
+            }
+        }
     }
 }
