@@ -51,7 +51,7 @@ public static class Redirector
         return Task.Run(aio_free);
     }
 
-    private const string Redirector_bin = "Redirector.bin";
+    private const string Redirector_bin = "redirector.bin";
 
     [DllImport(Redirector_bin, CallingConvention = CallingConvention.Cdecl)]
     public static extern bool aio_register([MarshalAs(UnmanagedType.LPWStr)] string value);

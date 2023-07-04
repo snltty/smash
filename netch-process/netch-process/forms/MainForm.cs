@@ -1,6 +1,5 @@
-using System.Diagnostics;
 using System.Reflection;
-using System.Runtime;
+using netch_process.forms;
 using netch_process.libs;
 
 namespace netch_process
@@ -14,13 +13,18 @@ namespace netch_process
         Icon iconGray = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream(@"netch_process.public.icon-gray.ico"));
         string name = "netch进程劫持代理";
 
-        Config config = new Config();
-        NFController nFController;
+        private readonly Config config = new Config();
+        private readonly HijackController hijackController;
+        private readonly SysProxyController SysProxyController;
 
-        public MainForm()
+        bool hideForm;
+
+        public MainForm(string[] args)
         {
+            HideForm(args);
             config = Config.Load();
-            nFController = new NFController(config);
+            hijackController = new HijackController(config);
+            SysProxyController = new SysProxyController(config);
 
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -29,8 +33,6 @@ namespace netch_process
             InitializeComponent();
             InitialTray();
             BindInfo();
-
-
         }
 
         #region 托盘
@@ -65,13 +67,21 @@ namespace netch_process
         }
         private new void Closing(object sender, FormClosingEventArgs e)
         {
-            ShowInTaskbar = false;
-            Hide();
+            HideForm();
             if (menuClose == false)
             {
                 e.Cancel = true;
             }
             menuClose = false;
+        }
+        private void HideForm(string[] args)
+        {
+            hideForm = args.Length > 0 && args[0] == "/service";
+        }
+        private void HideForm()
+        {
+            ShowInTaskbar = false;
+            Hide();
         }
         #endregion
 
@@ -101,7 +111,7 @@ namespace netch_process
                 if (isStartUp == false)
                 {
                     Command.Windows("schtasks.exe", new string[] {
-                        "schtasks.exe /create /tn \""+model.Key+"\" /rl highest /sc ONSTART /delay 0000:30 /tr \""+model.Path+"\" /f"
+                        "schtasks.exe /create /tn \""+model.Key+"\" /rl highest /sc ONSTART /delay 0000:30 /tr \""+model.Path+" /service\" /f"
                     });
                     notifyIcon.BalloonTipText = "已设置自启动";
                     notifyIcon.ShowBalloonTip(1000);
@@ -154,51 +164,63 @@ namespace netch_process
         #region 子窗口
 
         ProxySettingForm proxyWin = null;
-        private void OnProxySettingClick(object sender, EventArgs e)
+        private void OnMainMenuProxyClick(object sender, EventArgs e)
         {
             proxyWin = new ProxySettingForm(config);
-            proxyWin.ShowDialog();
             proxyWin.FormClosed += (object sender, FormClosedEventArgs e) =>
             {
                 proxyWin = null;
                 BindInfo();
             };
+            proxyWin.ShowDialog();
         }
 
-        OptionsForm optionsWin = null;
-        private void OnOptionsSettingClick(object sender, EventArgs e)
+        HijackOptionsForm optionsWin = null;
+        private void OnMainMenuHijackOptionsClick(object sender, EventArgs e)
         {
-            optionsWin = new OptionsForm(config);
-            optionsWin.ShowDialog();
+            optionsWin = new HijackOptionsForm(config);
             optionsWin.FormClosed += (object sender, FormClosedEventArgs e) =>
             {
                 optionsWin = null;
                 BindInfo();
             };
+            optionsWin.ShowDialog();
         }
 
         AboutForm aboutWin = null;
-        private void OnAboutClick(object sender, EventArgs e)
+        private void OnMainMenuAboutClick(object sender, EventArgs e)
         {
             aboutWin = new AboutForm();
-            aboutWin.ShowDialog();
             aboutWin.FormClosed += (object sender, FormClosedEventArgs e) =>
             {
                 aboutWin = null;
                 BindInfo();
             };
+            aboutWin.ShowDialog();
         }
 
-        ProcessForm processWin = null;
-        private void OnProcessClick(object sender, EventArgs e)
+        HijackProcessForm processWin = null;
+        private void OnMainMenuHijackProcessClick(object sender, EventArgs e)
         {
-            processWin = new ProcessForm(config);
-            processWin.ShowDialog();
+            processWin = new HijackProcessForm(config);
             processWin.FormClosed += (object sender, FormClosedEventArgs e) =>
             {
                 processWin = null;
                 BindInfo();
             };
+            processWin.ShowDialog();
+        }
+
+        SysProxySettingForm sysProxySettingForm = null;
+        private void OnMainMenuSysProxyClick(object sender, EventArgs e)
+        {
+            sysProxySettingForm = new SysProxySettingForm(config);
+            sysProxySettingForm.FormClosed += (object sender, FormClosedEventArgs e) =>
+            {
+                sysProxySettingForm = null;
+                BindInfo();
+            };
+            sysProxySettingForm.ShowDialog();
         }
 
         #endregion
@@ -208,6 +230,8 @@ namespace netch_process
         {
             BindGroup();
             BindProxy();
+            BindSysProxy();
+            config.Save();
         }
 
         private void cmbGroup_SelectedIndexChanged(object sender, EventArgs e)
@@ -222,6 +246,7 @@ namespace netch_process
         {
             cmbGroup.DataSource = null;
             cmbGroup.DataSource = config.Processs.Select(c => c.Name).ToList();
+            cbUseHijack.Checked = config.UseHijack;
         }
         private void BindFileNames()
         {
@@ -229,6 +254,11 @@ namespace netch_process
             if (config.Process == null) return;
             listProcess.DataSource = config.Process.FileNames;
             listProcess.ClearSelected();
+        }
+        private void cbUseHijack_CheckedChanged(object sender, EventArgs e)
+        {
+            config.UseHijack = cbUseHijack.Checked;
+            BindInfo();
         }
 
         private void BindProxy()
@@ -245,6 +275,47 @@ namespace netch_process
             {
                 config.Proxy = config.Proxys.FirstOrDefault(c => c.Name == cmbProxy.SelectedItem.ToString());
                 labelProxy.Text = $"{config.Proxy.Host}:{config.Proxy.Port}";
+            }
+        }
+
+        private void BindSysProxy()
+        {
+            cmbSysProxy.DataSource = null;
+            if (config.SysProxys != null)
+            {
+                cmbSysProxy.DataSource = config.SysProxys.Select(c => c.Name).ToList();
+            }
+            cbUseSysProxy.Checked = config.UseSysProxy;
+        }
+        private void cmbSysProxy_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cmbSysProxy.SelectedItem != null)
+            {
+                config.SysProxy = config.SysProxys.FirstOrDefault(c => c.Name == cmbSysProxy.SelectedItem.ToString());
+                lbPac.Text = $"{config.SysProxy.Pac}";
+                cbIsPac.Checked = config.SysProxy.IsPac;
+                cbIsEnv.Checked = config.SysProxy.IsEnv;
+            }
+        }
+        private void cbUseSysProxy_CheckedChanged(object sender, EventArgs e)
+        {
+            config.UseSysProxy = cbUseSysProxy.Checked;
+            BindInfo();
+        }
+        private void cbIsEnv_CheckedChanged(object sender, EventArgs e)
+        {
+            if (config.SysProxy != null)
+            {
+                config.SysProxy.IsEnv = cbIsEnv.Checked;
+                BindInfo();
+            }
+        }
+        private void cbIsPac_CheckedChanged(object sender, EventArgs e)
+        {
+            if (config.SysProxy != null)
+            {
+                config.SysProxy.IsPac = cbIsPac.Checked;
+                BindInfo();
             }
         }
 
@@ -286,22 +357,44 @@ namespace netch_process
         }
         private void Start()
         {
-            if (starting) return;
+            if (config.UseHijack == false && config.UseSysProxy == false)
+            {
+                MessageBox.Show("至少要使用一种方式，不然没意义");
+                return;
+            }
 
+            if (config.UseHijack && config.Process == null)
+            {
+                MessageBox.Show("未选进程劫持规则");
+                return;
+            }
+            if (config.UseSysProxy && config.SysProxy == null)
+            {
+                MessageBox.Show("未选系统代理规则");
+                return;
+            }
+
+
+            if (starting) return;
             starting = true;
             SetButtonTest();
+
             Task.Run(async () =>
             {
                 try
                 {
-                    nFController.ClearRule();
-                    await nFController.StartAsync();
+                    hijackController.ClearRule();
+                    await hijackController.StartAsync();
+                    SysProxyController.Start();
+
                     starting = false;
                     running = true;
                     config.Running = true;
+                    config.Save();
                 }
                 catch (Exception ex)
                 {
+                    Stop();
                     starting = false;
                     MessageBox.Show(ex.Message);
                 }
@@ -317,11 +410,14 @@ namespace netch_process
             {
                 try
                 {
-                    nFController.ClearRule();
-                    await nFController.StopAsync();
+                    hijackController.ClearRule();
+                    await hijackController.StopAsync();
+                    SysProxyController.Stop();
                     starting = false;
                     running = false;
                     config.Running = false;
+                    config.Save();
+                    Helper.FlushMemory();
                 }
                 catch (Exception ex)
                 {
@@ -336,12 +432,16 @@ namespace netch_process
         {
             Switch(null, null);
         }
-
         private void OnWinLoad(object sender, EventArgs e)
         {
+            Helper.FlushMemory();
             if (config.Running)
             {
                 Start();
+            }
+            if (hideForm)
+            {
+                HideForm();
             }
         }
     }

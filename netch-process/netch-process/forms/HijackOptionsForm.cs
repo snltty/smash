@@ -3,10 +3,10 @@ using System.Net;
 
 namespace netch_process
 {
-    public partial class OptionsForm : Form
+    public partial class HijackOptionsForm : Form
     {
         Config config;
-        public OptionsForm(Config config)
+        public HijackOptionsForm(Config config)
         {
             this.config = config;
             StartPosition = FormStartPosition.CenterParent;

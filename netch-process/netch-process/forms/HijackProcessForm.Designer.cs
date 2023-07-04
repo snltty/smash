@@ -1,6 +1,6 @@
 ﻿namespace netch_process
 {
-    partial class ProcessForm
+    partial class HijackProcessForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ProcessForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(HijackProcessForm));
             groupBox1 = new GroupBox();
             listProcess = new ListBox();
             cmbGroup = new ComboBox();
@@ -155,7 +155,7 @@
             groupBox3.TabStop = false;
             groupBox3.Text = "添加删除进程";
             // 
-            // ProcessForm
+            // HijackProcessForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -164,8 +164,8 @@
             Controls.Add(groupBox2);
             Controls.Add(groupBox1);
             Icon = (Icon)resources.GetObject("$this.Icon");
-            Name = "ProcessForm";
-            Text = "进程设置";
+            Name = "HijackProcessForm";
+            Text = "进程劫持进程设置";
             groupBox1.ResumeLayout(false);
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();

@@ -1,6 +1,6 @@
 ﻿namespace netch_process
 {
-    partial class OptionsForm
+    partial class HijackOptionsForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(OptionsForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(HijackOptionsForm));
             groupBox1 = new GroupBox();
             panel1 = new Panel();
             dnsOnly = new RadioButton();
@@ -184,7 +184,7 @@
             filterTcp.Text = "处理TCP";
             filterTcp.UseVisualStyleBackColor = true;
             // 
-            // OptionsForm
+            // HijackOptionsForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -192,8 +192,8 @@
             Controls.Add(groupBox1);
             Icon = (Icon)resources.GetObject("$this.Icon");
             Margin = new Padding(6, 5, 6, 5);
-            Name = "OptionsForm";
-            Text = "选项设置";
+            Name = "HijackOptionsForm";
+            Text = "进程劫持选项设置";
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
             panel1.ResumeLayout(false);

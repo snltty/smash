@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
+using System.Runtime.InteropServices;
 
 namespace netch_process.libs
 {
@@ -17,6 +19,19 @@ namespace netch_process.libs
                 }
             }
             return ip;
+        }
+
+        [DllImport("kernel32.dll")]
+        public static extern bool SetProcessWorkingSetSize(IntPtr proc, int min, int max);
+        public static void FlushMemory()
+        {
+            GC.Collect();
+            //GC.SuppressFinalize(true);
+            GC.WaitForPendingFinalizers();
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                SetProcessWorkingSetSize(Process.GetCurrentProcess().Handle, -1, -1);
+            }
         }
     }
 }

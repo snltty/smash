@@ -2,10 +2,10 @@
 
 namespace netch_process
 {
-    public partial class ProcessForm : Form
+    public partial class HijackProcessForm : Form
     {
         Config config;
-        public ProcessForm(Config config)
+        public HijackProcessForm(Config config)
         {
             this.config = config;
             StartPosition = FormStartPosition.CenterParent;
