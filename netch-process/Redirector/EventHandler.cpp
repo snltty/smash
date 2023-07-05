@@ -282,6 +282,7 @@ void tcpClosed(ENDPOINT_ID id, PNF_TCP_CONN_INFO info)
 
 void udpCreated(ENDPOINT_ID id, PNF_UDP_CONN_INFO info)
 {
+	//wcout << "[Redirector][EventHandler][udpCreated][" << id << "][" << info->processId << "] " << GetProcessName(info->processId) << endl;
 	if (CurrentID == info->processId)
 	{
 		nf_udpDisableFiltering(id);
@@ -298,7 +299,8 @@ void udpCreated(ENDPOINT_ID id, PNF_UDP_CONN_INFO info)
 
 	if (checkBypassName(info->processId))
 	{
-		if (dnsOnly) nf_udpDisableFiltering(id);
+		//if (dnsOnly) 
+		nf_udpDisableFiltering(id);
 
 		//wcout << "[Redirector][EventHandler][udpCreated][" << id << "][" << info->processId << "][checkBypassName] " << GetProcessName(info->processId) << endl;
 		return;
@@ -306,14 +308,14 @@ void udpCreated(ENDPOINT_ID id, PNF_UDP_CONN_INFO info)
 
 	if (!checkHandleName(info->processId))
 	{
-		if (dnsOnly) nf_udpDisableFiltering(id);
+		//if (dnsOnly) 
+		nf_udpDisableFiltering(id);
 
 		//wcout << "[Redirector][EventHandler][udpCreated][" << id << "][" << info->processId << "][!checkHandleName] " << GetProcessName(info->processId) << endl;
 		return;
 	}
 
-	//wcout << "[Redirector][EventHandler][udpCreated][" << id << "][" << info->processId << "] " << GetProcessName(info->processId) << endl;
-
+	wcout << "[Redirector][EventHandler][udpCreated1][" << id << "][" << info->processId << "] " << GetProcessName(info->processId) << endl;
 	lock_guard<mutex> lg(udpContextLock);
 	udpContext[id] = new SocksHelper::UDP();
 }
@@ -331,12 +333,12 @@ void udpCanSend(ENDPOINT_ID id)
 
 void udpSend(ENDPOINT_ID id, const unsigned char* target, const char* buffer, int length, PNF_UDP_OPTIONS options)
 {
+	wcout << "[Redirector][EventHandler][udpSend][" << id << "] to " << ConvertIP((PSOCKADDR)target) << endl;
 	if (DNSHandler::IsDNS((PSOCKADDR_IN6)target))
 	{
 		if (!filterDNS)
 		{
 			nf_udpPostSend(id, target, buffer, length, options);
-
 			//wcout << "[Redirector][EventHandler][udpSend][" << id << "] B DNS to " << ConvertIP((PSOCKADDR)target) << endl;
 			return;
 		}
@@ -344,7 +346,6 @@ void udpSend(ENDPOINT_ID id, const unsigned char* target, const char* buffer, in
 		{
 			UP += length;
 			DNSHandler::CreateHandler(id, (PSOCKADDR_IN6)target, buffer, length, options);
-
 			//wcout << "[Redirector][EventHandler][udpSend][" << id << "] H DNS to " << ConvertIP((PSOCKADDR)target) << endl;
 			return;
 		}
@@ -393,7 +394,7 @@ void udpClosed(ENDPOINT_ID id, PNF_UDP_CONN_INFO info)
 {
 	UNREFERENCED_PARAMETER(info);
 
-	//printf("[Redirector][EventHandler][udpClosed][%llu]\n", id);
+	printf("[Redirector][EventHandler][udpClosed][%llu]\n", id);
 
 	lock_guard<mutex> lg(udpContextLock);
 	if (udpContext.find(id) != udpContext.end())

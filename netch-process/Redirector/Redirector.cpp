@@ -194,6 +194,7 @@ extern "C" {
 			return FALSE;
 		}
 
+		nf_deleteRules();
 		NF_RULE rule;
 		if (!filterLoopback)
 		{
@@ -210,6 +211,8 @@ extern "C" {
 			memset(rule.remoteIpAddressMask, 0xff, sizeof(rule.remoteIpAddressMask));
 			rule.filteringFlag = NF_ALLOW;
 			nf_addRule(&rule, FALSE);
+
+			printf("[Redirector][aio_init] filterLoopback\n");
 		}
 
 		if (!filterIntranet)
@@ -269,6 +272,8 @@ extern "C" {
 			inet_pton(AF_INET, "255.254.0.0", rule.remoteIpAddressMask);
 			rule.filteringFlag = NF_ALLOW;
 			nf_addRule(&rule, FALSE);
+
+			printf("[Redirector][aio_init] filterIntranet\n");
 		}
 
 		if (filterICMP)
@@ -298,6 +303,8 @@ extern "C" {
 			rule.direction = NF_D_OUT;
 			rule.filteringFlag = NF_INDICATE_CONNECT_REQUESTS;
 			nf_addRule(&rule, FALSE);
+
+			printf("[Redirector][aio_init] filter tcp\n");
 		}
 
 		if (filterUDP || filterDNS)
@@ -305,14 +312,31 @@ extern "C" {
 			memset(&rule, 0, sizeof(NF_RULE));
 			rule.ip_family = AF_INET;
 			rule.protocol = IPPROTO_UDP;
+			rule.direction = NF_D_OUT;
 			rule.filteringFlag = NF_FILTER;
 			nf_addRule(&rule, FALSE);
 
 			memset(&rule, 0, sizeof(NF_RULE));
 			rule.ip_family = AF_INET6;
 			rule.protocol = IPPROTO_UDP;
+			rule.direction = NF_D_OUT;
 			rule.filteringFlag = NF_FILTER;
 			nf_addRule(&rule, FALSE);
+
+			printf("[Redirector][aio_init] filter udp\n");
+
+
+			memset(&rule, 0, sizeof(NF_RULE));
+			rule.ip_family = AF_INET;
+			rule.protocol = IPPROTO_UDP;
+			rule.remotePort = htons(53);
+			inet_pton(AF_INET, "0.0.0.0", rule.remoteIpAddress);
+			inet_pton(AF_INET, "0.0.0.0", rule.remoteIpAddressMask);
+			rule.direction = NF_D_OUT;
+			rule.filteringFlag = NF_FILTER;
+			nf_addRule(&rule, TRUE);
+
+			printf("[Redirector][aio_init] filter 53\n");
 		}
 
 		return TRUE;

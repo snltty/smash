@@ -13,7 +13,6 @@ bool TCPHandler::INIT()
 	if (tcpSocket != INVALID_SOCKET)
 	{
 		closesocket(tcpSocket);
-
 		tcpSocket = INVALID_SOCKET;
 	}
 
@@ -29,7 +28,6 @@ bool TCPHandler::INIT()
 		if (setsockopt(client, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&v6only, sizeof(v6only)) == SOCKET_ERROR)
 		{
 			//printf("[Redirector][TCPHandler::INIT] Set socket option failed: %d\n", WSAGetLastError());
-
 			closesocket(client);
 			return false;
 		}
@@ -42,7 +40,6 @@ bool TCPHandler::INIT()
 		if (bind(client, (PSOCKADDR)&addr, sizeof(SOCKADDR_IN6)) == SOCKET_ERROR)
 		{
 			//printf("[Redirector][TCPHandler::INIT] Bind socket failed: %d\n", WSAGetLastError());
-
 			closesocket(client);
 			return false;
 		}
@@ -51,7 +48,6 @@ bool TCPHandler::INIT()
 	if (listen(client, 2100000000) == SOCKET_ERROR)
 	{
 		//printf("[Redirector][TCPHandler::INIT] Listen socket failed: %d\n", WSAGetLastError());
-
 		closesocket(client);
 		return false;
 	}
@@ -62,11 +58,9 @@ bool TCPHandler::INIT()
 		if (getsockname(client, (PSOCKADDR)&addr, &addrLength) == SOCKET_ERROR)
 		{
 			//printf("[Redirector][TCPHandler::INIT] Get listen address failed: %d\n", WSAGetLastError());
-
 			closesocket(client);
 			return false;
 		}
-
 		tcpListen = (addr.sin6_family == AF_INET6) ? addr.sin6_port : ((PSOCKADDR_IN)&addr)->sin_port;
 	}
 
@@ -83,7 +77,6 @@ void TCPHandler::FREE()
 	if (tcpSocket != INVALID_SOCKET)
 	{
 		closesocket(tcpSocket);
-
 		tcpSocket = INVALID_SOCKET;
 	}
 	tcpListen = 0;

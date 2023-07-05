@@ -9,7 +9,6 @@ extern USHORT dnsPort;
 SOCKADDR_IN6 dnsAddr;
 
 
-
 void HandleClientDNS(ENDPOINT_ID id, PSOCKADDR_IN6 target, char* packet, int length, PNF_UDP_OPTIONS option)
 {
 	auto remote = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
@@ -112,6 +111,13 @@ bool DNSHandler::IsDNS(PSOCKADDR_IN6 target)
 	else
 		return target->sin6_port == htons(53);
 }
+USHORT Port(PSOCKADDR_IN6 target) {
+	if (target->sin6_family == AF_INET)
+		return ((PSOCKADDR_IN)target)->sin_port;
+	else
+		return target->sin6_port;
+}
+
 
 void DNSHandler::CreateHandler(ENDPOINT_ID id, PSOCKADDR_IN6 target, const char* packet, int length, PNF_UDP_OPTIONS options)
 {

@@ -21,7 +21,6 @@ SOCKET SocksHelper::Connect()
 		if (setsockopt(client, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&v6only, sizeof(v6only)) == SOCKET_ERROR)
 		{
 			//printf("[Redirector][SocksHelper::Connect] Set socket option failed: %d\n", WSAGetLastError());
-
 			closesocket(client);
 			return INVALID_SOCKET;
 		}
@@ -33,7 +32,6 @@ SOCKET SocksHelper::Connect()
 	if (!WSAConnectByNameW(client, (LPWSTR)tgtHost.c_str(), (LPWSTR)tgtPort.c_str(), NULL, NULL, NULL, NULL, &timeout, NULL))
 	{
 		//printf("[Redirector][SocksHelper::Connect] Connect to remote server failed: %d\n", WSAGetLastError());
-
 		closesocket(client);
 		return INVALID_SOCKET;
 	}
@@ -299,6 +297,7 @@ void SocksHelper::UDP::Run(SOCKET tcpSocket, SOCKET udpSocket)
 
 bool SocksHelper::UDP::Associate()
 {
+	//printf("udp socks5");
 	this->tcpSocket = SocksHelper::Connect();
 	if (this->tcpSocket == INVALID_SOCKET)
 		return false;
@@ -328,7 +327,7 @@ bool SocksHelper::UDP::Associate()
 		//printf("[Redirector][SocksHelper::UDP::Associate] UDP associate failed: %d\n", buffer[1]);
 		return false;
 	}
-	//printf("socks5 success");
+	//printf("udp socks5 success");
 	return SocksHelper::SplitAddr(this->tcpSocket, &this->address);
 }
 

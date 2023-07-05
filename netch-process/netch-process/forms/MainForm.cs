@@ -399,6 +399,7 @@ namespace netch_process
                     MessageBox.Show(ex.Message);
                 }
                 SetButtonTest();
+                Command.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
             });
         }
         private void Stop()
@@ -425,6 +426,7 @@ namespace netch_process
                     MessageBox.Show(ex.Message);
                 }
                 SetButtonTest();
+                Command.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
             });
         }
 
