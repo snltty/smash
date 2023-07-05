@@ -43,8 +43,8 @@ jobs:
           GITHUB_TOKEN: '${{ secrets.ACTIONS_TOKEN }}'
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./public/publish-zip/netch-process-any.zip
-        asset_name: any.zip
+        asset_path: ./public/publish-zip/smash-any.zip
+        asset_name: smash-any.zip
         asset_content_type: application/zip
     
     - name: upload win x64
@@ -54,7 +54,7 @@ jobs:
           GITHUB_TOKEN: '${{ secrets.ACTIONS_TOKEN }}'
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./public/publish-zip/netch-process-win-x64.zip
-        asset_name: win-x64.zip
+        asset_path: ./public/publish-zip/smash-win-x64.zip
+        asset_name: smash-win-x64.zip
         asset_content_type: application/zip
     
