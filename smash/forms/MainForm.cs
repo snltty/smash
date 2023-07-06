@@ -1,6 +1,7 @@
 using System.Reflection;
 using smash.forms;
 using smash.libs;
+using smash.libs.hijack;
 
 namespace smash.forms
 {
@@ -110,7 +111,7 @@ namespace smash.forms
             {
                 if (isStartUp == false)
                 {
-                    Command.Windows("schtasks.exe", new string[] {
+                    CommandHelper.Windows("schtasks.exe", new string[] {
                         "schtasks.exe /create /tn \""+model.Key+"\" /rl highest /sc ONSTART /delay 0000:30 /tr \""+model.Path+" /service\" /f"
                     });
                     notifyIcon.BalloonTipText = "已设置自启动";
@@ -118,7 +119,7 @@ namespace smash.forms
                 }
                 else
                 {
-                    Command.Windows("schtasks.exe", new string[] {
+                    CommandHelper.Windows("schtasks.exe", new string[] {
                         "schtasks /delete  /TN "+model.Key+" /f"
                     });
                     notifyIcon.BalloonTipText = "已取消自启动";
@@ -135,7 +136,7 @@ namespace smash.forms
         private void StartUp()
         {
             Model model = GetInfo();
-            string res = Command.Windows("", new string[] {
+            string res = CommandHelper.Windows("", new string[] {
                 "schtasks.exe /query /fo TABLE|findstr \"" + model.Key + "\""
             });
             bool has = false;
@@ -379,12 +380,11 @@ namespace smash.forms
             starting = true;
             SetButtonTest();
 
-            Task.Run(async () =>
+            Task.Run(() =>
             {
                 try
                 {
-                    hijackController.ClearRule();
-                    await hijackController.StartAsync();
+                    hijackController.Start();
                     SysProxyController.Start();
 
                     starting = false;
@@ -399,7 +399,7 @@ namespace smash.forms
                     MessageBox.Show(ex.Message);
                 }
                 SetButtonTest();
-                Command.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
+                CommandHelper.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
             });
         }
         private void Stop()
@@ -407,12 +407,11 @@ namespace smash.forms
             if (starting) return;
             starting = true;
             SetButtonTest();
-            Task.Run(async () =>
+            Task.Run(() =>
             {
                 try
                 {
-                    hijackController.ClearRule();
-                    await hijackController.StopAsync();
+                    hijackController.Stop();
                     SysProxyController.Stop();
                     starting = false;
                     running = false;
@@ -426,7 +425,7 @@ namespace smash.forms
                     MessageBox.Show(ex.Message);
                 }
                 SetButtonTest();
-                Command.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
+                CommandHelper.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
             });
         }
 

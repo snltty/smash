@@ -76,10 +76,10 @@ namespace smash.libs
         }
         private void SetEnv(string proxyUrl, string username, string password)
         {
-            Command.Windows(string.Empty, new string[] { $"setx http_proxy \"{proxyUrl}\" -m", $"setx https_proxy \"{proxyUrl}\" -m" });
+            CommandHelper.Windows(string.Empty, new string[] { $"setx http_proxy \"{proxyUrl}\" -m", $"setx https_proxy \"{proxyUrl}\" -m" });
             if (string.IsNullOrWhiteSpace(username) == false)
             {
-                Command.Windows(string.Empty, new string[] {
+                CommandHelper.Windows(string.Empty, new string[] {
                     $"setx http_proxy_user {username} -m",
                     $"setx http_proxy_pass {password} -m",
                     $"setx https_proxy_user {username} -m",
@@ -118,7 +118,7 @@ namespace smash.libs
         }
         private void ClearEnv()
         {
-            Command.Windows(string.Empty, new string[] {
+            CommandHelper.Windows(string.Empty, new string[] {
                 $"setx http_proxy \"\" -m",
                 $"setx https_proxy \"\" -m",
             });

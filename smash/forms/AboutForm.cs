@@ -15,7 +15,7 @@ namespace smash.forms
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            Command.Windows(string.Empty,new string[] {$"start https://github.com/snltty/smash" });
+            CommandHelper.Windows(string.Empty,new string[] {$"start https://github.com/snltty/smash" });
         }
     }
 }

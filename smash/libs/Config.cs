@@ -63,6 +63,16 @@
         public List<ProcessInfo> Processs { get; set; } = new List<ProcessInfo> {
             new ProcessInfo{ Name="浏览器", FileNames = new List<string>{"chrome.exe" } }
         };
+        public Dictionary<string, bool> CurrentProcesss { get; private set; } = new Dictionary<string, bool>();
+        public void ParseProcesss()
+        {
+            if (Process != null)
+            {
+                CurrentProcesss = Process.FileNames.ToDictionary(c => c, d => true);
+            }
+
+        }
+
         #endregion
 
 
@@ -76,7 +86,7 @@
 
         public bool Running { get; set; }
         public bool UseHijack { get; set; }
-        public bool UseSysProxy{ get; set; }
+        public bool UseSysProxy { get; set; }
 
         static string fileName = "config.json";
         public void Save()

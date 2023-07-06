@@ -2,7 +2,7 @@
 
 namespace smash.libs
 {
-    public sealed class Command
+    public sealed class CommandHelper
     {
         public static string Windows(string arg, string[] commands)
         {
