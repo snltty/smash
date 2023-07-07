@@ -87,7 +87,7 @@ namespace smash.forms
         private void btnDelGroup_Click(object sender, EventArgs e)
         {
             if (processInfo == null) return;
-            if (config.Processs.Count == 1) return;
+            if (config.Processs.Count <= 1) return;
 
             int selectIndex = cmbGroup.SelectedIndex;
             config.Processs.Remove(processInfo);

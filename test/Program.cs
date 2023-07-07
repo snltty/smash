@@ -1,5 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using System;
 
 namespace test
 {
@@ -7,67 +8,37 @@ namespace test
     {
         static void Main(string[] args)
         {
+            string path = "D:\\Naraka\\program\\NeacClient.exe";
+            string name = "\\NeacClient.exe";
+            var span = path.AsSpan();
+            var span1 = name.AsSpan();
+            Console.WriteLine(path.AsSpan().Slice(span.Length - span1.Length, span1.Length).SequenceEqual(span1));
 
-            BenchmarkRunner.Run<Test>();
+           // BenchmarkRunner.Run<Test>();
         }
     }
 
     [MemoryDiagnoser]
     public partial class Test
     {
-        Dictionary<string, bool> dic = new Dictionary<string, bool>();
-        uint[][] arr = new uint[][] { 
-            new uint[]{ 1,2},
-            new uint[]{ 12,2},
-            new uint[]{ 12,2},
-            new uint[]{ 13,2},
-            new uint[]{ 14,2},
-            new uint[]{ 15,2},
-            new uint[]{ 15,2},
-            new uint[]{ 15,2},
-            new uint[]{ 176,2},
-            new uint[]{ 1,652},
-            new uint[]{ 1,25},
-            new uint[]{ 15,26},
-            new uint[]{ 15,52},
-            new uint[]{ 15,52},
-            new uint[]{ 15,52},
-            new uint[]{ 15,52},
-            new uint[]{ 15,52},
-            new uint[]{ 15,52},
-            new uint[]{ 15,52},
-            new uint[]{ 15,52},
-        };
         [GlobalSetup]
         public void Startup()
         {
-            for (uint i = 0; i < 100; i++)
-            {
-                dic.Add(i.ToString(),true);
-            }
         }
 
-
+        string path = "D:\\Naraka\\program\\NeacClient.exe";
+        string name = "\\NeacClient.exe";
         [Benchmark]
         public void Dic()
         {
-           dic.ContainsKey("127.0.0.1");
-        }
-
-        int a = 1;
-        int b = 100;
-        [Benchmark]
-        public void For()
-        {
-
-            for (int i = 0; i < 20; i++)
+            var span = path.AsSpan();
+            var span1 = name.AsSpan();
+            if(path.AsSpan().Slice(span.Length - span1.Length, span1.Length).SequenceEqual(span1))
             {
-                if ((arr[i][0]) == 0)
-                {
 
-                }
             }
         }
+
     }
 
 }

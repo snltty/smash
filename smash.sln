@@ -9,8 +9,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "redirector", "redirector\Re
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "test", "test\test.csproj", "{66D15672-B3FA-4259-838B-7302B2553C1C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testcpp", "testcpp\testcpp.vcxproj", "{20358A6F-6F98-483C-95CB-F08A0D8E3273}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,18 +55,6 @@ Global
 		{66D15672-B3FA-4259-838B-7302B2553C1C}.Release|x64.Build.0 = Release|Any CPU
 		{66D15672-B3FA-4259-838B-7302B2553C1C}.Release|x86.ActiveCfg = Release|Any CPU
 		{66D15672-B3FA-4259-838B-7302B2553C1C}.Release|x86.Build.0 = Release|Any CPU
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Debug|Any CPU.Build.0 = Debug|x64
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Debug|x64.ActiveCfg = Debug|x64
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Debug|x64.Build.0 = Debug|x64
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Debug|x86.ActiveCfg = Debug|Win32
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Debug|x86.Build.0 = Debug|Win32
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Release|Any CPU.ActiveCfg = Release|x64
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Release|Any CPU.Build.0 = Release|x64
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Release|x64.ActiveCfg = Release|x64
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Release|x64.Build.0 = Release|x64
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Release|x86.ActiveCfg = Release|Win32
-		{20358A6F-6F98-483C-95CB-F08A0D8E3273}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

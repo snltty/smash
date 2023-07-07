@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using smash.forms;
 using smash.libs;
@@ -74,6 +75,10 @@ namespace smash.forms
                 e.Cancel = true;
             }
             menuClose = false;
+        }
+        private void OnMainFormClosed(object sender, FormClosedEventArgs e)
+        {
+            Stop();
         }
         private void HideForm(string[] args)
         {
@@ -235,6 +240,7 @@ namespace smash.forms
             config.Save();
         }
 
+        #region 进程劫持
         private void cmbGroup_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (cmbGroup.SelectedItem != null)
@@ -245,9 +251,14 @@ namespace smash.forms
         }
         private void BindGroup()
         {
+            int index = cmbGroup.SelectedIndex;
             cmbGroup.DataSource = null;
             cmbGroup.DataSource = config.Processs.Select(c => c.Name).ToList();
             cbUseHijack.Checked = config.UseHijack;
+            if (index < config.Processs.Count && config.Processs.Count > 0)
+            {
+                cmbGroup.SelectedIndex = index < 0 ? 0 : index;
+            }
         }
         private void BindFileNames()
         {
@@ -261,13 +272,20 @@ namespace smash.forms
             config.UseHijack = cbUseHijack.Checked;
             BindInfo();
         }
+        #endregion
 
+        #region 代理
         private void BindProxy()
         {
+            int index = cmbProxy.SelectedIndex;
             cmbProxy.DataSource = null;
             if (config.Proxy != null)
             {
                 cmbProxy.DataSource = config.Proxys.Select(c => c.Name).ToList();
+            }
+            if (index < config.Proxys.Count && config.Proxys.Count > 0)
+            {
+                cmbProxy.SelectedIndex = index < 0 ? 0 : index;
             }
         }
         private void cmbProxy_SelectedIndexChanged(object sender, EventArgs e)
@@ -278,15 +296,22 @@ namespace smash.forms
                 labelProxy.Text = $"{config.Proxy.Host}:{config.Proxy.Port}";
             }
         }
+        #endregion
 
+        #region 系统代理
         private void BindSysProxy()
         {
+            int index = cmbSysProxy.SelectedIndex;
             cmbSysProxy.DataSource = null;
             if (config.SysProxys != null)
             {
                 cmbSysProxy.DataSource = config.SysProxys.Select(c => c.Name).ToList();
             }
             cbUseSysProxy.Checked = config.UseSysProxy;
+            if (index < config.SysProxys.Count && config.SysProxys.Count > 0)
+            {
+                cmbSysProxy.SelectedIndex = index < 0 ? 0 : index;
+            }
         }
         private void cmbSysProxy_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -319,6 +344,8 @@ namespace smash.forms
                 BindInfo();
             }
         }
+        #endregion
+
 
         bool starting = false;
         bool running = false;
@@ -396,6 +423,7 @@ namespace smash.forms
                 {
                     Stop();
                     starting = false;
+                    Debug.WriteLine(ex + "");
                     MessageBox.Show(ex.Message);
                 }
                 SetButtonTest();
@@ -445,5 +473,7 @@ namespace smash.forms
                 HideForm();
             }
         }
+
+
     }
 }

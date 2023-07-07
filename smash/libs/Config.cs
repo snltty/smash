@@ -11,44 +11,11 @@
         /// 处理UDP
         /// </summary>
         public bool FilterUDP { get; set; } = true;
-        /// <summary>
-        /// 处理ICMP
-        /// </summary>
-        public bool FilterICMP { get; set; } = false;
-        /// <summary>
-        /// ICMP延迟
-        /// </summary>
-        public int ICMPDelay { get; set; } = 10;
 
-
-        /// <summary>
-        /// 处理子进程
-        /// </summary>
-        public bool FilterParent { get; set; } = true;
-
-        /// <summary>
-        /// 处理环回
-        /// </summary>
-        public bool FilterLoopback { get; set; } = false;
-        /// <summary>
-        /// 处理内网
-        /// </summary>
-        public bool FilterIntranet { get; set; } = false;
-
-        /// <summary>
-        /// 处理被处理进程的DNS查询包
-        /// </summary>
-        public bool HandleOnlyDNS { get; set; } = false;
         /// <summary>
         /// 处理所有DNS查询包
         /// </summary>
         public bool FilterDNS { get; set; } = false;
-        /// <summary>
-        /// 是否代理处理DNS
-        /// </summary>
-        public bool DNSProxy { get; set; } = false;
-        public string DNSHost { get; set; } = $"8.8.8.8";
-        public int DNSPort { get; set; } = 53;
         #endregion
 
         #region 代理
@@ -63,18 +30,22 @@
         public List<ProcessInfo> Processs { get; set; } = new List<ProcessInfo> {
             new ProcessInfo{ Name="浏览器", FileNames = new List<string>{"chrome.exe" } }
         };
-        public Dictionary<string, bool> CurrentProcesss { get; private set; } = new Dictionary<string, bool>();
+        public string[] CurrentProcesss { get; private set; }  = Array.Empty<string>();
         public void ParseProcesss()
         {
             if (Process != null)
             {
-                CurrentProcesss = Process.FileNames.ToDictionary(c => c, d => true);
+                CurrentProcesss = Process.FileNames.ToArray();
             }
-
         }
+        public List<string> IntranetIpv4s = new List<string>() {
+            "0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10","127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12",
+            "192.0.0.0/24", "192.0.2.0/24","192.88.99.0/24","192.168.0.0/16",
+            "198.18.0.0/15","198.51.100.0/24",
+            "203.0.113.0/24","224.0.0.0/4", "240.0.0.0/4","255.255.255.255/32"
+        };
 
         #endregion
-
 
         #region 系统代理
         public SysProxyInfo SysProxy { get; set; } = new SysProxyInfo { Name = "默认", IsEnv = true, IsPac = true, Pac = "http://127.0.0.1:5411/socks.pac" };
@@ -119,7 +90,6 @@
         public List<string> FileNames { get; set; } = new List<string>();
     }
 
-
     public sealed class SysProxyInfo
     {
         public string Name { get; set; }
@@ -127,4 +97,16 @@
         public string Pac { get; set; }
         public bool IsEnv { get; set; }
     }
+
+    public readonly struct Ip4Info
+    {
+        public readonly uint Network;
+        public readonly uint Mask;
+        public Ip4Info(uint network, uint mask)
+        {
+            Network = network; Mask = mask;
+        }
+    }
+
+
 }

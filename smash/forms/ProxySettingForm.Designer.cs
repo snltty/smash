@@ -45,8 +45,8 @@
             btnSave = new Button();
             proxysView = new DataGridView();
             contextMenu = new ContextMenuStrip(components);
-            使用ToolStripMenuItem = new ToolStripMenuItem();
-            删除ToolStripMenuItem = new ToolStripMenuItem();
+            mainManuUseProxy = new ToolStripMenuItem();
+            mainMenuDelProxy = new ToolStripMenuItem();
             groupBox2 = new GroupBox();
             useHost = new Label();
             useName = new Label();
@@ -205,23 +205,23 @@
             // contextMenu
             // 
             contextMenu.ImageScalingSize = new Size(32, 32);
-            contextMenu.Items.AddRange(new ToolStripItem[] { 使用ToolStripMenuItem, 删除ToolStripMenuItem });
+            contextMenu.Items.AddRange(new ToolStripItem[] { mainManuUseProxy, mainMenuDelProxy });
             contextMenu.Name = "contextMenu";
             contextMenu.Size = new Size(137, 80);
             // 
-            // 使用ToolStripMenuItem
+            // mainManuUseProxy
             // 
-            使用ToolStripMenuItem.Name = "使用ToolStripMenuItem";
-            使用ToolStripMenuItem.Size = new Size(136, 38);
-            使用ToolStripMenuItem.Text = "使用";
-            使用ToolStripMenuItem.Click += 使用ToolStripMenuItem_Click;
+            mainManuUseProxy.Name = "mainManuUseProxy";
+            mainManuUseProxy.Size = new Size(136, 38);
+            mainManuUseProxy.Text = "使用";
+            mainManuUseProxy.Click += MainManuUseProxy_Click;
             // 
-            // 删除ToolStripMenuItem
+            // mainMenuDelProxy
             // 
-            删除ToolStripMenuItem.Name = "删除ToolStripMenuItem";
-            删除ToolStripMenuItem.Size = new Size(136, 38);
-            删除ToolStripMenuItem.Text = "删除";
-            删除ToolStripMenuItem.Click += 删除ToolStripMenuItem_Click;
+            mainMenuDelProxy.Name = "mainMenuDelProxy";
+            mainMenuDelProxy.Size = new Size(136, 38);
+            mainMenuDelProxy.Text = "删除";
+            mainMenuDelProxy.Click += MainMenuDelProxy_Click;
             // 
             // groupBox2
             // 
@@ -286,8 +286,8 @@
         private Label label1;
         private DataGridView proxysView;
         private ContextMenuStrip contextMenu;
-        private ToolStripMenuItem 使用ToolStripMenuItem;
-        private ToolStripMenuItem 删除ToolStripMenuItem;
+        private ToolStripMenuItem mainManuUseProxy;
+        private ToolStripMenuItem mainMenuDelProxy;
         private TextBox inputName;
         private Label label4;
         private Button btnClear;

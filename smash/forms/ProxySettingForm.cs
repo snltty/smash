@@ -28,16 +28,7 @@ namespace smash.forms
             Ping();
         }
 
-        private void ProxysView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
-        {
-            if (e.ColumnIndex == 4)
-            {
-                if (e.Value != null && e.Value.ToString().Length > 0)
-                {
-                    e.Value = new string('*', e.Value.ToString().Length);
-                }
-            }
-        }
+      
         private void BindData()
         {
             proxysView.DataSource = null;
@@ -52,6 +43,16 @@ namespace smash.forms
         }
 
         ProxyInfo proxy;
+        private void ProxysView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.ColumnIndex == 4)
+            {
+                if (e.Value != null && e.Value.ToString().Length > 0)
+                {
+                    e.Value = new string('*', e.Value.ToString().Length);
+                }
+            }
+        }
         private void ProxysView_SelectionChanged(object sender, EventArgs e)
         {
             if (proxysView.SelectedRows.Count > 0)
@@ -73,7 +74,6 @@ namespace smash.forms
                 inputPassword.Text = string.Empty;
             }
         }
-
         private void ProxysView_CellMouseUp(object sender, DataGridViewCellMouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -90,7 +90,6 @@ namespace smash.forms
         {
             proxysView.ClearSelection();
         }
-
         private void btnSave_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(inputHost.Text) || string.IsNullOrWhiteSpace(inputName.Text) || string.IsNullOrWhiteSpace(inputPort.Text))
@@ -136,14 +135,6 @@ namespace smash.forms
             proxysView.Rows[proxysView.Rows.Count - 1].Selected = true;
         }
 
-        private void 删除ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (config.Proxys.Count == 1) return;
-            config.Proxys.Remove(proxy);
-            BindData();
-            btnClear.PerformClick();
-        }
-
         private void ShowUsed()
         {
             if (config.Proxy == null && config.Proxys.Count > 0)
@@ -157,12 +148,6 @@ namespace smash.forms
         {
             if (proxy == null) return;
             config.Proxy = proxy;
-        }
-
-        private void 使用ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Use(proxy);
-            ShowUsed();
         }
 
         private bool isPing = false;
@@ -215,6 +200,19 @@ namespace smash.forms
         private void showPassword_CheckedChanged(object sender, EventArgs e)
         {
             inputPassword.PasswordChar = showPassword.Checked ? '\0' : '*';
+        }
+
+        private void MainMenuDelProxy_Click(object sender, EventArgs e)
+        {
+            if (config.Proxys.Count <= 1) return;
+            config.Proxys.Remove(proxy);
+            BindData();
+            btnClear.PerformClick();
+        }
+        private void MainManuUseProxy_Click(object sender, EventArgs e)
+        {
+            Use(proxy);
+            ShowUsed();
         }
     }
 }

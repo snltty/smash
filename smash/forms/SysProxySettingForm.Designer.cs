@@ -40,7 +40,8 @@
             inputPac = new TextBox();
             cbPac = new CheckBox();
             contextMenu = new ContextMenuStrip(components);
-            删除ToolStripMenuItem = new ToolStripMenuItem();
+            mainMenuDelProxy = new ToolStripMenuItem();
+            label2 = new Label();
             ((System.ComponentModel.ISupportInitialize)sysProxysView).BeginInit();
             groupBox1.SuspendLayout();
             contextMenu.SuspendLayout();
@@ -58,6 +59,7 @@
             // 
             // groupBox1
             // 
+            groupBox1.Controls.Add(label2);
             groupBox1.Controls.Add(btnClear);
             groupBox1.Controls.Add(btnSave);
             groupBox1.Controls.Add(cbEnv);
@@ -67,7 +69,7 @@
             groupBox1.Controls.Add(cbPac);
             groupBox1.Location = new Point(12, 295);
             groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(776, 162);
+            groupBox1.Size = new Size(776, 198);
             groupBox1.TabIndex = 1;
             groupBox1.TabStop = false;
             groupBox1.Text = "设置";
@@ -138,22 +140,32 @@
             // contextMenu
             // 
             contextMenu.ImageScalingSize = new Size(32, 32);
-            contextMenu.Items.AddRange(new ToolStripItem[] { 删除ToolStripMenuItem });
+            contextMenu.Items.AddRange(new ToolStripItem[] { mainMenuDelProxy });
             contextMenu.Name = "contextMenu";
             contextMenu.Size = new Size(137, 42);
             // 
-            // 删除ToolStripMenuItem
+            // mainMenuDelProxy
             // 
-            删除ToolStripMenuItem.Name = "删除ToolStripMenuItem";
-            删除ToolStripMenuItem.Size = new Size(136, 38);
-            删除ToolStripMenuItem.Text = "删除";
-            删除ToolStripMenuItem.Click += 删除ToolStripMenuItem_Click;
+            mainMenuDelProxy.Name = "mainMenuDelProxy";
+            mainMenuDelProxy.Size = new Size(136, 38);
+            mainMenuDelProxy.Text = "删除";
+            mainMenuDelProxy.Click += MainMenuDelProxy_Click;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.ForeColor = SystemColors.ControlDarkDark;
+            label2.Location = new Point(14, 149);
+            label2.Name = "label2";
+            label2.Size = new Size(470, 31);
+            label2.TabIndex = 7;
+            label2.Text = "某些程序会去读取系统环境变量的代理设置";
             // 
             // SysProxySettingForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 469);
+            ClientSize = new Size(800, 505);
             Controls.Add(groupBox1);
             Controls.Add(sysProxysView);
             Icon = (Icon)resources.GetObject("$this.Icon");
@@ -177,7 +189,8 @@
         private CheckBox cbEnv;
         private Button btnSave;
         private ContextMenuStrip contextMenu;
-        private ToolStripMenuItem 删除ToolStripMenuItem;
+        private ToolStripMenuItem mainMenuDelProxy;
         private Button btnClear;
+        private Label label2;
     }
 }

@@ -274,6 +274,7 @@
             Name = "MainForm";
             Text = "smash";
             FormClosing += Closing;
+            FormClosed += OnMainFormClosed;
             Load += OnWinLoad;
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();

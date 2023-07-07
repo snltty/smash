@@ -42,15 +42,18 @@ public sealed class HijackController
         CheckDriver();
         //给驱动获取进程权限
         NFAPI.nf_adjustProcessPriviledges();
+
         //初始化驱动
         NF_STATUS nF_STATUS = NFAPI.nf_init(Name, hijackEventHandler);
         if (nF_STATUS != NF_STATUS.NF_STATUS_SUCCESS)
         {
             throw new Exception($"{Name} start failed.{nF_STATUS}");
         }
-        //给一些默认规则
+        NFAPI.nf_deleteRules();
+        //本地即使没有IPV6，也会有IPV6的DNS解析
+        //所以，得有个选项，表示是否本地支持IPV6 支持ipv6则处理其DNS，
+        //                表示是否远程支持IPV6，支持则代理生效，不支持则本地解析
         DefaultRule();
-
 
         return true;
     }
@@ -74,17 +77,6 @@ public sealed class HijackController
         FilterIPV6Lan(rules);
         FilterIPV4Lan(rules);
         FilterWan(rules);
-
-        Debug.WriteLine(System.Text.Json.JsonSerializer.Serialize(rules.Select(c => new
-        {
-            filteringFlag = ((NF_FILTERING_FLAG)c.filteringFlag).ToString(),
-            protocol = ((ProtocolType)c.protocol).ToString(),
-            ip_family = ((AddressFamily)c.ip_family).ToString(),
-            direction = ((NF_DIRECTION)c.direction).ToString(),
-            remoteIpAddress = string.Join(",", c.remoteIpAddress ?? new byte[0]),
-            remoteIpAddressMask = string.Join(",", c.remoteIpAddressMask ?? new byte[0]),
-            c.remotePort
-        })));
 
         NFAPI.nf_setRules(rules.ToArray());
     }
@@ -171,14 +163,7 @@ public sealed class HijackController
     }
     private void FilterIPV4Lan(List<NF_RULE> rules)
     {
-        //ipv4内网
-        List<string> IntranetIpv4s = new List<string>() {
-            "0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10","127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12",
-            "192.0.0.0/24", "192.0.2.0/24","192.88.99.0/24","192.168.0.0/16",
-            "198.18.0.0/15","198.51.100.0/24",
-            "203.0.113.0/24","224.0.0.0/4", "240.0.0.0/4","255.255.255.255/32"
-        };
-        foreach (string item in IntranetIpv4s)
+        foreach (string item in config.IntranetIpv4s)
         {
             string[] arr = item.Split('/');
             uint ip = BinaryPrimitives.ReadUInt32LittleEndian(IPAddress.Parse(arr[0]).GetAddressBytes());
@@ -187,7 +172,6 @@ public sealed class HijackController
             byte[] maskBytes = new byte[16];
             BitConverter.GetBytes(ip).AsSpan().CopyTo(ipBytes);
             BitConverter.GetBytes(mask).AsSpan().CopyTo(maskBytes);
-
             rules.Add(new NF_RULE
             {
                 filteringFlag = (uint)NF_FILTERING_FLAG.NF_FILTER,
@@ -197,11 +181,6 @@ public sealed class HijackController
                 remoteIpAddressMask = maskBytes,
 
             });
-            Debug.WriteLine(item);
-            Debug.WriteLine(ip & mask);
-            Debug.WriteLine(string.Join(",", ipBytes));
-            Debug.WriteLine(string.Join(",", maskBytes));
-            Debug.WriteLine("======================================================");
         }
     }
     private void FilterWan(List<NF_RULE> rules)

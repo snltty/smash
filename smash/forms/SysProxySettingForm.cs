@@ -65,18 +65,20 @@ namespace smash.forms
                 }
             }
         }
-        private void btnClear_Click(object sender, EventArgs e)
-        {
-            sysProxysView.ClearSelection();
-        }
 
-        private void 删除ToolStripMenuItem_Click(object sender, EventArgs e)
+
+        private void MainMenuDelProxy_Click(object sender, EventArgs e)
         {
+            if (config.SysProxys.Count <= 1) return;
             config.SysProxys.Remove(proxy);
             btnClear.PerformClick();
             BindData();
         }
 
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            sysProxysView.ClearSelection();
+        }
         private void btnSave_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(inputName.Text))
@@ -105,11 +107,13 @@ namespace smash.forms
                     Pac = inputPac.Text,
                     IsEnv = cbEnv.Checked
                 });
-               
+
             }
             BindData();
             btnClear.PerformClick();
             sysProxysView.Rows[sysProxysView.Rows.Count - 1].Selected = true;
         }
+
+
     }
 }
