@@ -9,9 +9,11 @@ namespace smash.libs.hijack
     public sealed class HijackEventHandler : NF_EventHandler
     {
         private readonly Config config;
+        private readonly uint currentProcessId = 0;
         public HijackEventHandler(Config config)
         {
             this.config = config;
+            currentProcessId = (uint)Process.GetCurrentProcess().Id;
         }
 
         #region tcp无需处理
@@ -28,18 +30,15 @@ namespace smash.libs.hijack
         }
         public void tcpConnectRequest(ulong id, ref NF_TCP_CONN_INFO pConnInfo)
         {
+            if(currentProcessId == pConnInfo.processId)
+            {
+                NFAPI.nf_tcpDisableFiltering(pConnInfo.processId);
+                return;
+            }
             string processName = NFAPI.nf_getProcessName(pConnInfo.processId);
 
             RemoteIPEndPint localEp = convertAddress(pConnInfo.localAddress);
             RemoteIPEndPint remoteEp = convertAddress(pConnInfo.remoteAddress);
-            if (remoteEp == null)
-            {
-                Debug.WriteLine($"tcpConnectRequest://///////////////////////////////");
-                Debug.WriteLine($"{processName}->{string.Join(",", pConnInfo.remoteAddress)}");
-                Debug.WriteLine($"tcpConnectRequest://///////////////////////////////");
-                return;
-            }
-
             Debug.WriteLine($"tcpConnectRequest:================================");
             Debug.WriteLine($"{processName}->{localEp.IPEndPoint}->{remoteEp.IPEndPoint}");
             Debug.WriteLine($"tcpConnectRequest:================================");
@@ -88,9 +87,14 @@ namespace smash.libs.hijack
 
         public void udpCreated(ulong id, NF_UDP_CONN_INFO pConnInfo)
         {
+            if (currentProcessId == pConnInfo.processId)
+            {
+                NFAPI.nf_udpDisableFiltering(pConnInfo.processId);
+                return;
+            }
             string processName = NFAPI.nf_getProcessName(pConnInfo.processId);
 
-           
+
             //判断进程
             //判断过滤条件
             //创建udp发送对象
@@ -113,17 +117,11 @@ namespace smash.libs.hijack
             byte[] remoteAddressBuf = new byte[(int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH];
             Marshal.Copy((IntPtr)remoteAddress, remoteAddressBuf, 0, (int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH);
             RemoteIPEndPint remoteEp = convertAddress(remoteAddressBuf);
-            if (remoteEp == null)
-            {
-                Debug.WriteLine($"udpSend:******************************");
-                Debug.WriteLine($"xxx->{string.Join(",", remoteAddressBuf)}");
-                Debug.WriteLine($"udpSend:******************************");
-                return;
-            }
 
-            Debug.WriteLine($"udpSend:+++++++++++++++++++++++++++++++++");
-            Debug.WriteLine($"xxx->{remoteEp.IPEndPoint}");
-            Debug.WriteLine($"udpSend:+++++++++++++++++++++++++++++++++");
+           // Debug.WriteLine($"udpSend:+++++++++++++++++++++++++++++++++");
+           // Debug.WriteLine($"xxx->{string.Join(",", remoteAddressBuf)}");
+           // Debug.WriteLine($"xxx->{remoteEp.IPEndPoint}");
+          //  Debug.WriteLine($"udpSend:+++++++++++++++++++++++++++++++++");
         }
         public void udpReceive(ulong id, nint remoteAddress, nint buf, int len, nint options, int optionsLen)
         {

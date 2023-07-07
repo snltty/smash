@@ -68,9 +68,47 @@ public sealed class HijackController
 
     private void DefaultRule()
     {
-        List<NF_RULE> rules = new List<NF_RULE>
+        List<NF_RULE> rules = new List<NF_RULE>();
+
+        Filter53(rules);
+        FilterIPV6Lan(rules);
+        FilterIPV4Lan(rules);
+        FilterWan(rules);
+
+        Debug.WriteLine(System.Text.Json.JsonSerializer.Serialize(rules.Select(c => new
         {
-            //UDP 53
+            filteringFlag = ((NF_FILTERING_FLAG)c.filteringFlag).ToString(),
+            protocol = ((ProtocolType)c.protocol).ToString(),
+            ip_family = ((AddressFamily)c.ip_family).ToString(),
+            direction = ((NF_DIRECTION)c.direction).ToString(),
+            remoteIpAddress = string.Join(",", c.remoteIpAddress ?? new byte[0]),
+            remoteIpAddressMask = string.Join(",", c.remoteIpAddressMask ?? new byte[0]),
+            c.remotePort
+        })));
+
+        NFAPI.nf_setRules(rules.ToArray());
+    }
+    private void Filter53(List<NF_RULE> rules)
+    {
+        rules.AddRange(new NF_RULE[] {
+            //TCP 53
+            new NF_RULE
+            {
+                direction = (byte)NF_DIRECTION.NF_D_OUT,
+                filteringFlag = (uint)NF_FILTERING_FLAG.NF_INDICATE_CONNECT_REQUESTS,
+                protocol = (int)ProtocolType.Tcp,
+                remotePort = BinaryPrimitives.ReverseEndianness((ushort)53),
+                ip_family = (ushort)AddressFamily.InterNetwork
+            },
+            new NF_RULE
+            {
+                direction = (byte)NF_DIRECTION.NF_D_OUT,
+                filteringFlag = (uint)NF_FILTERING_FLAG.NF_INDICATE_CONNECT_REQUESTS,
+                protocol = (int)ProtocolType.Tcp,
+                remotePort = BinaryPrimitives.ReverseEndianness((ushort)53),
+                ip_family = (ushort)AddressFamily.InterNetworkV6
+            },
+             //UDP 53
             new NF_RULE
             {
                 direction = (byte)NF_DIRECTION.NF_D_OUT,
@@ -86,7 +124,13 @@ public sealed class HijackController
                 protocol = (int)ProtocolType.Udp,
                 remotePort = BinaryPrimitives.ReverseEndianness((ushort)53),
                 ip_family = (ushort)AddressFamily.InterNetworkV6
-            },
+            }
+        });
+    }
+    private void FilterIPV6Lan(List<NF_RULE> rules)
+    {
+        rules.AddRange(new NF_RULE[]
+        {
             //IPV6 环回 ::1/128
             new NF_RULE
             {
@@ -123,8 +167,10 @@ public sealed class HijackController
                 remoteIpAddress = new byte[] { 0xFE, 0xC0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
                 remoteIpAddressMask = new byte[] { 255, 192, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
             }
-        };
-
+        });
+    }
+    private void FilterIPV4Lan(List<NF_RULE> rules)
+    {
         //ipv4内网
         List<string> IntranetIpv4s = new List<string>() {
             "0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10","127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12",
@@ -135,15 +181,31 @@ public sealed class HijackController
         foreach (string item in IntranetIpv4s)
         {
             string[] arr = item.Split('/');
-            uint mask = uint.MaxValue << (32 - byte.Parse(arr[1]));
+            uint ip = BinaryPrimitives.ReadUInt32LittleEndian(IPAddress.Parse(arr[0]).GetAddressBytes());
+            uint mask = BinaryPrimitives.ReverseEndianness(0xffffffff << (32 - byte.Parse(arr[1])));
+            byte[] ipBytes = new byte[16];
+            byte[] maskBytes = new byte[16];
+            BitConverter.GetBytes(ip).AsSpan().CopyTo(ipBytes);
+            BitConverter.GetBytes(mask).AsSpan().CopyTo(maskBytes);
+
             rules.Add(new NF_RULE
             {
-                filteringFlag = (uint)NF_FILTERING_FLAG.NF_ALLOW,
+                filteringFlag = (uint)NF_FILTERING_FLAG.NF_FILTER,
+                direction = (byte)NF_DIRECTION.NF_D_OUT,
                 ip_family = (ushort)AddressFamily.InterNetwork,
-                remoteIpAddress = IPAddress.Parse(arr[0]).GetAddressBytes(),
-                remoteIpAddressMask = BitConverter.GetBytes(mask),
+                remoteIpAddress = ipBytes,
+                remoteIpAddressMask = maskBytes,
+
             });
+            Debug.WriteLine(item);
+            Debug.WriteLine(ip & mask);
+            Debug.WriteLine(string.Join(",", ipBytes));
+            Debug.WriteLine(string.Join(",", maskBytes));
+            Debug.WriteLine("======================================================");
         }
+    }
+    private void FilterWan(List<NF_RULE> rules)
+    {
         rules.AddRange(new List<NF_RULE> { 
             //TCP
             new NF_RULE
@@ -177,17 +239,16 @@ public sealed class HijackController
             },
 
         });
-        NFAPI.nf_setRules(rules.ToArray());
     }
 
-    private static string GetFileVersion(string file)
+    private string GetFileVersion(string file)
     {
         if (File.Exists(file))
             return FileVersionInfo.GetVersionInfo(file).FileVersion ?? "";
 
         return "";
     }
-    private static void CheckDriver()
+    private void CheckDriver()
     {
         var binFileVersion = GetFileVersion(NFDriver);
         var systemFileVersion = GetFileVersion(SystemDriver);
@@ -223,7 +284,7 @@ public sealed class HijackController
         UninstallDriver();
         InstallDriver();
     }
-    private static void InstallDriver()
+    private void InstallDriver()
     {
         if (!File.Exists(NFDriver))
             throw new Exception("builtin driver files missing, can't install NF driver");
@@ -247,12 +308,12 @@ public sealed class HijackController
             Console.WriteLine($"Register {Name} failed");
         }
     }
-    public static bool UninstallDriver()
+    private bool UninstallDriver()
     {
         if (File.Exists(SystemDriver) == false)
             return true;
 
-        NFAPI.nf_unRegisterDriver("netfilter2");
+        NFAPI.nf_unRegisterDriver(Name);
         File.Delete(SystemDriver);
 
         return true;
