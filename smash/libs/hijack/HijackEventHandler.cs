@@ -47,6 +47,7 @@ namespace smash.libs.hijack
         public void tcpConnectRequest(ulong id, ref NF_TCP_CONN_INFO pConnInfo)
         {
             Debug.WriteLine($"tcp request");
+            return;
             if (config.FilterTCP == false)
             {
                 //NFAPI.nf_tcpDisableFiltering(pConnInfo.processId);
@@ -113,6 +114,8 @@ namespace smash.libs.hijack
         public void udpSend(ulong id, nint remoteAddress, nint buf, int len, nint options, int optionsLen)
         {
             Debug.WriteLine($"udp send");
+            NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
+            return;
             //是否有连接对象
             if (udpConnections.TryGetValue(id, out UdpConnection udpConnection) == false)
             {

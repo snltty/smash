@@ -42,6 +42,7 @@ public sealed class HijackController
         CheckDriver();
         //给驱动获取进程权限
         NFAPI.nf_adjustProcessPriviledges();
+        Stop();
 
         //初始化驱动
         NF_STATUS nF_STATUS = NFAPI.nf_init(Name, hijackEventHandler);
@@ -49,11 +50,11 @@ public sealed class HijackController
         {
             throw new Exception($"{Name} start failed.{nF_STATUS}");
         }
-        NFAPI.nf_deleteRules();
         //本地即使没有IPV6，也会有IPV6的DNS解析
         //所以，得有个选项，表示是否本地支持IPV6 支持ipv6则处理其DNS，
         //                表示是否远程支持IPV6，支持则代理生效，不支持则本地解析
         DefaultRule();
+        Debug.WriteLine("started");
 
         return true;
     }
@@ -74,8 +75,8 @@ public sealed class HijackController
         List<NF_RULE> rules = new List<NF_RULE>();
 
         Filter53(rules);
-        FilterIPV6Lan(rules);
-        FilterIPV4Lan(rules);
+        //FilterIPV6Lan(rules);
+        //FilterIPV4Lan(rules);
         FilterWan(rules);
 
         NFAPI.nf_setRules(rules.ToArray());
