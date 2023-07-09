@@ -1,9 +1,16 @@
-using smash.forms;
+using common.libs.database;
+using Microsoft.Extensions.DependencyInjection;
+using smash.plugins;
+using smash.plugin;
+using System.Reflection;
+using common.libs;
+using System.Collections.Generic;
 
 namespace smash
 {
     internal static class Program
     {
+        public static ServiceProvider serviceProvider = null;
         /// <summary>
         ///  The main entry point for the application.
         /// </summary>
@@ -25,7 +32,34 @@ namespace smash
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            Application.Run(new MainForm(args));
+
+
+            ServiceCollection serviceCollection = new ServiceCollection();
+            //注入 依赖注入服务供应 使得可以在别的地方通过注入的方式获得 ServiceProvider 以用来获取其它服务
+            serviceCollection.AddSingleton((e) => serviceProvider);
+
+            Assembly[] assemblys = AppDomain.CurrentDomain.GetAssemblies();
+
+            serviceCollection.AddSingleton<MainForm>();
+            serviceCollection.AddSingleton<StartUpArgInfo>();
+            serviceCollection.AddTransient(typeof(IConfigDataProvider<>), typeof(ConfigDataFileProvider<>));
+
+            IEnumerable <Type> tabForms = ReflectionHelper.GetInterfaceSchieves(assemblys, typeof(ITabForm)).Distinct();
+            foreach (Type item in tabForms)
+            {
+                serviceCollection.AddSingleton(item);
+            }
+
+            IPlugin[] plugins = PluginLoader.LoadBefore(serviceCollection, assemblys);
+            serviceProvider = serviceCollection.BuildServiceProvider();
+            PluginLoader.TabForms = tabForms.Select(c => (ITabForm)serviceProvider.GetService(c)).ToArray();
+
+            PluginLoader.LoadAfter(plugins, serviceProvider, assemblys);
+
+
+            StartUpArgInfo startUpArgInfo = serviceProvider.GetService<StartUpArgInfo>();
+            startUpArgInfo.Args = args;
+            Application.Run(serviceProvider.GetService<MainForm>());
         }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -37,5 +71,11 @@ namespace smash
         {
             MessageBox.Show($"系统异常:{(e.Exception).Message}");
         }
+
+    }
+
+    public sealed class StartUpArgInfo
+    {
+        public string[] Args { get; set; }
     }
 }

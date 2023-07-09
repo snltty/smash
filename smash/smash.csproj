@@ -32,6 +32,9 @@
     <EmbeddedResource Include="public\right-gray.png" />
     <EmbeddedResource Include="public\right.png" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\common.libs\common.libs.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
@@ -58,9 +61,10 @@
     <None Update="nfdriver.sys">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="redirector.bin">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="libs\" />
   </ItemGroup>
 
 </Project>
