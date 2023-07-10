@@ -5,6 +5,7 @@ namespace smash.plugins.hijack
 {
     public partial class HijackForm : Form, ITabForm
     {
+        public int Order => 1;
         private readonly HijackConfig hijackConfig;
         public HijackForm(HijackConfig hijackConfig)
         {
@@ -24,7 +25,6 @@ namespace smash.plugins.hijack
             {
                 hijackConfig.Process = hijackConfig.Processs.FirstOrDefault(c => c.Name == cmbGroup.SelectedItem.ToString());
             }
-            BindFileNames();
         }
         private void BindGroup()
         {
@@ -36,13 +36,6 @@ namespace smash.plugins.hijack
             {
                 cmbGroup.SelectedIndex = index < 0 ? 0 : index;
             }
-        }
-        private void BindFileNames()
-        {
-            listProcess.DataSource = null;
-            if (hijackConfig.Process == null) return;
-            listProcess.DataSource = hijackConfig.Process.FileNames;
-            listProcess.ClearSelected();
         }
         private void cbUseHijack_CheckedChanged(object sender, EventArgs e)
         {

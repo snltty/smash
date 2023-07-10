@@ -41,16 +41,6 @@ namespace smash.plugins
 
             AddTablePage();
 
-            hijackOptionsForm.TopLevel = false;
-            hijackOptionsForm.FormBorderStyle = FormBorderStyle.None;
-            hijackOptionsForm.Show();
-            panel1.Controls.Add(hijackOptionsForm);
-            hijackProcessForm.Top = hijackOptionsForm.Height;
-            hijackProcessForm.TopLevel = false;
-            hijackProcessForm.FormBorderStyle = FormBorderStyle.None;
-            hijackProcessForm.Show();
-            panel1.Controls.Add(hijackProcessForm);
-
         }
 
         #region ÍÐÅÌ
@@ -188,17 +178,17 @@ namespace smash.plugins
         #region ±êÇ©Ò³
         private void AddTablePage()
         {
-            foreach (ITabForm item in PluginLoader.TabForms)
+            int top = 0;
+            foreach (ITabForm item in PluginLoader.TabForms.OrderBy(c => c.Order))
             {
                 Form form = item as Form;
-                TabPage tabPage = new TabPage();
-                tabPage.Text = form.Text;
+                form.Top = top;
+                form.Left = 10;
                 form.TopLevel = false;
                 form.Visible = true;
                 form.FormBorderStyle = FormBorderStyle.None;
-                form.Dock = DockStyle.Fill;
-                tabPage.Controls.Add(form);
-                mainTab.Controls.Add(tabPage);
+                mainPanel.Controls.Add(form);
+                top += form.Height + 20;
             }
         }
         #endregion

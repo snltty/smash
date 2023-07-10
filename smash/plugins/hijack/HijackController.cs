@@ -54,9 +54,6 @@ public sealed class HijackController
         {
             throw new Exception($"{Name} start failed.{nF_STATUS}");
         }
-        //本地即使没有IPV6，也会有IPV6的DNS解析
-        //所以，得有个选项，表示是否本地支持IPV6 支持ipv6则处理其DNS，
-        //                表示是否远程支持IPV6，支持则代理生效，不支持则本地解析
         DefaultRule();
 
         return true;

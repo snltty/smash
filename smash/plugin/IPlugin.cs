@@ -12,7 +12,7 @@ namespace smash.plugin
 
     public interface ITabForm
     {
-
+        public int Order { get; }
     }
 
     public static class PluginLoader

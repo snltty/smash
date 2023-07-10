@@ -5,6 +5,8 @@ namespace smash.plugins.proxy
 {
     public partial class ProxyForm : Form, ITabForm
     {
+        public int Order => 99;
+
         private readonly ProxyConfig proxyConfig;
         public ProxyForm(ProxyConfig proxyConfig)
         {

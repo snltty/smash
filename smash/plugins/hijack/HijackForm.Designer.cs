@@ -30,24 +30,26 @@
         {
             groupBox1 = new GroupBox();
             cbUseHijack = new CheckBox();
-            listProcess = new ListBox();
             cmbGroup = new ComboBox();
-            menuStrip1 = new MenuStrip();
-            配置ToolStripMenuItem = new ToolStripMenuItem();
+            checkBox1 = new CheckBox();
+            checkBox2 = new CheckBox();
+            checkBox3 = new CheckBox();
             groupBox1.SuspendLayout();
-            menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // groupBox1
             // 
+            groupBox1.Controls.Add(checkBox3);
+            groupBox1.Controls.Add(checkBox2);
+            groupBox1.Controls.Add(checkBox1);
             groupBox1.Controls.Add(cbUseHijack);
-            groupBox1.Controls.Add(listProcess);
             groupBox1.Controls.Add(cmbGroup);
-            groupBox1.Location = new Point(235, 63);
+            groupBox1.Dock = DockStyle.Fill;
+            groupBox1.Location = new Point(0, 0);
             groupBox1.Margin = new Padding(6, 5, 6, 5);
             groupBox1.Name = "groupBox1";
             groupBox1.Padding = new Padding(6, 5, 6, 5);
-            groupBox1.Size = new Size(298, 289);
+            groupBox1.Size = new Size(434, 149);
             groupBox1.TabIndex = 2;
             groupBox1.TabStop = false;
             groupBox1.Text = "进程劫持";
@@ -55,71 +57,71 @@
             // cbUseHijack
             // 
             cbUseHijack.AutoSize = true;
-            cbUseHijack.Location = new Point(195, 45);
+            cbUseHijack.Location = new Point(330, 43);
             cbUseHijack.Name = "cbUseHijack";
             cbUseHijack.Size = new Size(94, 35);
             cbUseHijack.TabIndex = 3;
-            cbUseHijack.Text = "使用";
+            cbUseHijack.Text = "启用";
             cbUseHijack.UseVisualStyleBackColor = true;
-            // 
-            // listProcess
-            // 
-            listProcess.FormattingEnabled = true;
-            listProcess.ItemHeight = 31;
-            listProcess.Location = new Point(10, 87);
-            listProcess.Name = "listProcess";
-            listProcess.Size = new Size(276, 190);
-            listProcess.TabIndex = 2;
             // 
             // cmbGroup
             // 
             cmbGroup.FormattingEnabled = true;
-            cmbGroup.Location = new Point(10, 42);
+            cmbGroup.Location = new Point(12, 43);
             cmbGroup.Name = "cmbGroup";
-            cmbGroup.Size = new Size(176, 39);
+            cmbGroup.Size = new Size(230, 39);
             cmbGroup.TabIndex = 1;
             // 
-            // menuStrip1
+            // checkBox1
             // 
-            menuStrip1.ImageScalingSize = new Size(32, 32);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { 配置ToolStripMenuItem });
-            menuStrip1.Location = new Point(0, 0);
-            menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(800, 42);
-            menuStrip1.TabIndex = 3;
-            menuStrip1.Text = "menuStrip1";
+            checkBox1.AutoSize = true;
+            checkBox1.Location = new Point(12, 100);
+            checkBox1.Name = "checkBox1";
+            checkBox1.Size = new Size(91, 35);
+            checkBox1.TabIndex = 4;
+            checkBox1.Text = "TCP";
+            checkBox1.UseVisualStyleBackColor = true;
             // 
-            // 配置ToolStripMenuItem
+            // checkBox2
             // 
-            配置ToolStripMenuItem.Name = "配置ToolStripMenuItem";
-            配置ToolStripMenuItem.Size = new Size(82, 38);
-            配置ToolStripMenuItem.Text = "配置";
+            checkBox2.AutoSize = true;
+            checkBox2.Location = new Point(109, 100);
+            checkBox2.Name = "checkBox2";
+            checkBox2.Size = new Size(97, 35);
+            checkBox2.TabIndex = 5;
+            checkBox2.Text = "UDP";
+            checkBox2.UseVisualStyleBackColor = true;
+            // 
+            // checkBox3
+            // 
+            checkBox3.AutoSize = true;
+            checkBox3.Location = new Point(212, 100);
+            checkBox3.Name = "checkBox3";
+            checkBox3.Size = new Size(194, 35);
+            checkBox3.TabIndex = 6;
+            checkBox3.Text = "代理DNS解析";
+            checkBox3.UseVisualStyleBackColor = true;
             // 
             // HijackForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(434, 149);
             Controls.Add(groupBox1);
-            Controls.Add(menuStrip1);
-            MainMenuStrip = menuStrip1;
             Name = "HijackForm";
             Text = "进程劫持";
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
-            menuStrip1.ResumeLayout(false);
-            menuStrip1.PerformLayout();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
 
         private GroupBox groupBox1;
         private CheckBox cbUseHijack;
-        private ListBox listProcess;
         private ComboBox cmbGroup;
-        private MenuStrip menuStrip1;
-        private ToolStripMenuItem 配置ToolStripMenuItem;
+        private CheckBox checkBox1;
+        private CheckBox checkBox2;
+        private CheckBox checkBox3;
     }
 }

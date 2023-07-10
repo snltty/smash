@@ -38,35 +38,36 @@
             // 
             groupBox2.Controls.Add(labelProxy);
             groupBox2.Controls.Add(cmbProxy);
-            groupBox2.Location = new Point(238, 124);
+            groupBox2.Dock = DockStyle.Fill;
+            groupBox2.Location = new Point(0, 0);
             groupBox2.Name = "groupBox2";
-            groupBox2.Size = new Size(298, 146);
+            groupBox2.Size = new Size(434, 145);
             groupBox2.TabIndex = 5;
             groupBox2.TabStop = false;
             groupBox2.Text = "选择代理";
             // 
             // labelProxy
             // 
-            labelProxy.Location = new Point(6, 90);
+            labelProxy.Location = new Point(15, 89);
             labelProxy.Name = "labelProxy";
-            labelProxy.Size = new Size(286, 47);
+            labelProxy.Size = new Size(407, 38);
             labelProxy.TabIndex = 1;
-            labelProxy.Text = "label1";
+            labelProxy.Text = "代理地址";
             labelProxy.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // cmbProxy
             // 
             cmbProxy.FormattingEnabled = true;
-            cmbProxy.Location = new Point(34, 44);
+            cmbProxy.Location = new Point(12, 43);
             cmbProxy.Name = "cmbProxy";
-            cmbProxy.Size = new Size(234, 39);
+            cmbProxy.Size = new Size(230, 39);
             cmbProxy.TabIndex = 0;
             // 
             // ProxyForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(434, 145);
             Controls.Add(groupBox2);
             Name = "ProxyForm";
             Text = "代理配置";

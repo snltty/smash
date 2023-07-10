@@ -30,14 +30,12 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             startBtn = new Button();
-            mainTab = new TabControl();
-            listBox1 = new ListBox();
-            panel1 = new Panel();
+            mainPanel = new Panel();
             SuspendLayout();
             // 
             // startBtn
             // 
-            startBtn.Location = new Point(331, 684);
+            startBtn.Location = new Point(156, 560);
             startBtn.Margin = new Padding(6, 5, 6, 5);
             startBtn.Name = "startBtn";
             startBtn.Size = new Size(188, 78);
@@ -46,41 +44,21 @@
             startBtn.UseVisualStyleBackColor = true;
             startBtn.Click += startBtn_Click;
             // 
-            // mainTab
+            // mainPanel
             // 
-            mainTab.Location = new Point(12, 12);
-            mainTab.Name = "mainTab";
-            mainTab.SelectedIndex = 0;
-            mainTab.Size = new Size(221, 411);
-            mainTab.TabIndex = 6;
-            // 
-            // listBox1
-            // 
-            listBox1.FormattingEnabled = true;
-            listBox1.HorizontalScrollbar = true;
-            listBox1.ItemHeight = 31;
-            listBox1.Location = new Point(257, 23);
-            listBox1.Name = "listBox1";
-            listBox1.Size = new Size(420, 190);
-            listBox1.TabIndex = 7;
-            // 
-            // panel1
-            // 
-            panel1.AutoScroll = true;
-            panel1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            panel1.Location = new Point(0, 0);
-            panel1.Name = "panel1";
-            panel1.Size = new Size(739, 500);
-            panel1.TabIndex = 8;
+            mainPanel.AutoScroll = true;
+            mainPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            mainPanel.Location = new Point(12, 12);
+            mainPanel.Name = "mainPanel";
+            mainPanel.Size = new Size(450, 530);
+            mainPanel.TabIndex = 8;
             // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(853, 784);
-            Controls.Add(panel1);
-            Controls.Add(listBox1);
-            Controls.Add(mainTab);
+            ClientSize = new Size(478, 659);
+            Controls.Add(mainPanel);
             Controls.Add(startBtn);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Icon = (Icon)resources.GetObject("$this.Icon");
@@ -95,8 +73,6 @@
 
         #endregion
         private Button startBtn;
-        private TabControl mainTab;
-        private ListBox listBox1;
-        private Panel panel1;
+        private Panel mainPanel;
     }
 }

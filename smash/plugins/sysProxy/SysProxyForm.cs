@@ -4,6 +4,8 @@ namespace smash.plugins.sysProxy
 {
     public partial class SysProxyForm : Form, ITabForm
     {
+        public int Order => 2;
+
         private readonly SysProxyConfig sysProxyConfig;
         public SysProxyForm(SysProxyConfig sysProxyConfig)
         {
