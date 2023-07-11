@@ -28,29 +28,15 @@
         /// </summary>
         private void InitializeComponent()
         {
-            groupBox2 = new GroupBox();
             labelProxy = new Label();
             cmbProxy = new ComboBox();
-            groupBox2.SuspendLayout();
             SuspendLayout();
-            // 
-            // groupBox2
-            // 
-            groupBox2.Controls.Add(labelProxy);
-            groupBox2.Controls.Add(cmbProxy);
-            groupBox2.Dock = DockStyle.Fill;
-            groupBox2.Location = new Point(0, 0);
-            groupBox2.Name = "groupBox2";
-            groupBox2.Size = new Size(434, 145);
-            groupBox2.TabIndex = 5;
-            groupBox2.TabStop = false;
-            groupBox2.Text = "选择代理";
             // 
             // labelProxy
             // 
-            labelProxy.Location = new Point(15, 89);
+            labelProxy.Location = new Point(14, 68);
             labelProxy.Name = "labelProxy";
-            labelProxy.Size = new Size(407, 38);
+            labelProxy.Size = new Size(417, 38);
             labelProxy.TabIndex = 1;
             labelProxy.Text = "代理地址";
             labelProxy.TextAlign = ContentAlignment.MiddleCenter;
@@ -58,26 +44,25 @@
             // cmbProxy
             // 
             cmbProxy.FormattingEnabled = true;
-            cmbProxy.Location = new Point(12, 43);
+            cmbProxy.Location = new Point(100, 24);
             cmbProxy.Name = "cmbProxy";
             cmbProxy.Size = new Size(230, 39);
             cmbProxy.TabIndex = 0;
+            cmbProxy.SelectedIndexChanged += cmbProxy_SelectedIndexChanged;
             // 
             // ProxyForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(434, 145);
-            Controls.Add(groupBox2);
+            ClientSize = new Size(443, 130);
+            Controls.Add(labelProxy);
+            Controls.Add(cmbProxy);
             Name = "ProxyForm";
             Text = "代理配置";
-            groupBox2.ResumeLayout(false);
             ResumeLayout(false);
         }
 
         #endregion
-
-        private GroupBox groupBox2;
         private Label labelProxy;
         private ComboBox cmbProxy;
     }

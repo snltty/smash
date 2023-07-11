@@ -30,12 +30,12 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             startBtn = new Button();
-            mainPanel = new Panel();
+            mainTab = new TabControl();
             SuspendLayout();
             // 
             // startBtn
             // 
-            startBtn.Location = new Point(156, 560);
+            startBtn.Location = new Point(145, 327);
             startBtn.Margin = new Padding(6, 5, 6, 5);
             startBtn.Name = "startBtn";
             startBtn.Size = new Size(188, 78);
@@ -44,21 +44,20 @@
             startBtn.UseVisualStyleBackColor = true;
             startBtn.Click += startBtn_Click;
             // 
-            // mainPanel
+            // mainTab
             // 
-            mainPanel.AutoScroll = true;
-            mainPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            mainPanel.Location = new Point(12, 12);
-            mainPanel.Name = "mainPanel";
-            mainPanel.Size = new Size(450, 530);
-            mainPanel.TabIndex = 8;
+            mainTab.Location = new Point(12, 9);
+            mainTab.Name = "mainTab";
+            mainTab.SelectedIndex = 0;
+            mainTab.Size = new Size(454, 298);
+            mainTab.TabIndex = 3;
             // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(478, 659);
-            Controls.Add(mainPanel);
+            ClientSize = new Size(478, 425);
+            Controls.Add(mainTab);
             Controls.Add(startBtn);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Icon = (Icon)resources.GetObject("$this.Icon");
@@ -73,6 +72,6 @@
 
         #endregion
         private Button startBtn;
-        private Panel mainPanel;
+        private TabControl mainTab;
     }
 }

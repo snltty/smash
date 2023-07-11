@@ -4,13 +4,11 @@ using smash.plugins;
 using smash.plugin;
 using System.Reflection;
 using common.libs;
-using System.Collections.Generic;
 
 namespace smash
 {
     internal static class Program
     {
-        public static ServiceProvider serviceProvider = null;
         /// <summary>
         ///  The main entry point for the application.
         /// </summary>
@@ -34,29 +32,29 @@ namespace smash
             ApplicationConfiguration.Initialize();
 
 
+            //注入对象
+            ServiceProvider serviceProvider = null;
             ServiceCollection serviceCollection = new ServiceCollection();
             //注入 依赖注入服务供应 使得可以在别的地方通过注入的方式获得 ServiceProvider 以用来获取其它服务
             serviceCollection.AddSingleton((e) => serviceProvider);
 
             Assembly[] assemblys = AppDomain.CurrentDomain.GetAssemblies();
-
+            //基础注入
             serviceCollection.AddSingleton<MainForm>();
             serviceCollection.AddSingleton<StartUpArgInfo>();
+            serviceCollection.AddSingleton<Config>();
             serviceCollection.AddTransient(typeof(IConfigDataProvider<>), typeof(ConfigDataFileProvider<>));
-
-            IEnumerable <Type> tabForms = ReflectionHelper.GetInterfaceSchieves(assemblys, typeof(ITabForm)).Distinct();
-            foreach (Type item in tabForms)
-            {
-                serviceCollection.AddSingleton(item);
-            }
 
             IPlugin[] plugins = PluginLoader.LoadBefore(serviceCollection, assemblys);
             serviceProvider = serviceCollection.BuildServiceProvider();
-            PluginLoader.TabForms = tabForms.Select(c => (ITabForm)serviceProvider.GetService(c)).ToArray();
+
+            //获取窗体，和控制器
+            PluginLoader.TabForms = ReflectionHelper.GetInterfaceSchieves(assemblys, typeof(ITabForm)).Distinct().Select(c => (ITabForm)serviceProvider.GetService(c)).ToArray();
+            PluginLoader.Controllers = ReflectionHelper.GetInterfaceSchieves(assemblys, typeof(IController)).Distinct().Select(c => (IController)serviceProvider.GetService(c)).ToArray();
 
             PluginLoader.LoadAfter(plugins, serviceProvider, assemblys);
 
-
+            //运行主窗体
             StartUpArgInfo startUpArgInfo = serviceProvider.GetService<StartUpArgInfo>();
             startUpArgInfo.Args = args;
             Application.Run(serviceProvider.GetService<MainForm>());

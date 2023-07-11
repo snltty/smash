@@ -1,11 +1,12 @@
 ﻿using common.libs;
 using Microsoft.Win32;
+using smash.plugin;
 using smash.plugins.proxy;
 using System.Runtime.InteropServices;
 
 namespace smash.plugins.sysProxy
 {
-    public sealed class SysProxyController
+    public sealed class SysProxyController : IController
     {
         private readonly SysProxyConfig sysProxyConfig;
         private readonly ProxyConfig proxyConfig;
@@ -22,10 +23,21 @@ namespace smash.plugins.sysProxy
                 Stop();
             };
         }
-        public void Start()
+        public bool Validate(out string error)
         {
-            if (sysProxyConfig.SysProxy == null) return;
+            error = string.Empty;
+            if (sysProxyConfig.SysProxy == null) return false;
 
+            if (sysProxyConfig.SysProxy.IsPac == false && sysProxyConfig.SysProxy.IsEnv == false)
+            {
+                error = $"系统代理:至少选择一种方式";
+            }
+
+            return true;
+        }
+        public bool Start()
+        {
+            if (sysProxyConfig.SysProxy == null) return false;
             if (sysProxyConfig.SysProxy.IsPac)
             {
                 isPac = true;
@@ -36,6 +48,7 @@ namespace smash.plugins.sysProxy
                 isEnv = true;
                 SetEnv($"socks5://{proxyConfig.Proxy.Host}:{proxyConfig.Proxy.Port}", proxyConfig.Proxy.UserName, proxyConfig.Proxy.Password);
             }
+            return true;
         }
         public void Stop()
         {
@@ -146,5 +159,7 @@ namespace smash.plugins.sysProxy
             InternetSetOption(nint.Zero, INTERNET_OPTION_SETTINGS_CHANGED, nint.Zero, 0);
             InternetSetOption(nint.Zero, INTERNET_OPTION_REFRESH, nint.Zero, 0);
         }
+
+
     }
 }

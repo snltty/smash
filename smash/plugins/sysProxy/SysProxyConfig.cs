@@ -1,7 +1,9 @@
 ﻿using common.libs.database;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace smash.plugins.sysProxy
 {
+    [Table("sysproxy-config")]
     public sealed class SysProxyConfig
     {
         private readonly IConfigDataProvider<SysProxyConfig> configDataProvider;

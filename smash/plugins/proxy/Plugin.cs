@@ -13,7 +13,8 @@ namespace smash.plugins.proxy
         public void LoadBefore(ServiceCollection services, Assembly[] assemblys)
         {
             services.AddSingleton<ProxyConfig>();
-            services.AddSingleton<ProxySettingForm>();
+            services.AddSingleton<ProxyController>();
+            services.AddSingleton<ProxyForm>();
         }
     }
 }

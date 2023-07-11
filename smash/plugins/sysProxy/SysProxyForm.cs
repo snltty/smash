@@ -11,6 +11,7 @@ namespace smash.plugins.sysProxy
         {
             this.sysProxyConfig = sysProxyConfig;
             InitializeComponent();
+            BindInfo();
         }
 
         private void BindInfo()
@@ -43,26 +44,19 @@ namespace smash.plugins.sysProxy
                 cbIsEnv.Checked = sysProxyConfig.SysProxy.IsEnv;
             }
         }
-        private void cbUseSysProxy_CheckedChanged(object sender, EventArgs e)
+        private void UpdateConfig()
         {
             sysProxyConfig.UseSysProxy = cbUseSysProxy.Checked;
-            BindInfo();
-        }
-        private void cbIsEnv_CheckedChanged(object sender, EventArgs e)
-        {
             if (sysProxyConfig.SysProxy != null)
             {
                 sysProxyConfig.SysProxy.IsEnv = cbIsEnv.Checked;
-                BindInfo();
-            }
-        }
-        private void cbIsPac_CheckedChanged(object sender, EventArgs e)
-        {
-            if (sysProxyConfig.SysProxy != null)
-            {
                 sysProxyConfig.SysProxy.IsPac = cbIsPac.Checked;
-                BindInfo();
             }
+            BindInfo();
+        }
+        private void CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateConfig();
         }
         #endregion
     }

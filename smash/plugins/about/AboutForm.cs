@@ -1,9 +1,11 @@
 ﻿using common.libs;
+using smash.plugin;
 
-namespace smash.plugins
+namespace smash.plugins.about
 {
-    public partial class AboutForm : Form
+    public partial class AboutForm : Form, ITabForm
     {
+        public int Order => int.MaxValue;
         public AboutForm()
         {
             StartPosition = FormStartPosition.CenterParent;
@@ -15,7 +17,7 @@ namespace smash.plugins
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            CommandHelper.Windows(string.Empty,new string[] {$"start https://github.com/snltty/smash" });
+            CommandHelper.Windows(string.Empty, new string[] { $"start https://github.com/snltty/smash" });
         }
     }
 }

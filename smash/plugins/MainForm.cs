@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
 using common.libs;
-using smash.plugins.hijack;
-using smash.plugins.sysProxy;
 using smash.plugin;
 
 namespace smash.plugins
@@ -16,21 +14,17 @@ namespace smash.plugins
         Icon iconGray = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream(@"smash.public.icon-gray.ico"));
         string name = "smash进程劫持代理";
 
-        private readonly Config config = new Config();
-        private readonly HijackController hijackController;
-        private readonly SysProxyController SysProxyController;
+        private readonly Config config;
 
         private ToolStripItem startupMenu;
         private ToolStripItem startMenu;
 
         bool hideForm;
 
-        public MainForm(StartUpArgInfo startUpArgInfo, HijackController hijackController, SysProxyController SysProxyController, HijackOptionsForm hijackOptionsForm, HijackProcessForm hijackProcessForm)
+        public MainForm(StartUpArgInfo startUpArgInfo, Config config)
         {
             HideForm(startUpArgInfo.Args);
-            config = Config.Load();
-            this.hijackController = hijackController;
-            this.SysProxyController = SysProxyController;
+            this.config = config;
 
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -38,7 +32,6 @@ namespace smash.plugins
             MinimizeBox = false;
             InitializeComponent();
             InitialTray();
-
             AddTablePage();
 
         }
@@ -55,8 +48,8 @@ namespace smash.plugins
             notifyIcon.Visible = true;
 
             notifyIcon.ContextMenuStrip = new ContextMenuStrip();
-            startupMenu = notifyIcon.ContextMenuStrip.Items.Add("程序自启动", unright, StartUp);
-            startMenu = notifyIcon.ContextMenuStrip.Items.Add("启动进程驱动", unright, Switch);
+            startupMenu = notifyIcon.ContextMenuStrip.Items.Add("自启动", unright, StartUp);
+            startMenu = notifyIcon.ContextMenuStrip.Items.Add("代理驱动", unright, Switch);
             notifyIcon.ContextMenuStrip.Items.Add("退出", null, Close);
             notifyIcon.DoubleClick += ContextMenuStrip_MouseDoubleClick;
 
@@ -174,23 +167,24 @@ namespace smash.plugins
         }
         #endregion
 
-
         #region 标签页
         private void AddTablePage()
         {
-            int top = 0;
             foreach (ITabForm item in PluginLoader.TabForms.OrderBy(c => c.Order))
             {
                 Form form = item as Form;
-                form.Top = top;
-                form.Left = 10;
                 form.TopLevel = false;
                 form.Visible = true;
                 form.FormBorderStyle = FormBorderStyle.None;
-                mainPanel.Controls.Add(form);
-                top += form.Height + 20;
+                form.Dock = DockStyle.Fill;
+                TabPage tabPage = new TabPage();
+                tabPage.BackColor = Color.Black;
+                tabPage.Text = form.Text;
+                tabPage.Controls.Add(form);
+                mainTab.Controls.Add(tabPage);
             }
         }
+
         #endregion
 
 
@@ -232,35 +226,27 @@ namespace smash.plugins
         }
         private void Start()
         {
-            /*
-            if (config.UseHijack == false && config.UseSysProxy == false)
-            {
-                MessageBox.Show("至少要使用一种方式，不然没意义");
-                return;
-            }
-
-            if (config.UseHijack && config.Process == null)
-            {
-                MessageBox.Show("未选进程劫持规则");
-                return;
-            }
-            if (config.UseSysProxy && config.SysProxy == null)
-            {
-                MessageBox.Show("未选系统代理规则");
-                return;
-            }
-            */
-
             if (starting) return;
             starting = true;
             SetButtonTest();
-
             Task.Run(() =>
             {
                 try
                 {
-                    hijackController.Start();
-                    SysProxyController.Start();
+                    foreach (IController controller in PluginLoader.Controllers)
+                    {
+                        if (controller.Validate(out string error) == false)
+                        {
+                            if (string.IsNullOrWhiteSpace(error) == false)
+                            {
+                                throw new Exception(error);
+                            }
+                        }
+                    }
+                    foreach (IController controller in PluginLoader.Controllers)
+                    {
+                        controller.Start();
+                    }
 
                     starting = false;
                     running = true;
@@ -272,7 +258,11 @@ namespace smash.plugins
                     Stop();
                     starting = false;
                     Debug.WriteLine(ex + "");
-                    MessageBox.Show(ex.Message);
+                    this.Invoke(() =>
+                    {
+                        MessageBox.Show(ex.Message);
+                    });
+
                 }
                 SetButtonTest();
                 CommandHelper.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
@@ -283,26 +273,25 @@ namespace smash.plugins
             if (starting) return;
             starting = true;
             SetButtonTest();
-            Task.Run(() =>
+            try
             {
-                try
+                foreach (IController controller in PluginLoader.Controllers)
                 {
-                    hijackController.Stop();
-                    SysProxyController.Stop();
-                    starting = false;
-                    running = false;
-                    config.Running = false;
-                    config.Save();
-                    GCHelper.FlushMemory();
+                    controller.Stop();
                 }
-                catch (Exception ex)
-                {
-                    starting = false;
-                    MessageBox.Show(ex.Message);
-                }
-                SetButtonTest();
-                CommandHelper.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
-            });
+                starting = false;
+                running = false;
+                config.Running = false;
+                config.Save();
+                GCHelper.FlushMemory();
+            }
+            catch (Exception ex)
+            {
+                starting = false;
+                MessageBox.Show(ex.Message);
+            }
+            SetButtonTest();
+            CommandHelper.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
         }
 
         private void startBtn_Click(object sender, EventArgs e)
@@ -321,7 +310,6 @@ namespace smash.plugins
                 HideForm();
             }
         }
-
 
     }
 }

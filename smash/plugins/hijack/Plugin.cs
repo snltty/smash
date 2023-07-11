@@ -13,8 +13,7 @@ namespace smash.plugins.hijack
         public void LoadBefore(ServiceCollection services, Assembly[] assemblys)
         {
             services.AddSingleton<HijackConfig>();
-            services.AddSingleton<HijackOptionsForm>();
-            services.AddSingleton<HijackProcessForm>();
+            services.AddSingleton<HijackForm>();
             services.AddSingleton<HijackController>();
         }
     }

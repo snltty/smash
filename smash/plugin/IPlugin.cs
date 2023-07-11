@@ -15,10 +15,18 @@ namespace smash.plugin
         public int Order { get; }
     }
 
+    public interface IController
+    {
+        public bool Validate(out string error);
+        public bool Start();
+        public void Stop();
+    }
+
     public static class PluginLoader
     {
         public static IPlugin[] Plugins { get; private set; }
         public static ITabForm[] TabForms { get; set; }
+        public static IController[] Controllers { get; set; }
         public static IPlugin[] LoadBefore(ServiceCollection services, Assembly[] assemblys)
         {
             IEnumerable<Type> types = ReflectionHelper.GetInterfaceSchieves(assemblys, typeof(IPlugin)).Distinct();

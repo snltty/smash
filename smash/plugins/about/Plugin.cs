@@ -2,7 +2,7 @@
 using smash.plugin;
 using System.Reflection;
 
-namespace smash.plugins.sysProxy
+namespace smash.plugins.about
 {
     internal class Plugin : IPlugin
     {
@@ -12,9 +12,7 @@ namespace smash.plugins.sysProxy
 
         public void LoadBefore(ServiceCollection services, Assembly[] assemblys)
         {
-            services.AddSingleton<SysProxyConfig>();
-            services.AddSingleton<SysProxyController>();
-            services.AddSingleton<SysProxyForm>();
+            services.AddSingleton<AboutForm>();
         }
     }
 }

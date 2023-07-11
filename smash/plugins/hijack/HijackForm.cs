@@ -11,6 +11,7 @@ namespace smash.plugins.hijack
         {
             this.hijackConfig = hijackConfig;
             InitializeComponent();
+            BindInfo();
         }
 
         private void BindInfo()
@@ -32,15 +33,26 @@ namespace smash.plugins.hijack
             cmbGroup.DataSource = null;
             cmbGroup.DataSource = hijackConfig.Processs.Select(c => c.Name).ToList();
             cbUseHijack.Checked = hijackConfig.UseHijack;
+            cbFilterTcp.Checked = hijackConfig.FilterTCP;
+            cbFilterUdp.Checked = hijackConfig.FilterUDP;
+            cbFilterDns.Checked = hijackConfig.FilterDNS;
             if (index < hijackConfig.Processs.Count && hijackConfig.Processs.Count > 0)
             {
                 cmbGroup.SelectedIndex = index < 0 ? 0 : index;
             }
         }
-        private void cbUseHijack_CheckedChanged(object sender, EventArgs e)
+        private void UpdateConfig()
         {
             hijackConfig.UseHijack = cbUseHijack.Checked;
+            hijackConfig.FilterTCP = cbFilterTcp.Checked;
+            hijackConfig.FilterUDP = cbFilterUdp.Checked;
+            hijackConfig.FilterDNS = cbFilterDns.Checked;
+            hijackConfig.Save();
             BindInfo();
+        }
+        private void CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateConfig();
         }
         #endregion
     }

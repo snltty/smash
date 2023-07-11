@@ -1,4 +1,5 @@
 ﻿using common.libs;
+using smash.plugin;
 using smash.plugins.proxy;
 using System.Buffers.Binary;
 using System.Diagnostics;
@@ -7,7 +8,7 @@ using System.Net.Sockets;
 
 namespace smash.plugins.hijack;
 
-public sealed class HijackController
+public sealed class HijackController : IController
 {
     private static readonly string SystemDriver = $"{Environment.SystemDirectory}\\drivers\\netfilter2.sys";
     public const string NFDriver = "nfdriver.sys";
@@ -16,28 +17,39 @@ public sealed class HijackController
     private readonly ProxyConfig proxyConfig;
     private readonly HijackEventHandler hijackEventHandler;
 
-    public HijackController(HijackConfig  hijackConfig, ProxyConfig proxyConfig)
+    public HijackController(HijackConfig hijackConfig, ProxyConfig proxyConfig)
     {
         this.hijackConfig = hijackConfig;
         this.proxyConfig = proxyConfig;
         hijackEventHandler = new HijackEventHandler(hijackConfig);
     }
 
+    public bool Validate(out string error)
+    {
+        error = string.Empty;
+        if (hijackConfig.UseHijack == false)
+        {
+            return false;
+        }
+        if (hijackConfig.FilterTCP == false && hijackConfig.FilterUDP == false && hijackConfig.FilterDNS == false)
+        {
+            error = ($"进程劫持:至少选择一项协议");
+            return false;
+        }
+        if (hijackConfig.Process == null || hijackConfig.Process.FileNames.Count == 0)
+        {
+            error = ($"进程劫持:至少选择一个程序对象");
+            return false;
+        }
+        
+        return true;
+    }
     public bool Start()
     {
         if (hijackConfig.UseHijack == false)
         {
             return false;
         }
-        if (proxyConfig.Proxy == null || string.IsNullOrWhiteSpace(proxyConfig.Proxy.Host) || proxyConfig.Proxy.Port == 0)
-        {
-            throw new Exception($"proxy invalid!");
-        }
-        if (hijackConfig.Process == null || hijackConfig.Process.FileNames.Count == 0)
-        {
-            throw new Exception($"process invalid!");
-        }
-        IPAddress ip = NetworkHelper.GetDomainIp(proxyConfig.Proxy.Host) ?? throw new Exception("proxy host invalid!");
 
         //初始化一些数据
         hijackConfig.ParseProcesss();
@@ -297,5 +309,7 @@ public sealed class HijackController
 
         return true;
     }
+
+
 }
 
