@@ -7,6 +7,7 @@ namespace smash.proxy
 {
     public class ProxyInfo
     {
+        public byte Rsv { get; set; }
         /// <summary>
         /// 执行到哪一步了
         /// </summary>
@@ -24,12 +25,6 @@ namespace smash.proxy
         /// </summary>
         public EnumBufferSize BufferSize { get; set; } = EnumBufferSize.KB_8;
 
-        public Socks5EnumResponseCommand CommandStatus { get; set; }
-
-        /// <summary>
-        /// 请求id
-        /// </summary>
-        public uint RequestId { get; set; }
         /// <summary>
         /// 来源地址，数据从目标端回来的时候回给谁
         /// </summary>
@@ -49,11 +44,12 @@ namespace smash.proxy
         public Memory<byte> Data { get; set; }
 
 
-        public byte[] ToBytes(out int length)
+        public byte[] ToBytes(Memory<byte> key, out int length)
         {
-            length = 1 //0000 0000  step + command
+            length =
+                +key.Length //ke
+                + 1 //0000 0000  step + command
                 + 1 // 0000 0000 address type + buffer size
-                + 1 //CommandResponse
                 + 4  // RequestId
                 + 1  //source length
                 + 1 // target length
@@ -76,16 +72,13 @@ namespace smash.proxy
             int index = 0;
 
 
+            key.CopyTo(memory.Slice(index));
+            index += key.Length;
+
             bytes[index] = (byte)(((byte)Step) << 4 | (byte)Command);
             index += 1;
             bytes[index] = (byte)(((byte)AddressType << 4) | (byte)BufferSize);
             index += 1;
-
-            bytes[index] = (byte)CommandStatus;
-            index += 1;
-
-            RequestId.ToBytes(memory.Slice(index));
-            index += 4;
 
             bytes[index] = (byte)sepLength;
             index += 1;
@@ -167,10 +160,6 @@ namespace smash.proxy
             ArrayPool<byte>.Shared.Return(data);
         }
 
-        public static uint GetRequestId(Memory<byte> bytes)
-        {
-            return bytes.Span.Slice(3).ToUInt32();
-        }
     }
 
     public enum EnumBufferSize : byte
@@ -188,7 +177,7 @@ namespace smash.proxy
         KB_1024 = 10,
     }
 
-    
+
     /// <summary>
     /// 数据验证结果
     /// </summary>

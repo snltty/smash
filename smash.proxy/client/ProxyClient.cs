@@ -8,12 +8,13 @@ using System.Net;
 using System.Threading.Tasks;
 using common.libs.extends;
 using System.Text;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 
 namespace smash.proxy.server
 {
     public sealed class ProxyClient
     {
-        private readonly ClientsManager clientsManager = new ClientsManager();
         private NumberSpaceUInt32 requestIdNs = new NumberSpaceUInt32(65536);
         private readonly ProxyClientConfig proxyClientConfig;
 
@@ -33,7 +34,7 @@ namespace smash.proxy.server
 
         private void BindAccept()
         {
-            var endpoint = new IPEndPoint(IPAddress.Any, proxyClientConfig.Port);
+            var endpoint = new IPEndPoint(IPAddress.Any, proxyClientConfig.ListenPort);
             Socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             Socket.Bind(endpoint);
             Socket.Listen(int.MaxValue);
@@ -53,10 +54,9 @@ namespace smash.proxy.server
                     Command = Socks5EnumRequestCommand.UdpAssociate,
                     CommandStatus = Socks5EnumResponseCommand.ConnecSuccess,
                     BufferSize = EnumBufferSize.KB_8,
-                    RequestId = proxyClientConfig.Port
+                    RequestId = proxyClientConfig.ListenPort
                 }
             };
-            clientsManager.TryAdd(token);
             acceptEventArg.UserToken = token;
             acceptEventArg.Completed += IO_Completed;
             StartAccept(acceptEventArg);
@@ -105,12 +105,13 @@ namespace smash.proxy.server
         {
             try
             {
+                Socket socket = e.AcceptSocket;
                 ProxyUserToken acceptToken = (e.UserToken as ProxyUserToken);
 
                 uint id = requestIdNs.Increment();
                 ProxyUserToken token = new ProxyUserToken
                 {
-                    ClientSocket = e.AcceptSocket,
+                    ClientSocket = socket,
                     Request = new ProxyInfo
                     {
                         RequestId = id,
@@ -120,7 +121,6 @@ namespace smash.proxy.server
                         Step = Socks5EnumStep.Request
                     },
                 };
-                clientsManager.TryAdd(token);
 
                 SocketAsyncEventArgs readEventArgs = new SocketAsyncEventArgs
                 {
@@ -146,6 +146,44 @@ namespace smash.proxy.server
                     Logger.Instance.Error(ex);
             }
         }
+
+
+        private async Task<SslStream> ConnectServer()
+        {
+            try
+            {
+                Socket socket = new Socket(proxyClientConfig.ServerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                await socket.ConnectAsync(proxyClientConfig.ServerEP);
+                SslStream sslStream = new SslStream(new NetworkStream(socket), true, ValidateServerCertificate, null);
+                await sslStream.AuthenticateAsClientAsync(string.Empty);
+
+                return sslStream;
+            }
+            catch (Exception ex)
+            {
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error($"connect server -> error " + ex);
+            }
+            return null;
+        }
+        private bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
+        }
+        private void BindServerReceive(ProxyUserToken token)
+        {
+            if (token.ServerStream == null || token.ServerStream.CanRead == false) return;
+
+            token.ServerPoolBuffer = new byte[(1 << (byte)EnumBufferSize.KB_8) * 1024];
+            token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
+        }
+        private void ServerReceiveCallback(IAsyncResult result)
+        {
+            ProxyUserToken token = result.AsyncState as ProxyUserToken;
+            int length = token.ServerStream.EndRead(result);
+        }
+
+
 
         private async Task<bool> ReceiveCommandData(ProxyUserToken token, SocketAsyncEventArgs e, int totalLength)
         {
@@ -260,36 +298,38 @@ namespace smash.proxy.server
 
         private async Task Receive(ProxyUserToken token, Memory<byte> data)
         {
-            await Receive(token.Request, data);
+            token.Request.Data = data;
+            await Receive(token, data);
         }
-        private async Task Receive(ProxyInfo info, Memory<byte> data)
-        {
-            info.Data = data;
-            await Receive(info);
-        }
-        private async Task Receive(ProxyInfo info)
+        private async Task Receive(ProxyUserToken token)
         {
             try
             {
-                if (info.Data.Length == 0 && info.Step == Socks5EnumStep.Command)
+                if (token.Request.Data.Length == 0 && token.Request.Step == Socks5EnumStep.Command)
                 {
                     return;
                 }
-                if (await HandleRequestData(info) == false)
+                if (await HandleRequestData(token) == false)
                 {
                     return;
                 }
 
-                bool res = await Request(info);
+                if (token.ServerStream == null)
+                {
+                    await ConnectServer();
+                    BindServerReceive(token);
+                }
+
+                bool res = await Request(token);
                 if (res == false)
                 {
-                    if (info.Step == Socks5EnumStep.Command)
+                    if (token.Request.Step == Socks5EnumStep.Command)
                     {
-                        await InputData(info);
+                        await InputData(token, token.Request);
                     }
-                    else if (info.Step == Socks5EnumStep.Forward)
+                    else if (token.Request.Step == Socks5EnumStep.Forward)
                     {
-                        clientsManager.TryRemove(info.RequestId, out _);
+                        CloseClientSocket(token);
                     }
                 }
             }
@@ -298,23 +338,25 @@ namespace smash.proxy.server
                 Logger.Instance.Error(ex);
             }
         }
-        public async Task<bool> Request(ProxyInfo info)
+        private async Task<bool> Request(ProxyUserToken token)
         {
+            if (token.ServerStream == null || token.ServerStream.CanWrite == false)
+            {
+                return false;
+            }
+            byte[] bytes = token.Request.ToBytes(proxyClientConfig.KeyMemory, out int length);
+            await token.ServerStream.WriteAsync(bytes.AsMemory(0,length));
+            token.Request.Return(bytes);
             return true;
         }
 
-        public async Task InputData(ProxyInfo info)
+        private async Task InputData(ProxyUserToken token, ProxyInfo info)
         {
             try
             {
                 if (info.Data.Length == 0)
                 {
-                    clientsManager.TryRemove(info.RequestId, out _);
-                    return;
-                }
-
-                if (clientsManager.TryGetValue(info.RequestId, out ProxyUserToken token) == false)
-                {
+                    CloseClientSocket(token);
                     return;
                 }
 
@@ -322,6 +364,9 @@ namespace smash.proxy.server
                 bool commandAndFail = step == Socks5EnumStep.Command && info.CommandStatus != Socks5EnumResponseCommand.ConnecSuccess;
 
                 HandleAnswerData(info);
+                token.Request.Step = info.Step;
+                token.Request.Command = info.Command;
+                token.Request.CommandStatus = info.CommandStatus;
 
                 if (info.Step == Socks5EnumStep.ForwardUdp)
                 {
@@ -334,65 +379,65 @@ namespace smash.proxy.server
 
                 if (commandAndFail)
                 {
-                    clientsManager.TryRemove(info.RequestId, out _);
+                    CloseClientSocket(token);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                clientsManager.TryRemove(info.RequestId, out _);
+                CloseClientSocket(token);
                 if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
                     Logger.Instance.Error(ex);
             }
         }
-        public async Task<bool> HandleRequestData(ProxyInfo info)
+        private async Task<bool> HandleRequestData(ProxyUserToken token)
         {
             //request  auth 的 直接通过,跳过验证部分
-            if (info.Step < Socks5EnumStep.Command)
+            if (token.Request.Step < Socks5EnumStep.Command)
             {
-                info.Data = new byte[] { 0x00 };
-                info.Step++;
-                await InputData(info);
+                token.Request.Data = new byte[] { 0x00 };
+                token.Request.Step++;
+                await InputData(token, token.Request);
                 return false;
             }
             //command 的
-            if (info.Step == Socks5EnumStep.Command)
+            if (token.Request.Step == Socks5EnumStep.Command)
             {
                 //解析出目标地址
-                GetRemoteEndPoint(info, out int index);
+                GetRemoteEndPoint(token.Request, out int index);
                 //udp中继的时候，有可能是 0.0.0.0:0 直接通过
-                if (info.TargetAddress.GetIsAnyAddress())
+                if (token.Request.TargetAddress.GetIsAnyAddress())
                 {
-                    info.Data = new byte[] { (byte)Socks5EnumResponseCommand.ConnecSuccess };
-                    await InputData(info);
+                    token.Request.Data = new byte[] { (byte)Socks5EnumResponseCommand.ConnecSuccess };
+                    await InputData(token, token.Request);
                     return false;
                 }
 
                 //将socks5的command转化未通用command
-                info.Command = (Socks5EnumRequestCommand)info.Data.Span[1];
-                info.Data = info.Data.Slice(index);
+                token.Request.Command = (Socks5EnumRequestCommand)token.Request.Data.Span[1];
+                token.Request.Data = token.Request.Data.Slice(index);
             }
             else
             {
-                if (info.Step == Socks5EnumStep.ForwardUdp)
+                if (token.Request.Step == Socks5EnumStep.ForwardUdp)
                 {
                     //解析出目标地址
-                    GetRemoteEndPoint(info, out int index);
+                    GetRemoteEndPoint(token.Request, out int index);
                     //解析出udp包的数据部分
-                    info.Data = Socks5Parser.GetUdpData(info.Data);
+                    token.Request.Data = Socks5Parser.GetUdpData(token.Request.Data);
                 }
 
-                if (info.TargetPort == 53)
+                if (token.Request.TargetPort == 53)
                 {
                     if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                        Logger.Instance.Debug($"[DNS查询]:{string.Join(",", info.Data.ToArray())}:{Encoding.UTF8.GetString(info.Data.ToArray())}");
+                        Logger.Instance.Debug($"[DNS查询]:{string.Join(",", token.Request.Data.ToArray())}:{Encoding.UTF8.GetString(info.Data.ToArray())}");
                 }
             }
-            if (info.TargetAddress.GetIsAnyAddress()) return false;
+            if (token.Request.TargetAddress.GetIsAnyAddress()) return false;
 
             return true;
         }
-        public bool HandleAnswerData(ProxyInfo info)
+        private bool HandleAnswerData(ProxyInfo info)
         {
             //request auth 步骤的，只需回复一个字节的状态码
             if (info.Step < Socks5EnumStep.Command)
@@ -407,7 +452,7 @@ namespace smash.proxy.server
                 case Socks5EnumStep.Command:
                     {
                         //command的，需要区分成功和失败，成功则回复指定数据，失败则关闭连接
-                        info.Data = Socks5Parser.MakeConnectResponse(new IPEndPoint(IPAddress.Any, proxyClientConfig.Port), (byte)info.CommandStatus);
+                        info.Data = Socks5Parser.MakeConnectResponse(new IPEndPoint(IPAddress.Any, proxyClientConfig.ListenPort), (byte)info.CommandStatus);
                         info.Step = Socks5EnumStep.Forward;
                     }
                     break;
@@ -450,8 +495,13 @@ namespace smash.proxy.server
         }
         private void CloseClientSocket(ProxyUserToken token)
         {
-            clientsManager.TryRemove(token.Request.RequestId, out _);
-            _ = Receive(token, Helper.EmptyArray);
+            token.ClientSocket?.SafeClose();
+            token.ServerStream?.Dispose();
+            token.PoolBuffer = null;
+            token.ServerPoolBuffer = null;
+            token.Request = null;
+            token.Saea?.Dispose();
+            GC.Collect();
         }
         public void Stop()
         {
@@ -476,56 +526,25 @@ namespace smash.proxy.server
         public byte[] PoolBuffer { get; set; }
         public ProxyInfo Request { get; set; } = new ProxyInfo { };
 
-        public Socket ServerSocket { get; set; }
-    }
+        public SslStream ServerStream { get; set; }
+        public byte[] ServerPoolBuffer { get; set; }
+        public ProxyInfo Response { get; set; } = new ProxyInfo { };
 
-    sealed class ClientsManager
-    {
-        private ConcurrentDictionary<ulong, ProxyUserToken> clients = new();
-
-        public bool TryAdd(ProxyUserToken model)
-        {
-            return clients.TryAdd(model.Request.RequestId, model);
-        }
-        public bool TryGetValue(ulong id, out ProxyUserToken c)
-        {
-            return clients.TryGetValue(id, out c);
-        }
-        public bool TryRemove(ulong id, out ProxyUserToken c)
-        {
-            bool res = clients.TryRemove(id, out c);
-            if (res)
-            {
-                try
-                {
-                    c?.ClientSocket.SafeClose();
-                    c?.ServerSocket.SafeClose();
-                    c.PoolBuffer = Helper.EmptyArray;
-                    c?.Saea.Dispose();
-                    GC.Collect();
-                    //  GC.SuppressFinalize(c);
-                }
-                catch (Exception ex)
-                {
-                    if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                        Logger.Instance.Error(ex);
-                }
-            }
-            return res;
-        }
-        public void Clear()
-        {
-            IEnumerable<ulong> requestIds = clients.Select(c => c.Key);
-            foreach (var requestId in requestIds)
-            {
-                TryRemove(requestId, out _);
-            }
-        }
     }
 
     public sealed class ProxyClientConfig
     {
-        public ushort Port { get; set; }
-        public string Key { get; set; }
+        public ushort ListenPort { get; set; }
+        public string Key
+        {
+            set
+            {
+                keyMemory = value.ToBytes();
+            }
+        }
+        private Memory<byte> keyMemory;
+        public Memory<byte> KeyMemory { get => keyMemory; }
+
+        public IPEndPoint ServerEP { get; set; }
     }
 }
