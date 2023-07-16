@@ -1,8 +1,10 @@
 ﻿using common.libs;
 using common.libs.extends;
 using System;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Net;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace smash.proxy
@@ -150,13 +152,15 @@ namespace smash.proxy
         /// <param name="remoteEndPoint"></param>
         /// <param name="data"></param>
         /// <returns></returns>
-        public static unsafe Memory<byte> MakeUdpResponse(IPEndPoint remoteEndPoint, Memory<byte> data)
+        public static unsafe byte[] MakeUdpResponse(IPEndPoint remoteEndPoint, Memory<byte> data,out int length)
         {
             //RSV FRAG ATYPE DST.ADDR DST.PORT DATA
             //RSV占俩字节
 
             int ipLength = remoteEndPoint.Address.Length();
-            byte[] res = new byte[4 + ipLength + 2 + data.Length];
+            length = 4 + ipLength + 2 + data.Length;
+
+            byte[] res = ArrayPool<byte>.Shared.Rent(length);
             var span = res.AsSpan();
 
             res[0] = 0;
@@ -182,6 +186,10 @@ namespace smash.proxy
             data.CopyTo(res.AsMemory(index, data.Length));
 
             return res;
+        }
+        public static void Return(byte[] data)
+        {
+            ArrayPool<byte>.Shared.Return(data);
         }
 
 

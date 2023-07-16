@@ -7,15 +7,6 @@ namespace smash.proxy
 {
     public class ProxyInfo
     {
-        public byte Rsv { get; set; }
-        /// <summary>
-        /// 执行到哪一步了
-        /// </summary>
-        public Socks5EnumStep Step { get; set; } = Socks5EnumStep.Request;
-        /// <summary>
-        /// 连接类型
-        /// </summary>
-        public Socks5EnumRequestCommand Command { get; set; } = Socks5EnumRequestCommand.Connect;
         /// <summary>
         /// 地址类型
         /// </summary>
@@ -44,117 +35,77 @@ namespace smash.proxy
         public Memory<byte> Data { get; set; }
 
 
-        public byte[] ToBytes(Memory<byte> key, out int length)
+        public bool ValidateKey(Memory<byte> key)
+        {
+            return Data.Length >= key.Length && Data.Span.Slice(key.Length).SequenceEqual(key.Span);
+        }
+
+        public byte[] PackConnect(Memory<byte> key, out int length)
         {
             length =
-                +key.Length //ke
-                + 1 //0000 0000  step + command
-                + 1 // 0000 0000 address type + buffer size
-                + 4  // RequestId
-                + 1  //source length
-                + 1 // target length
-                + Data.Length;
-
-            int sepLength = 0;
-            if (SourceEP != null)
-            {
-                sepLength = SourceEP.Address.Length();
-                length += sepLength + 2;
-            }
-            if (TargetAddress.Length > 0)
-            {
-                length += TargetAddress.Length + 2;
-            }
+               +key.Length //ke
+               + 1 // 0000 0000 address type + buffer size
+               + 1 + TargetAddress.Length + 2; // target length
 
             byte[] bytes = ArrayPool<byte>.Shared.Rent(length);
             Memory<byte> memory = bytes.AsMemory(0, length);
             var span = memory.Span;
             int index = 0;
 
-
             key.CopyTo(memory.Slice(index));
             index += key.Length;
 
-            bytes[index] = (byte)(((byte)Step) << 4 | (byte)Command);
-            index += 1;
             bytes[index] = (byte)(((byte)AddressType << 4) | (byte)BufferSize);
             index += 1;
 
-            bytes[index] = (byte)sepLength;
-            index += 1;
-            if (sepLength > 0)
-            {
-                SourceEP.Address.TryWriteBytes(span.Slice(index), out _);
-                index += sepLength;
-
-                ((ushort)SourceEP.Port).ToBytes(memory.Slice(index));
-                index += 2;
-            }
-
             bytes[index] = (byte)TargetAddress.Length;
             index += 1;
-            if (TargetAddress.Length > 0)
-            {
-                TargetAddress.CopyTo(memory.Slice(index));
-                index += TargetAddress.Length;
-                TargetPort.ToBytes(memory.Slice(index));
-                index += 2;
-            }
 
+            TargetAddress.CopyTo(memory.Slice(index));
+            index += TargetAddress.Length;
+            TargetPort.ToBytes(memory.Slice(index));
+            index += 2;
 
-            if (Data.Length > 0)
-            {
-                Data.CopyTo(memory.Slice(index));
-            }
             return bytes;
         }
-        public void DeBytes(Memory<byte> bytes)
+        public bool ValidateConnect(Memory<byte> key)
+        {
+            if (Data.Length < key.Length + 1 + 1 + 2)
+            {
+                return false;
+            }
+
+            int index = 0;
+            index += key.Length + 1;
+
+            byte tLength = Data.Span[index];
+            index += 1 + tLength + 2;
+
+            return Data.Length >= index;
+        }
+        public bool UnPackConnect(Memory<byte> bytes, Memory<byte> key)
         {
             var span = bytes.Span;
             int index = 0;
 
-            Step = (EnumProxyStep)(span[index] >> 4);
-            Command = (EnumProxyCommand)(span[index] & 0b0000_1111);
-            index++;
+            if (bytes.Length < key.Length || span.Slice(key.Length).SequenceEqual(key.Span) == false) return false;
 
-            AddressType = (EnumProxyAddressType)(span[index] >> 4);
+            index += key.Length;
+
+            AddressType = (Socks5EnumAddressType)(span[index] >> 4);
             BufferSize = (EnumBufferSize)(span[index] & 0b0000_1111);
             index += 1;
 
-            CommandStatus = (EnumProxyCommandStatus)span[index];
-            index += 1;
-
-            RequestId = span.Slice(index).ToUInt32();
-            index += 4;
-
-            byte epLength = span[index];
-            index += 1;
-            if (epLength > 0)
-            {
-                IPAddress ip = new IPAddress(span.Slice(index, epLength));
-                index += epLength;
-                SourceEP = new IPEndPoint(ip, span.Slice(index, 2).ToUInt16());
-                index += 2;
-            }
-
             byte targetepLength = span[index];
             index += 1;
-            if (targetepLength > 0)
-            {
-                TargetAddress = bytes.Slice(index, targetepLength);
-                index += targetepLength;
-                TargetPort = span.Slice(index, 2).ToUInt16();
-                index += 2;
-            }
+            TargetAddress = bytes.Slice(index, targetepLength);
+            index += targetepLength;
+            TargetPort = span.Slice(index, 2).ToUInt16();
+            index += 2;
 
-            Data = bytes.Slice(index);
+            return true;
         }
-        public static ProxyInfo Debytes(Memory<byte> data)
-        {
-            ProxyInfo info = new ProxyInfo();
-            info.DeBytes(data);
-            return info;
-        }
+
         public void Return(byte[] data)
         {
             ArrayPool<byte>.Shared.Return(data);
