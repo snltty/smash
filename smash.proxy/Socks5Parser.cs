@@ -4,7 +4,6 @@ using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Net;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace smash.proxy
@@ -12,7 +11,7 @@ namespace smash.proxy
     /// <summary>
     /// socks5 数据包解析和组装
     /// </summary>
-    public sealed class Socks5Parser
+    internal sealed class Socks5Parser
     {
 
         /// <summary>

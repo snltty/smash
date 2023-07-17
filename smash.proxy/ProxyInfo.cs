@@ -5,21 +5,13 @@ using System.Net;
 
 namespace smash.proxy
 {
-    public class ProxyInfo
+    internal sealed class ProxyInfo
     {
         /// <summary>
         /// 地址类型
         /// </summary>
         public Socks5EnumAddressType AddressType { get; set; } = Socks5EnumAddressType.IPV4;
-        /// <summary>
-        /// buffer size
-        /// </summary>
-        public EnumBufferSize BufferSize { get; set; } = EnumBufferSize.KB_8;
-
-        /// <summary>
-        /// 来源地址，数据从目标端回来的时候回给谁
-        /// </summary>
-        public IPEndPoint SourceEP { get; set; }
+        public Socks5EnumRequestCommand Command { get; set; } = Socks5EnumRequestCommand.Connect;
 
         /// <summary>
         /// 目标地址
@@ -44,8 +36,9 @@ namespace smash.proxy
         {
             length =
                +key.Length //ke
-               + 1 // 0000 0000 address type + buffer size
+               + 1 // 0000 0000 address type + command
                + 1 + TargetAddress.Length + 2; // target length
+
 
             byte[] bytes = ArrayPool<byte>.Shared.Rent(length);
             Memory<byte> memory = bytes.AsMemory(0, length);
@@ -55,8 +48,9 @@ namespace smash.proxy
             key.CopyTo(memory.Slice(index));
             index += key.Length;
 
-            bytes[index] = (byte)(((byte)AddressType << 4) | (byte)BufferSize);
+            bytes[index] = (byte)((byte)AddressType << 4 | (byte)Command);
             index += 1;
+
 
             bytes[index] = (byte)TargetAddress.Length;
             index += 1;
@@ -70,13 +64,14 @@ namespace smash.proxy
         }
         public bool ValidateConnect(Memory<byte> key)
         {
-            if (Data.Length < key.Length + 1 + 1 + 2)
+            if (Data.Length < key.Length + 1 + 1 + 1 + 2)
             {
                 return false;
             }
 
             int index = 0;
             index += key.Length + 1;
+
 
             byte tLength = Data.Span[index];
             index += 1 + tLength + 2;
@@ -93,8 +88,9 @@ namespace smash.proxy
             index += key.Length;
 
             AddressType = (Socks5EnumAddressType)(span[index] >> 4);
-            BufferSize = (EnumBufferSize)(span[index] & 0b0000_1111);
+            Command = (Socks5EnumRequestCommand)(span[index] & 0b0000_1111);
             index += 1;
+
 
             byte targetepLength = span[index];
             index += 1;
@@ -113,7 +109,7 @@ namespace smash.proxy
 
     }
 
-    public enum EnumBufferSize : byte
+    internal enum EnumBufferSize : byte
     {
         KB_1 = 0,
         KB_2 = 1,
@@ -133,7 +129,7 @@ namespace smash.proxy
     /// 数据验证结果
     /// </summary>
     [Flags]
-    public enum EnumProxyValidateDataResult : byte
+    internal enum EnumProxyValidateDataResult : byte
     {
         Equal = 1,
         TooShort = 2,
@@ -144,7 +140,7 @@ namespace smash.proxy
     /// <summary>
     /// 当前处于socks5协议的哪一步
     /// </summary>
-    public enum Socks5EnumStep : byte
+    internal enum Socks5EnumStep : byte
     {
         /// <summary>
         /// 第一次请求，处理认证方式
@@ -173,7 +169,7 @@ namespace smash.proxy
     /// <summary>
     /// socks5的连接地址类型
     /// </summary>
-    public enum Socks5EnumAddressType : byte
+    internal enum Socks5EnumAddressType : byte
     {
         IPV4 = 1,
         Domain = 3,
@@ -183,7 +179,7 @@ namespace smash.proxy
     /// <summary>
     /// socks5的认证类型
     /// </summary>
-    public enum Socks5EnumAuthType : byte
+    internal enum Socks5EnumAuthType : byte
     {
         NoAuth = 0x00,
         GSSAPI = 0x01,
@@ -195,7 +191,7 @@ namespace smash.proxy
     /// <summary>
     /// socks5的认证状态0成功 其它失败
     /// </summary>
-    public enum Socks5EnumAuthState : byte
+    internal enum Socks5EnumAuthState : byte
     {
         Success = 0x00,
         UnKnow = 0xff,
@@ -203,7 +199,7 @@ namespace smash.proxy
     /// <summary>
     /// socks5的请求指令
     /// </summary>
-    public enum Socks5EnumRequestCommand : byte
+    internal enum Socks5EnumRequestCommand : byte
     {
         /// <summary>
         /// 连接上游服务器
@@ -221,7 +217,7 @@ namespace smash.proxy
     /// <summary>
     /// socks5的请求的回复数据的指令
     /// </summary>
-    public enum Socks5EnumResponseCommand : byte
+    internal enum Socks5EnumResponseCommand : byte
     {
         /// <summary>
         /// 代理服务器连接目标服务器成功

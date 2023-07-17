@@ -11,13 +11,13 @@ using System.Collections.Concurrent;
 
 namespace smash.proxy.server
 {
-    public sealed class ProxyClient
+    internal sealed class ProxyClient
     {
         private readonly ProxyClientConfig proxyClientConfig;
 
         private Socket Socket;
         private UdpClient UdpClient;
-        private ConcurrentDictionary<IPEndPoint, ProxyUserToken> udpConnections = new ConcurrentDictionary<IPEndPoint, ProxyUserToken>();
+        private ConcurrentDictionary<IPEndPoint, ProxyClientUserToken> udpConnections = new ConcurrentDictionary<IPEndPoint, ProxyClientUserToken>();
 
         public ProxyClient(ProxyClientConfig proxyClientConfig)
         {
@@ -42,27 +42,27 @@ namespace smash.proxy.server
             UdpClient.Client.WindowsUdpBug();
 
             SocketAsyncEventArgs acceptEventArg = new SocketAsyncEventArgs();
-            acceptEventArg.UserToken = new ProxyUserToken
+            acceptEventArg.UserToken = new ProxyClientUserToken
             {
                 Saea = acceptEventArg,
                 Step = Socks5EnumStep.Request,
                 Request = new ProxyInfo
                 {
-                    BufferSize = proxyClientConfig.BufferSize,
-                    AddressType = Socks5EnumAddressType.IPV4
+                    AddressType = Socks5EnumAddressType.IPV4,
+                    Command = Socks5EnumRequestCommand.Connect
                 }
             };
             acceptEventArg.Completed += IO_Completed;
             StartAccept(acceptEventArg);
 
-            IAsyncResult result = UdpClient.BeginReceive(ProcessReceiveUdp, new ProxyUserToken
+            IAsyncResult result = UdpClient.BeginReceive(ProcessReceiveUdp, new ProxyClientUserToken
             {
                 Step = Socks5EnumStep.ForwardUdp,
                 PoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024],
                 Request = new ProxyInfo
                 {
-                    BufferSize = proxyClientConfig.BufferSize,
-                    AddressType = Socks5EnumAddressType.IPV4
+                    AddressType = Socks5EnumAddressType.IPV4,
+                    Command = Socks5EnumRequestCommand.UdpAssociate
                 }
             });
         }
@@ -72,7 +72,7 @@ namespace smash.proxy.server
             {
 
                 acceptEventArg.AcceptSocket = null;
-                ProxyUserToken token = ((ProxyUserToken)acceptEventArg.UserToken);
+                ProxyClientUserToken token = ((ProxyClientUserToken)acceptEventArg.UserToken);
                 if (Socket.AcceptAsync(acceptEventArg) == false)
                 {
                     ProcessAccept(acceptEventArg);
@@ -109,15 +109,14 @@ namespace smash.proxy.server
             try
             {
                 Socket socket = e.AcceptSocket;
-                ProxyUserToken acceptToken = (e.UserToken as ProxyUserToken);
+                ProxyClientUserToken acceptToken = (e.UserToken as ProxyClientUserToken);
 
-                ProxyUserToken token = new ProxyUserToken
+                ProxyClientUserToken token = new ProxyClientUserToken
                 {
                     ClientSocket = socket,
                     Step = Socks5EnumStep.Request,
                     Request = new ProxyInfo
                     {
-                        BufferSize = proxyClientConfig.BufferSize,
                         AddressType = Socks5EnumAddressType.IPV4,
                     },
                 };
@@ -148,7 +147,7 @@ namespace smash.proxy.server
         }
 
 
-        private async Task<bool> ConnectServer(ProxyUserToken token, ProxyInfo info)
+        private async Task<bool> ConnectServer(ProxyClientUserToken token, ProxyInfo info)
         {
             try
             {
@@ -177,7 +176,7 @@ namespace smash.proxy.server
         {
             return true;
         }
-        private void BindServerReceive(ProxyUserToken token)
+        private void BindServerReceive(ProxyClientUserToken token)
         {
             if (token.ServerStream == null || token.ServerStream.CanRead == false) return;
 
@@ -186,7 +185,7 @@ namespace smash.proxy.server
         }
         private async void ServerReceiveCallback(IAsyncResult result)
         {
-            ProxyUserToken token = result.AsyncState as ProxyUserToken;
+            ProxyClientUserToken token = result.AsyncState as ProxyClientUserToken;
             try
             {
                 int length = token.ServerStream.EndRead(result);
@@ -205,7 +204,7 @@ namespace smash.proxy.server
         }
 
 
-        private async Task<bool> ReceiveCommandData(ProxyUserToken token, SocketAsyncEventArgs e, int totalLength)
+        private async Task<bool> ReceiveCommandData(ProxyClientUserToken token, SocketAsyncEventArgs e, int totalLength)
         {
             EnumProxyValidateDataResult validate = ValidateData(token);
             if ((validate & EnumProxyValidateDataResult.TooShort) == EnumProxyValidateDataResult.TooShort)
@@ -227,7 +226,7 @@ namespace smash.proxy.server
             }
             return true;
         }
-        private EnumProxyValidateDataResult ValidateData(ProxyUserToken token)
+        private EnumProxyValidateDataResult ValidateData(ProxyClientUserToken token)
         {
             return token.Step switch
             {
@@ -241,7 +240,7 @@ namespace smash.proxy.server
         }
         private async void ProcessReceive(SocketAsyncEventArgs e)
         {
-            ProxyUserToken token = (ProxyUserToken)e.UserToken;
+            ProxyClientUserToken token = (ProxyClientUserToken)e.UserToken;
             try
             {
                 if (e.BytesTransferred == 0 || e.SocketError != SocketError.Success)
@@ -300,20 +299,20 @@ namespace smash.proxy.server
             IPEndPoint rep = null;
             try
             {
-                ProxyUserToken receiveToken = result.AsyncState as ProxyUserToken;
+                ProxyClientUserToken receiveToken = result.AsyncState as ProxyClientUserToken;
 
                 receiveToken.Request.Data = UdpClient.EndReceive(result, ref rep);
-                receiveToken.Request.SourceEP = rep;
+                receiveToken.SourceEP = rep;
 
-                if (udpConnections.TryGetValue(rep, out ProxyUserToken token) == false)
+                if (udpConnections.TryGetValue(rep, out ProxyClientUserToken token) == false)
                 {
-                    token = new ProxyUserToken
+                    token = new ProxyClientUserToken
                     {
+                        SourceEP = receiveToken.SourceEP,
                         Request = new ProxyInfo
                         {
-                            BufferSize = receiveToken.Request.BufferSize,
                             AddressType = receiveToken.Request.AddressType,
-                            SourceEP = receiveToken.Request.SourceEP,
+                            Command = receiveToken.Request.Command,
                             Data = receiveToken.Request.Data
                         },
                         Step = receiveToken.Step,
@@ -329,7 +328,7 @@ namespace smash.proxy.server
                 else
                 {
                     token.Request.Data = receiveToken.Request.Data;
-                    token.Request.SourceEP = receiveToken.Request.SourceEP = rep;
+                    token.SourceEP = receiveToken.SourceEP = rep;
                 }
 
                 if (token.Request.Data.Length > 0)
@@ -350,7 +349,7 @@ namespace smash.proxy.server
         }
 
 
-        private async Task Receive(ProxyUserToken token)
+        private async Task Receive(ProxyClientUserToken token)
         {
             try
             {
@@ -381,7 +380,7 @@ namespace smash.proxy.server
                 Logger.Instance.Error(ex);
             }
         }
-        private async Task<bool> Request(ProxyUserToken token)
+        private async Task<bool> Request(ProxyClientUserToken token)
         {
             if (token.ServerStream == null || token.ServerStream.CanWrite == false)
             {
@@ -391,7 +390,7 @@ namespace smash.proxy.server
             return true;
         }
 
-        private async Task InputData(ProxyUserToken token, ProxyInfo info)
+        private async Task InputData(ProxyClientUserToken token, ProxyInfo info)
         {
             try
             {
@@ -410,7 +409,7 @@ namespace smash.proxy.server
                     {
                         //组装udp包
                         byte[] bytes = Socks5Parser.MakeUdpResponse(new IPEndPoint(new IPAddress(info.TargetAddress.Span), info.TargetPort), info.Data, out int legnth);
-                        await UdpClient.SendAsync(info.Data, info.SourceEP);
+                        await UdpClient.SendAsync(info.Data, token.SourceEP);
                         Socks5Parser.Return(bytes);
                     }
                     else
@@ -432,7 +431,7 @@ namespace smash.proxy.server
                     Logger.Instance.Error(ex);
             }
         }
-        private async Task<bool> HandleRequestData(ProxyUserToken token, ProxyInfo info)
+        private async Task<bool> HandleRequestData(ProxyClientUserToken token, ProxyInfo info)
         {
             //request  auth 的 直接通过,跳过验证部分
             if (token.Step < Socks5EnumStep.Command)
@@ -491,7 +490,7 @@ namespace smash.proxy.server
 
             return true;
         }
-        private bool HandleAnswerData(ProxyUserToken token, ProxyInfo info)
+        private bool HandleAnswerData(ProxyClientUserToken token, ProxyInfo info)
         {
             //request auth 步骤的，只需回复一个字节的状态码
             if (token.Step < Socks5EnumStep.Command)
@@ -540,14 +539,14 @@ namespace smash.proxy.server
 
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
-            ProxyUserToken token = e.UserToken as ProxyUserToken;
+            ProxyClientUserToken token = e.UserToken as ProxyClientUserToken;
             CloseClientSocket(token);
         }
-        private void CloseClientSocket(ProxyUserToken token)
+        private void CloseClientSocket(ProxyClientUserToken token)
         {
-            if (token.Request.SourceEP != null)
+            if (token.SourceEP != null)
             {
-                udpConnections.TryRemove(token.Request.SourceEP, out _);
+                udpConnections.TryRemove(token.SourceEP, out _);
             }
             token.ClientSocket?.SafeClose();
             token.ServerStream?.Dispose();
@@ -572,7 +571,7 @@ namespace smash.proxy.server
         }
     }
 
-    sealed class ProxyUserToken
+    internal sealed class ProxyClientUserToken
     {
         public Socket ClientSocket { get; set; }
         public SocketAsyncEventArgs Saea { get; set; }
@@ -580,12 +579,14 @@ namespace smash.proxy.server
         public ProxyInfo Request { get; set; } = new ProxyInfo { };
         public Socks5EnumStep Step { get; set; } = Socks5EnumStep.Request;
 
+        public IPEndPoint SourceEP { get; set; }
+
         public SslStream ServerStream { get; set; }
         public byte[] ServerPoolBuffer { get; set; }
 
     }
 
-    public sealed class ProxyClientConfig
+    internal sealed class ProxyClientConfig
     {
         public ushort ListenPort { get; set; }
         public string Key
