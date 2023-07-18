@@ -22,10 +22,6 @@
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
 	</PropertyGroup>
-	<ItemGroup>
-	  <None Remove="public\right-gray.png" />
-	  <None Remove="public\right.png" />
-	</ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="public\icon-gray.ico" />
     <EmbeddedResource Include="public\icon.ico" />
@@ -52,9 +48,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="netfilter2.sys">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="nfapi.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -62,5 +55,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+	<ItemGroup>
+		<Content Include="./pacs/**/*">
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
 
 </Project>

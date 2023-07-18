@@ -14,6 +14,7 @@ namespace smash.plugins.proxy
             ProxyConfig _config = configDataProvider.Load().Result ?? new ProxyConfig();
             Proxy = _config.Proxy;
             Proxys = _config.Proxys;
+            Save();
         }
 
 

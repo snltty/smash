@@ -14,6 +14,7 @@ namespace smash.plugins.sysProxy
             SysProxyConfig _config = configDataProvider.Load().Result ?? new SysProxyConfig();
             SysProxy = _config.SysProxy;
             SysProxys = _config.SysProxys;
+            Save();
         }
 
         /// <summary>

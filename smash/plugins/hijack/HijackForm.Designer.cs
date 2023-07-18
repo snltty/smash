@@ -41,7 +41,7 @@
             // cbFilterDns
             // 
             cbFilterDns.AutoSize = true;
-            cbFilterDns.Location = new Point(354, 114);
+            cbFilterDns.Location = new Point(260, 114);
             cbFilterDns.Name = "cbFilterDns";
             cbFilterDns.Size = new Size(194, 35);
             cbFilterDns.TabIndex = 6;
@@ -52,7 +52,7 @@
             // cbFilterUdp
             // 
             cbFilterUdp.AutoSize = true;
-            cbFilterUdp.Location = new Point(251, 114);
+            cbFilterUdp.Location = new Point(157, 114);
             cbFilterUdp.Name = "cbFilterUdp";
             cbFilterUdp.Size = new Size(97, 35);
             cbFilterUdp.TabIndex = 5;
@@ -63,7 +63,7 @@
             // cbFilterTcp
             // 
             cbFilterTcp.AutoSize = true;
-            cbFilterTcp.Location = new Point(154, 114);
+            cbFilterTcp.Location = new Point(60, 114);
             cbFilterTcp.Name = "cbFilterTcp";
             cbFilterTcp.Size = new Size(91, 35);
             cbFilterTcp.TabIndex = 4;
@@ -74,7 +74,7 @@
             // cbUseHijack
             // 
             cbUseHijack.AutoSize = true;
-            cbUseHijack.Location = new Point(301, 174);
+            cbUseHijack.Location = new Point(207, 174);
             cbUseHijack.Name = "cbUseHijack";
             cbUseHijack.Size = new Size(94, 35);
             cbUseHijack.TabIndex = 3;
@@ -85,7 +85,7 @@
             // cmbGroup
             // 
             cmbGroup.FormattingEnabled = true;
-            cmbGroup.Location = new Point(230, 60);
+            cmbGroup.Location = new Point(136, 60);
             cmbGroup.Name = "cmbGroup";
             cmbGroup.Size = new Size(230, 39);
             cmbGroup.TabIndex = 1;
@@ -96,14 +96,14 @@
             mainMenu.Items.AddRange(new ToolStripItem[] { mainMenuOptions });
             mainMenu.Location = new Point(0, 0);
             mainMenu.Name = "mainMenu";
-            mainMenu.Size = new Size(714, 42);
+            mainMenu.Size = new Size(514, 39);
             mainMenu.TabIndex = 7;
             mainMenu.Text = "menuStrip1";
             // 
             // mainMenuOptions
             // 
             mainMenuOptions.Name = "mainMenuOptions";
-            mainMenuOptions.Size = new Size(130, 38);
+            mainMenuOptions.Size = new Size(130, 35);
             mainMenuOptions.Text = "进程选项";
             mainMenuOptions.Click += OnMainMenuOptionsClick;
             // 
@@ -111,7 +111,7 @@
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(714, 230);
+            ClientSize = new Size(514, 230);
             Controls.Add(cbFilterDns);
             Controls.Add(cbFilterUdp);
             Controls.Add(cbFilterTcp);

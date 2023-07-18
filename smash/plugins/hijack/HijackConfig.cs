@@ -20,6 +20,7 @@ namespace smash.plugins.hijack
             Process = _config.Process;
             Processs = _config.Processs;
             IntranetIpv4s = _config.IntranetIpv4s;
+            Save();
 
         }
         /// <summary>

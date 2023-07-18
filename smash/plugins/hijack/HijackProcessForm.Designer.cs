@@ -89,7 +89,7 @@
             // 
             // btnDelGroup
             // 
-            btnDelGroup.Location = new Point(178, 146);
+            btnDelGroup.Location = new Point(102, 152);
             btnDelGroup.Name = "btnDelGroup";
             btnDelGroup.Size = new Size(150, 46);
             btnDelGroup.TabIndex = 3;
@@ -99,7 +99,7 @@
             // 
             // btnClearForm
             // 
-            btnClearForm.Location = new Point(13, 146);
+            btnClearForm.Location = new Point(13, 92);
             btnClearForm.Name = "btnClearForm";
             btnClearForm.Size = new Size(150, 46);
             btnClearForm.TabIndex = 2;
@@ -109,11 +109,11 @@
             // 
             // btnSaveGroup
             // 
-            btnSaveGroup.Location = new Point(93, 87);
+            btnSaveGroup.Location = new Point(178, 92);
             btnSaveGroup.Name = "btnSaveGroup";
             btnSaveGroup.Size = new Size(150, 46);
             btnSaveGroup.TabIndex = 1;
-            btnSaveGroup.Text = "保存分组";
+            btnSaveGroup.Text = "保存更改";
             btnSaveGroup.UseVisualStyleBackColor = true;
             btnSaveGroup.Click += btnSaveGroup_Click;
             // 

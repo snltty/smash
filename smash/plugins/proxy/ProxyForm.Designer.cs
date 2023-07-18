@@ -37,7 +37,7 @@
             // 
             // labelProxy
             // 
-            labelProxy.Location = new Point(139, 107);
+            labelProxy.Location = new Point(49, 107);
             labelProxy.Name = "labelProxy";
             labelProxy.Size = new Size(417, 38);
             labelProxy.TabIndex = 1;
@@ -47,7 +47,7 @@
             // cmbProxy
             // 
             cmbProxy.FormattingEnabled = true;
-            cmbProxy.Location = new Point(230, 60);
+            cmbProxy.Location = new Point(136, 60);
             cmbProxy.Name = "cmbProxy";
             cmbProxy.Size = new Size(230, 39);
             cmbProxy.TabIndex = 0;
@@ -59,7 +59,7 @@
             mainMenu.Items.AddRange(new ToolStripItem[] { mainMenuOptions });
             mainMenu.Location = new Point(0, 0);
             mainMenu.Name = "mainMenu";
-            mainMenu.Size = new Size(714, 39);
+            mainMenu.Size = new Size(514, 39);
             mainMenu.TabIndex = 2;
             mainMenu.Text = "menuStrip1";
             // 
@@ -74,7 +74,7 @@
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(714, 171);
+            ClientSize = new Size(514, 171);
             Controls.Add(labelProxy);
             Controls.Add(cmbProxy);
             Controls.Add(mainMenu);

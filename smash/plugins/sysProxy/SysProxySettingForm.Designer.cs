@@ -32,6 +32,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SysProxySettingForm));
             sysProxysView = new DataGridView();
             groupBox1 = new GroupBox();
+            label2 = new Label();
             btnClear = new Button();
             btnSave = new Button();
             cbEnv = new CheckBox();
@@ -41,7 +42,6 @@
             cbPac = new CheckBox();
             contextMenu = new ContextMenuStrip(components);
             mainMenuDelProxy = new ToolStripMenuItem();
-            label2 = new Label();
             ((System.ComponentModel.ISupportInitialize)sysProxysView).BeginInit();
             groupBox1.SuspendLayout();
             contextMenu.SuspendLayout();
@@ -69,39 +69,49 @@
             groupBox1.Controls.Add(cbPac);
             groupBox1.Location = new Point(12, 295);
             groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(776, 198);
+            groupBox1.Size = new Size(776, 218);
             groupBox1.TabIndex = 1;
             groupBox1.TabStop = false;
             groupBox1.Text = "设置";
             // 
+            // label2
+            // 
+            label2.ForeColor = SystemColors.ControlDarkDark;
+            label2.Location = new Point(14, 171);
+            label2.Name = "label2";
+            label2.Size = new Size(748, 31);
+            label2.TabIndex = 7;
+            label2.Text = "某些程序会去读取系统环境变量的代理设置";
+            label2.TextAlign = ContentAlignment.MiddleCenter;
+            // 
             // btnClear
             // 
-            btnClear.Location = new Point(589, 90);
+            btnClear.Location = new Point(223, 107);
             btnClear.Name = "btnClear";
             btnClear.Size = new Size(150, 46);
             btnClear.TabIndex = 6;
-            btnClear.Text = "清除表单";
+            btnClear.Text = "清空表单";
             btnClear.UseVisualStyleBackColor = true;
             btnClear.Click += btnClear_Click;
             // 
             // btnSave
             // 
-            btnSave.Location = new Point(423, 90);
+            btnSave.Location = new Point(388, 107);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(150, 46);
             btnSave.TabIndex = 5;
-            btnSave.Text = "保存设置";
+            btnSave.Text = "保存更改";
             btnSave.UseVisualStyleBackColor = true;
             btnSave.Click += btnSave_Click;
             // 
             // cbEnv
             // 
             cbEnv.AutoSize = true;
-            cbEnv.Location = new Point(14, 94);
+            cbEnv.Location = new Point(286, 47);
             cbEnv.Name = "cbEnv";
-            cbEnv.Size = new Size(262, 35);
+            cbEnv.Size = new Size(142, 35);
             cbEnv.TabIndex = 4;
-            cbEnv.Text = "在环境变量设置代理";
+            cbEnv.Text = "环境变量";
             cbEnv.UseVisualStyleBackColor = true;
             // 
             // inputName
@@ -122,19 +132,19 @@
             // 
             // inputPac
             // 
-            inputPac.Location = new Point(423, 44);
+            inputPac.Location = new Point(557, 44);
             inputPac.Name = "inputPac";
-            inputPac.Size = new Size(341, 38);
+            inputPac.Size = new Size(205, 38);
             inputPac.TabIndex = 1;
             // 
             // cbPac
             // 
             cbPac.AutoSize = true;
-            cbPac.Location = new Point(285, 46);
+            cbPac.Location = new Point(457, 47);
             cbPac.Name = "cbPac";
-            cbPac.Size = new Size(142, 35);
+            cbPac.Size = new Size(94, 35);
             cbPac.TabIndex = 0;
-            cbPac.Text = "设置PAC";
+            cbPac.Text = "PAC";
             cbPac.UseVisualStyleBackColor = true;
             // 
             // contextMenu
@@ -151,21 +161,11 @@
             mainMenuDelProxy.Text = "删除";
             mainMenuDelProxy.Click += MainMenuDelProxy_Click;
             // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.ForeColor = SystemColors.ControlDarkDark;
-            label2.Location = new Point(14, 149);
-            label2.Name = "label2";
-            label2.Size = new Size(470, 31);
-            label2.TabIndex = 7;
-            label2.Text = "某些程序会去读取系统环境变量的代理设置";
-            // 
             // SysProxySettingForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 505);
+            ClientSize = new Size(800, 525);
             Controls.Add(groupBox1);
             Controls.Add(sysProxysView);
             Icon = (Icon)resources.GetObject("$this.Icon");

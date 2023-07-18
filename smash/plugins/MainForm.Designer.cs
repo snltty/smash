@@ -35,7 +35,7 @@
             // 
             // startBtn
             // 
-            startBtn.Location = new Point(283, 366);
+            startBtn.Location = new Point(198, 364);
             startBtn.Margin = new Padding(6, 5, 6, 5);
             startBtn.Name = "startBtn";
             startBtn.Size = new Size(188, 78);
@@ -49,14 +49,14 @@
             mainTab.Location = new Point(12, 9);
             mainTab.Name = "mainTab";
             mainTab.SelectedIndex = 0;
-            mainTab.Size = new Size(730, 347);
+            mainTab.Size = new Size(540, 347);
             mainTab.TabIndex = 3;
             // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(754, 459);
+            ClientSize = new Size(561, 459);
             Controls.Add(mainTab);
             Controls.Add(startBtn);
             FormBorderStyle = FormBorderStyle.FixedSingle;
