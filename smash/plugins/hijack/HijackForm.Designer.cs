@@ -33,12 +33,15 @@
             cbFilterTcp = new CheckBox();
             cbUseHijack = new CheckBox();
             cmbGroup = new ComboBox();
+            mainMenu = new MenuStrip();
+            mainMenuOptions = new ToolStripMenuItem();
+            mainMenu.SuspendLayout();
             SuspendLayout();
             // 
             // cbFilterDns
             // 
             cbFilterDns.AutoSize = true;
-            cbFilterDns.Location = new Point(218, 81);
+            cbFilterDns.Location = new Point(354, 114);
             cbFilterDns.Name = "cbFilterDns";
             cbFilterDns.Size = new Size(194, 35);
             cbFilterDns.TabIndex = 6;
@@ -49,7 +52,7 @@
             // cbFilterUdp
             // 
             cbFilterUdp.AutoSize = true;
-            cbFilterUdp.Location = new Point(115, 81);
+            cbFilterUdp.Location = new Point(251, 114);
             cbFilterUdp.Name = "cbFilterUdp";
             cbFilterUdp.Size = new Size(97, 35);
             cbFilterUdp.TabIndex = 5;
@@ -60,7 +63,7 @@
             // cbFilterTcp
             // 
             cbFilterTcp.AutoSize = true;
-            cbFilterTcp.Location = new Point(18, 81);
+            cbFilterTcp.Location = new Point(154, 114);
             cbFilterTcp.Name = "cbFilterTcp";
             cbFilterTcp.Size = new Size(91, 35);
             cbFilterTcp.TabIndex = 4;
@@ -71,7 +74,7 @@
             // cbUseHijack
             // 
             cbUseHijack.AutoSize = true;
-            cbUseHijack.Location = new Point(165, 141);
+            cbUseHijack.Location = new Point(301, 174);
             cbUseHijack.Name = "cbUseHijack";
             cbUseHijack.Size = new Size(94, 35);
             cbUseHijack.TabIndex = 3;
@@ -82,23 +85,44 @@
             // cmbGroup
             // 
             cmbGroup.FormattingEnabled = true;
-            cmbGroup.Location = new Point(100, 24);
+            cmbGroup.Location = new Point(230, 60);
             cmbGroup.Name = "cmbGroup";
             cmbGroup.Size = new Size(230, 39);
             cmbGroup.TabIndex = 1;
+            // 
+            // mainMenu
+            // 
+            mainMenu.ImageScalingSize = new Size(32, 32);
+            mainMenu.Items.AddRange(new ToolStripItem[] { mainMenuOptions });
+            mainMenu.Location = new Point(0, 0);
+            mainMenu.Name = "mainMenu";
+            mainMenu.Size = new Size(714, 42);
+            mainMenu.TabIndex = 7;
+            mainMenu.Text = "menuStrip1";
+            // 
+            // mainMenuOptions
+            // 
+            mainMenuOptions.Name = "mainMenuOptions";
+            mainMenuOptions.Size = new Size(130, 38);
+            mainMenuOptions.Text = "进程选项";
+            mainMenuOptions.Click += OnMainMenuOptionsClick;
             // 
             // HijackForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(434, 201);
+            ClientSize = new Size(714, 230);
             Controls.Add(cbFilterDns);
             Controls.Add(cbFilterUdp);
             Controls.Add(cbFilterTcp);
             Controls.Add(cmbGroup);
             Controls.Add(cbUseHijack);
+            Controls.Add(mainMenu);
+            MainMenuStrip = mainMenu;
             Name = "HijackForm";
             Text = "进程劫持";
+            mainMenu.ResumeLayout(false);
+            mainMenu.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -109,5 +133,7 @@
         private CheckBox cbFilterTcp;
         private CheckBox cbFilterUdp;
         private CheckBox cbFilterDns;
+        private MenuStrip mainMenu;
+        private ToolStripMenuItem mainMenuOptions;
     }
 }

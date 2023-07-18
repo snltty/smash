@@ -1,4 +1,5 @@
 ﻿using smash.plugin;
+using smash.plugins.hijack;
 
 namespace smash.plugins.sysProxy
 {
@@ -59,5 +60,18 @@ namespace smash.plugins.sysProxy
             UpdateConfig();
         }
         #endregion
+
+
+        SysProxySettingForm sysProxySettingForm;
+        private void OnMainMenuOptionsClick(object sender, EventArgs e)
+        {
+            sysProxySettingForm = new SysProxySettingForm(sysProxyConfig);
+            sysProxySettingForm.FormClosed += (a, b) =>
+            {
+                sysProxySettingForm = null;
+                BindInfo();
+            };
+            sysProxySettingForm.ShowDialog();
+        }
     }
 }

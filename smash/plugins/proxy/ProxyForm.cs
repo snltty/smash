@@ -1,4 +1,5 @@
 ﻿using smash.plugin;
+using smash.plugins.hijack;
 using System.Data;
 
 namespace smash.plugins.proxy
@@ -40,8 +41,21 @@ namespace smash.plugins.proxy
             {
                 proxyConfig.Proxy = proxyConfig.Proxys.FirstOrDefault(c => c.Name == cmbProxy.SelectedItem.ToString());
                 labelProxy.Text = $"{proxyConfig.Proxy.Host}:{proxyConfig.Proxy.Port}";
+                proxyConfig.Save();
             }
         }
         #endregion
+
+        ProxySettingForm proxySettingForm;
+        private void OnMainMenuOptionsClick(object sender, EventArgs e)
+        {
+            proxySettingForm = new ProxySettingForm(proxyConfig);
+            proxySettingForm.FormClosed += (a, b) =>
+            {
+                proxySettingForm = null;
+                BindInfo();
+            };
+            proxySettingForm.ShowDialog();
+        }
     }
 }

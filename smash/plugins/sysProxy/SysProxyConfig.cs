@@ -22,10 +22,10 @@ namespace smash.plugins.sysProxy
         public bool UseSysProxy { get; set; }
 
         #region 系统代理
-        public SysProxyInfo SysProxy { get; set; } = new SysProxyInfo { Name = "默认", IsEnv = true, IsPac = true, Pac = "http://127.0.0.1:5411/socks.pac" };
+        public SysProxyInfo SysProxy { get; set; } = new SysProxyInfo { Name = "默认", IsEnv = true, IsPac = true, Pac = "default.pac" };
         public List<SysProxyInfo> SysProxys { get; set; } = new List<SysProxyInfo>
         {
-            new SysProxyInfo { Name="默认", IsEnv = true, IsPac = true, Pac="http://127.0.0.1:5411/socks.pac" }
+            new SysProxyInfo { Name="默认", IsEnv = true, IsPac = true, Pac="default.pac" }
         };
         #endregion
 

@@ -55,5 +55,18 @@ namespace smash.plugins.hijack
             UpdateConfig();
         }
         #endregion
+
+
+        HijackProcessForm hijackProcessForm;
+        private void OnMainMenuOptionsClick(object sender, EventArgs e)
+        {
+            hijackProcessForm = new HijackProcessForm(hijackConfig);
+            hijackProcessForm.FormClosed += (a, b) =>
+            {
+                hijackProcessForm = null;
+                BindInfo();
+            };
+            hijackProcessForm.ShowDialog();
+        }
     }
 }

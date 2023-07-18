@@ -30,7 +30,7 @@ namespace smash.plugins
             sysProxysView.Columns["Name"].HeaderText = "名称";
             sysProxysView.Columns["IsEnv"].HeaderText = "设置环境变量";
             sysProxysView.Columns["IsPac"].HeaderText = "设置PAC";
-            sysProxysView.Columns["Pac"].HeaderText = "Pac地址";
+            sysProxysView.Columns["Pac"].HeaderText = "Pac文件";
             sysProxyConfig.Save();
         }
 
@@ -88,7 +88,7 @@ namespace smash.plugins
             }
             if (cbPac.Checked && string.IsNullOrWhiteSpace(inputPac.Text))
             {
-                MessageBox.Show("pac地址必填");
+                MessageBox.Show("pac文件必填");
                 return;
             }
             if (proxy != null)
