@@ -32,16 +32,17 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SysProxySettingForm));
             sysProxysView = new DataGridView();
             groupBox1 = new GroupBox();
+            btnPacPath = new Button();
             label2 = new Label();
             btnClear = new Button();
             btnSave = new Button();
             cbEnv = new CheckBox();
             inputName = new TextBox();
             label1 = new Label();
-            inputPac = new TextBox();
             cbPac = new CheckBox();
             contextMenu = new ContextMenuStrip(components);
             mainMenuDelProxy = new ToolStripMenuItem();
+            cmbPac = new ComboBox();
             ((System.ComponentModel.ISupportInitialize)sysProxysView).BeginInit();
             groupBox1.SuspendLayout();
             contextMenu.SuspendLayout();
@@ -59,13 +60,14 @@
             // 
             // groupBox1
             // 
+            groupBox1.Controls.Add(cmbPac);
+            groupBox1.Controls.Add(btnPacPath);
             groupBox1.Controls.Add(label2);
             groupBox1.Controls.Add(btnClear);
             groupBox1.Controls.Add(btnSave);
             groupBox1.Controls.Add(cbEnv);
             groupBox1.Controls.Add(inputName);
             groupBox1.Controls.Add(label1);
-            groupBox1.Controls.Add(inputPac);
             groupBox1.Controls.Add(cbPac);
             groupBox1.Location = new Point(12, 295);
             groupBox1.Name = "groupBox1";
@@ -73,6 +75,16 @@
             groupBox1.TabIndex = 1;
             groupBox1.TabStop = false;
             groupBox1.Text = "设置";
+            // 
+            // btnPacPath
+            // 
+            btnPacPath.Location = new Point(612, 107);
+            btnPacPath.Name = "btnPacPath";
+            btnPacPath.Size = new Size(150, 46);
+            btnPacPath.TabIndex = 8;
+            btnPacPath.Text = "pac文件夹";
+            btnPacPath.UseVisualStyleBackColor = true;
+            btnPacPath.Click += OnBtnPacPathClick;
             // 
             // label2
             // 
@@ -130,13 +142,6 @@
             label1.TabIndex = 2;
             label1.Text = "名称";
             // 
-            // inputPac
-            // 
-            inputPac.Location = new Point(557, 44);
-            inputPac.Name = "inputPac";
-            inputPac.Size = new Size(205, 38);
-            inputPac.TabIndex = 1;
-            // 
             // cbPac
             // 
             cbPac.AutoSize = true;
@@ -161,6 +166,14 @@
             mainMenuDelProxy.Text = "删除";
             mainMenuDelProxy.Click += MainMenuDelProxy_Click;
             // 
+            // cmbPac
+            // 
+            cmbPac.FormattingEnabled = true;
+            cmbPac.Location = new Point(557, 43);
+            cmbPac.Name = "cmbPac";
+            cmbPac.Size = new Size(205, 39);
+            cmbPac.TabIndex = 9;
+            // 
             // SysProxySettingForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
@@ -184,7 +197,6 @@
         private GroupBox groupBox1;
         private TextBox inputName;
         private Label label1;
-        private TextBox inputPac;
         private CheckBox cbPac;
         private CheckBox cbEnv;
         private Button btnSave;
@@ -192,5 +204,7 @@
         private ToolStripMenuItem mainMenuDelProxy;
         private Button btnClear;
         private Label label2;
+        private Button btnPacPath;
+        private ComboBox cmbPac;
     }
 }

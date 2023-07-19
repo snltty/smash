@@ -2,7 +2,9 @@
 using Microsoft.Win32;
 using smash.plugin;
 using smash.plugins.proxy;
+using System.Net;
 using System.Runtime.InteropServices;
+using File = System.IO.File;
 
 namespace smash.plugins.sysProxy
 {
@@ -22,7 +24,10 @@ namespace smash.plugins.sysProxy
             {
                 Stop();
             };
+
+            PacServer();
         }
+
         public bool Validate(out string error)
         {
             error = string.Empty;
@@ -65,19 +70,111 @@ namespace smash.plugins.sysProxy
         }
 
 
+        private void PacServer()
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    HttpListener http;
+                    while (true)
+                    {
+                        try
+                        {
+                            sysProxyConfig.PacServerPort = (ushort)new Random().Next(10000, 50000);
+                            http = new HttpListener();
+                            http.Prefixes.Add($"http://+:{sysProxyConfig.PacServerPort}/");
+                            http.Start();
+
+                            break;
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+
+
+                    while (true)
+                    {
+                        HttpListenerContext context = http.GetContext();
+                        HttpListenerRequest request = context.Request;
+                        using HttpListenerResponse response = context.Response;
+                        using Stream stream = response.OutputStream;
+
+                        try
+                        {
+                            response.Headers.Set("Server", "snltty");
+
+                            string path = request.Url.AbsolutePath;
+                            //默认页面
+                            if (path == "/") path = "default.pac";
+
+                            byte[] bytes = Read(path, out DateTime last);
+                            if (bytes.Length > 0)
+                            {
+                                response.ContentLength64 = bytes.Length;
+                                response.ContentType = GetContentType(path);
+                                //response.Headers.Set("Last-Modified", last.ToString());
+                                stream.Write(bytes, 0, bytes.Length);
+                            }
+                            else
+                            {
+                                response.StatusCode = (int)HttpStatusCode.NotFound;
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            response.StatusCode = (int)HttpStatusCode.BadRequest;
+                        }
+                        stream.Close();
+                        stream.Dispose();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Error(ex);
+                }
+            }, TaskCreationOptions.LongRunning);
+        }
+        private byte[] Read(string fileName, out DateTime lastModified)
+        {
+            fileName = Path.Join(sysProxyConfig.PacRoot, fileName);
+            lastModified = DateTime.UtcNow;
+            if (File.Exists(fileName))
+            {
+                lastModified = File.GetLastWriteTimeUtc(fileName);
+                return File.ReadAllBytes(fileName);
+            }
+            return Helper.EmptyArray;
+        }
+        private string GetContentType(string path)
+        {
+            string ext = Path.GetExtension(path);
+            if (ext == ".pac")
+            {
+                return "application/x-ns-proxy-autoconfig; charset=utf-8";
+            }
+            return "application/octet-stream";
+        }
+
+
         private void SetPac(string pacUrl)
         {
             try
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
+                    IPAddress ipAddress = NetworkHelper.GetDomainIp(proxyConfig.Proxy.Host);
+                    string pacContent = File.ReadAllText(Path.Join(sysProxyConfig.PacRoot, pacUrl)).Replace("{proxy}", $"SOCKS5 {ipAddress}:{proxyConfig.Proxy.Port}");
+                    File.WriteAllText(Path.Join(sysProxyConfig.PacRoot, "--socks.pac"), pacContent);
+
                     string[] names = GetWindowsCurrentIds();
                     foreach (var item in names)
                     {
                         try
                         {
                             RegistryKey reg = Registry.Users.OpenSubKey($"{item}\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", true);
-                            reg.SetValue("AutoConfigURL", pacUrl);
+                            reg.SetValue("AutoConfigURL", $"http://{IPAddress.Loopback}:{sysProxyConfig.PacServerPort}/--socks.pac");
                             reg.Close();
                         }
                         catch (Exception)

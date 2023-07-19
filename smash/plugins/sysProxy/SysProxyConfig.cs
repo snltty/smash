@@ -21,6 +21,8 @@ namespace smash.plugins.sysProxy
         /// 是否设置系统代理
         /// </summary>
         public bool UseSysProxy { get; set; }
+        public string PacRoot { get; set; } = "./pacs/";
+        public ushort PacServerPort { get; set; }
 
         #region 系统代理
         public SysProxyInfo SysProxy { get; set; } = new SysProxyInfo { Name = "默认", IsEnv = true, IsPac = true, Pac = "default.pac" };

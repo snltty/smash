@@ -4,6 +4,7 @@ using smash.plugins;
 using smash.plugin;
 using System.Reflection;
 using common.libs;
+using System.Diagnostics;
 
 namespace smash
 {
@@ -20,6 +21,8 @@ namespace smash
             {
                 Environment.Exit(1);
             }
+
+            LoggerConsole();
 
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             //处理UI线程异常
@@ -70,6 +73,25 @@ namespace smash
             MessageBox.Show($"系统异常:{(e.Exception).Message}");
         }
 
+
+        private static void LoggerConsole()
+        {
+            if (Directory.Exists("log") == false)
+            {
+                Directory.CreateDirectory("log");
+            }
+            Logger.Instance.OnLogger += (model) =>
+            {
+                string line = $"[{model.Type,-7}][{model.Time:yyyy-MM-dd HH:mm:ss}]:{model.Content}";
+                Debug.WriteLine(line);
+
+                using StreamWriter sw = File.AppendText(Path.Combine("log", $"{DateTime.Now:yyyy-MM-dd}.log"));
+                sw.WriteLine(line);
+                sw.Flush();
+                sw.Close();
+                sw.Dispose();
+            };
+        }
     }
 
     public sealed class StartUpArgInfo

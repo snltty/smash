@@ -1,4 +1,5 @@
 ﻿using smash.plugins.hijack;
+using System.Diagnostics;
 
 namespace smash.plugins
 {
@@ -14,9 +15,25 @@ namespace smash.plugins
             MinimizeBox = false;
             InitializeComponent();
 
+            listProcess.ContextMenuStrip = contextMenu;
+            listProcess.MouseUp += ListProcess_MouseClick;
             cmbGroup.SelectedIndexChanged += CmbGroup_SelectedIndexChanged;
             BindGroup();
         }
+
+        private void ListProcess_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                int currentIndex = e.Y / listProcess.ItemHeight;
+                if (currentIndex < listProcess.Items.Count)
+                {
+                    listProcess.SelectedIndex = currentIndex;
+                }
+            }
+        }
+
+
 
         ProcessInfo processInfo;
         private void CmbGroup_SelectedIndexChanged(object sender, EventArgs e)

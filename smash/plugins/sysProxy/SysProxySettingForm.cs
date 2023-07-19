@@ -1,4 +1,5 @@
 ﻿using smash.plugins.sysProxy;
+using System.Diagnostics;
 using System.Net;
 
 namespace smash.plugins
@@ -31,6 +32,10 @@ namespace smash.plugins
             sysProxysView.Columns["IsEnv"].HeaderText = "设置环境变量";
             sysProxysView.Columns["IsPac"].HeaderText = "设置PAC";
             sysProxysView.Columns["Pac"].HeaderText = "Pac文件";
+
+            cmbPac.DataSource = null;
+            cmbPac.DataSource = GetPacFiles();
+
             sysProxyConfig.Save();
         }
 
@@ -42,7 +47,7 @@ namespace smash.plugins
                 proxy = sysProxysView.SelectedRows[0].DataBoundItem as SysProxyInfo;
                 inputName.Text = proxy.Name;
                 cbPac.Checked = proxy.IsPac;
-                inputPac.Text = proxy.Pac;
+                cmbPac.SelectedItem = proxy.Pac;
                 cbEnv.Checked = proxy.IsEnv;
             }
             else
@@ -50,7 +55,7 @@ namespace smash.plugins
                 proxy = null;
                 inputName.Text = string.Empty;
                 cbPac.Checked = false;
-                inputPac.Text = string.Empty;
+                cmbPac.SelectedItem = string.Empty;
                 cbEnv.Checked = false;
             }
         }
@@ -86,7 +91,7 @@ namespace smash.plugins
                 MessageBox.Show("名称必填");
                 return;
             }
-            if (cbPac.Checked && string.IsNullOrWhiteSpace(inputPac.Text))
+            if (cbPac.Checked && cmbPac.SelectedItem == null && string.IsNullOrWhiteSpace(cmbPac.SelectedItem.ToString()))
             {
                 MessageBox.Show("pac文件必填");
                 return;
@@ -95,7 +100,7 @@ namespace smash.plugins
             {
                 proxy.Name = inputName.Text;
                 proxy.IsPac = cbPac.Checked;
-                proxy.Pac = inputPac.Text;
+                proxy.Pac = cmbPac.SelectedItem.ToString();
                 proxy.IsEnv = cbEnv.Checked;
             }
             else
@@ -104,7 +109,7 @@ namespace smash.plugins
                 {
                     Name = inputName.Text,
                     IsPac = cbPac.Checked,
-                    Pac = inputPac.Text,
+                    Pac = cmbPac.SelectedItem.ToString(),
                     IsEnv = cbEnv.Checked
                 });
 
@@ -114,6 +119,15 @@ namespace smash.plugins
             sysProxysView.Rows[sysProxysView.Rows.Count - 1].Selected = true;
         }
 
+        private void OnBtnPacPathClick(object sender, EventArgs e)
+        {
+            Process.Start("explorer.exe", $"{Path.GetFullPath(sysProxyConfig.PacRoot)}");
+        }
 
+
+        private List<string> GetPacFiles()
+        {
+            return Directory.GetFiles(sysProxyConfig.PacRoot).Select(c => Path.GetFileName(c)).Where(c => c.StartsWith("--") == false).ToList();
+        }
     }
 }

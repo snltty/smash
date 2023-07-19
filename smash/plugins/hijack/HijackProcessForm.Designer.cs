@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(HijackProcessForm));
             groupBox1 = new GroupBox();
             listProcess = new ListBox();
@@ -37,12 +38,12 @@
             btnClearForm = new Button();
             btnSaveGroup = new Button();
             inputName = new TextBox();
-            btnAddProcess = new Button();
-            btnDelProcess = new Button();
-            groupBox3 = new GroupBox();
+            contextMenu = new ContextMenuStrip(components);
+            contextMenuAddProcess = new ToolStripMenuItem();
+            contextMenuDelProcess = new ToolStripMenuItem();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
-            groupBox3.SuspendLayout();
+            contextMenu.SuspendLayout();
             SuspendLayout();
             // 
             // groupBox1
@@ -82,14 +83,14 @@
             groupBox2.Controls.Add(inputName);
             groupBox2.Location = new Point(396, 12);
             groupBox2.Name = "groupBox2";
-            groupBox2.Size = new Size(345, 210);
+            groupBox2.Size = new Size(345, 413);
             groupBox2.TabIndex = 1;
             groupBox2.TabStop = false;
             groupBox2.Text = "添加修改组";
             // 
             // btnDelGroup
             // 
-            btnDelGroup.Location = new Point(102, 152);
+            btnDelGroup.Location = new Point(178, 355);
             btnDelGroup.Name = "btnDelGroup";
             btnDelGroup.Size = new Size(150, 46);
             btnDelGroup.TabIndex = 3;
@@ -99,7 +100,7 @@
             // 
             // btnClearForm
             // 
-            btnClearForm.Location = new Point(13, 92);
+            btnClearForm.Location = new Point(95, 177);
             btnClearForm.Name = "btnClearForm";
             btnClearForm.Size = new Size(150, 46);
             btnClearForm.TabIndex = 2;
@@ -109,7 +110,7 @@
             // 
             // btnSaveGroup
             // 
-            btnSaveGroup.Location = new Point(178, 92);
+            btnSaveGroup.Location = new Point(95, 115);
             btnSaveGroup.Name = "btnSaveGroup";
             btnSaveGroup.Size = new Size(150, 46);
             btnSaveGroup.TabIndex = 1;
@@ -119,48 +120,37 @@
             // 
             // inputName
             // 
-            inputName.Location = new Point(13, 43);
+            inputName.Location = new Point(50, 59);
             inputName.Name = "inputName";
-            inputName.Size = new Size(315, 38);
+            inputName.Size = new Size(259, 38);
             inputName.TabIndex = 0;
             // 
-            // btnAddProcess
+            // contextMenu
             // 
-            btnAddProcess.Location = new Point(13, 48);
-            btnAddProcess.Name = "btnAddProcess";
-            btnAddProcess.Size = new Size(150, 46);
-            btnAddProcess.TabIndex = 3;
-            btnAddProcess.Text = "添加进程";
-            btnAddProcess.UseVisualStyleBackColor = true;
-            btnAddProcess.Click += btnAddProcess_Click;
+            contextMenu.ImageScalingSize = new Size(32, 32);
+            contextMenu.Items.AddRange(new ToolStripItem[] { contextMenuAddProcess, contextMenuDelProcess });
+            contextMenu.Name = "contextMenu";
+            contextMenu.Size = new Size(185, 80);
             // 
-            // btnDelProcess
+            // contextMenuAddProcess
             // 
-            btnDelProcess.Location = new Point(178, 48);
-            btnDelProcess.Name = "btnDelProcess";
-            btnDelProcess.Size = new Size(150, 46);
-            btnDelProcess.TabIndex = 4;
-            btnDelProcess.Text = "删除进程";
-            btnDelProcess.UseVisualStyleBackColor = true;
-            btnDelProcess.Click += btnDelProcess_Click;
+            contextMenuAddProcess.Name = "contextMenuAddProcess";
+            contextMenuAddProcess.Size = new Size(184, 38);
+            contextMenuAddProcess.Text = "添加进程";
+            contextMenuAddProcess.Click += btnAddProcess_Click;
             // 
-            // groupBox3
+            // contextMenuDelProcess
             // 
-            groupBox3.Controls.Add(btnDelProcess);
-            groupBox3.Controls.Add(btnAddProcess);
-            groupBox3.Location = new Point(396, 267);
-            groupBox3.Name = "groupBox3";
-            groupBox3.Size = new Size(345, 158);
-            groupBox3.TabIndex = 2;
-            groupBox3.TabStop = false;
-            groupBox3.Text = "添加删除进程";
+            contextMenuDelProcess.Name = "contextMenuDelProcess";
+            contextMenuDelProcess.Size = new Size(184, 38);
+            contextMenuDelProcess.Text = "删除进程";
+            contextMenuDelProcess.Click += btnDelProcess_Click;
             // 
             // HijackProcessForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(755, 434);
-            Controls.Add(groupBox3);
             Controls.Add(groupBox2);
             Controls.Add(groupBox1);
             Icon = (Icon)resources.GetObject("$this.Icon");
@@ -169,7 +159,7 @@
             groupBox1.ResumeLayout(false);
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();
-            groupBox3.ResumeLayout(false);
+            contextMenu.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -183,8 +173,8 @@
         private Button btnSaveGroup;
         private TextBox inputName;
         private Button btnDelGroup;
-        private Button btnAddProcess;
-        private Button btnDelProcess;
-        private GroupBox groupBox3;
+        private ContextMenuStrip contextMenu;
+        private ToolStripMenuItem contextMenuAddProcess;
+        private ToolStripMenuItem contextMenuDelProcess;
     }
 }
