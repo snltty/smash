@@ -17,9 +17,61 @@
 </div>
 
 ## 做了个啥
-1. 这是一个进程代理项目，使用Netfilter驱动拦截进程流量，将其代理
-2. 因为很多软件都不会内置代理功能，且不会去读取系统代理设置，那么进程劫持代理将会很有用
+1. smash
+    1. 使用Netfilter驱动拦截进程流量，将其代理
+    2. 设置系统代理，设置PAC自动代理或环境变量代理
+2. smash.proxy 代理协议
 
-## 重要的点
-1. 如果你是使用域名，则应该勾选DNS代理，并且清除浏览器及操作系统的DNS缓存
-2. 跟一般配置系统代理不一样的是，浏览器如果读取系统代理，使用代理时，是直接代理域名，域名在服务器解析，因此不会有这样的DNS污染问题
+## smash
+一个winform，运行exe即可
+
+## smash.proxy
+#### 运行参数
+
+**--mode client | server** 以客户端或服务端运行
+
+**--server 127.0.0.1:5413** 以客户端运行时需要填写服务器地址
+
+**--fake 127.0.0.1:80** 以服务端运行时，需要填写一个伪装地址，当遇到非代理协议时，使用本服务作为数据返回
+
+**--port 5413** 运行在哪个端口
+
+**--key SNLTTY** key,客户端与服务端key一致时，可以使用代理
+
+**--buff 3** buffer size 0-10,分别表示2^n次方
+
+#### 部署
+1. docker镜像 **snltty/smash.proxy-alpine-x64**
+```
+docker run -it -d --name="smash.proxy.server" -p 5413:5413/tcp \
+--entrypoint ./smash.proxy.run --mode server --key SNLTTY --fake 127.0.0.1:80 \
+ snltty/smash.proxy-alpine-x64 
+```
+2. windows 可以使用nssm部署为windows service
+2. linux 使用 systemd 托管
+```
+//1、下载linux版本程序，放到 /usr/local/smash.proxy 文件夹
+
+//3、写配置文件
+vim /etc/systemd/system/smash.proxy.service
+
+[Unit]
+Description=smash.proxy
+
+[Service]
+WorkingDirectory=/usr/local/smash.proxy
+ExecStart=/usr/local/smash.proxy/smash.proxy
+ExecStop=/bin/kill $MAINPID
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+
+//4、重新加载配置文件
+systemctl daemon-reload
+//5、启动，或者重新启动
+systemctl start smash.proxy
+systemctl restart smash.proxy
+```
