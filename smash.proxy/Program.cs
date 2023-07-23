@@ -202,7 +202,7 @@ namespace smash.proxy
                 if (dic.ContainsKey("fake") == false || string.IsNullOrWhiteSpace(dic["fake"]))
                 {
 #if DEBUG
-                    dic["fake"] = "127.0.0.1:80";
+                    dic["fake"] = "127.0.0.1:8200";
 #else
                     Logger.Instance.Error($"server mode need fake endpoint");
                     return false;
