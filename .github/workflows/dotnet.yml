@@ -54,7 +54,83 @@ jobs:
           GITHUB_TOKEN: '${{ secrets.ACTIONS_TOKEN }}'
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./public/publish-zip/smash-win-x64.zip
-        asset_name: smash-win-x64.zip
+        asset_path: ./public/publish-zip/smash-win-x64-single.zip
+        asset_name: smash-win-x64-single.zip
+        asset_content_type: application/zip
+
+    - name: upload proxy any
+      id: upload-proxy-any
+      uses: actions/upload-release-asset@master
+      env:
+          GITHUB_TOKEN: '${{ secrets.ACTIONS_TOKEN }}'
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./public/publish-zip/smash.proxy-any.zip
+        asset_name: smash.proxy-any.zip
         asset_content_type: application/zip
     
+    - name: upload proxy win x64
+      id: upload-proxy-winx64
+      uses: actions/upload-release-asset@master
+      env:
+          GITHUB_TOKEN: '${{ secrets.ACTIONS_TOKEN }}'
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./public/publish-zip/smash.proxy-win-x64-single.zip
+        asset_name: smash.proxy-win-x64-single.zip
+        asset_content_type: application/zip
+
+    - name: upload proxy win arm64
+      id: upload-proxy-win-arm64
+      uses: actions/upload-release-asset@master
+      env:
+          GITHUB_TOKEN: '${{ secrets.ACTIONS_TOKEN }}'
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./public/publish-zip/smash.proxy-win-arm64-single.zip
+        asset_name: smash.proxy-win-arm64-single.zip
+        asset_content_type: application/zip
+
+    - name: upload proxy linux x64
+      id: upload-proxy-linux-x64
+      uses: actions/upload-release-asset@master
+      env:
+          GITHUB_TOKEN: '${{ secrets.ACTIONS_TOKEN }}'
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./public/publish-zip/smash.proxy-linux-x64-single.zip
+        asset_name: smash.proxy-linux-x64-single.zip
+        asset_content_type: application/zip
+
+    - name: upload proxy linux arm64
+      id: upload-proxy-linux-arm64
+      uses: actions/upload-release-asset@master
+      env:
+          GITHUB_TOKEN: '${{ secrets.ACTIONS_TOKEN }}'
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./public/publish-zip/smash.proxy-linux-arm64-single.zip
+        asset_name: smash.proxy-linux-arm64-single.zip
+        asset_content_type: application/zip
+
+    - name: upload proxy osx x64
+      id: upload-proxy-osx-x64
+      uses: actions/upload-release-asset@master
+      env:
+          GITHUB_TOKEN: '${{ secrets.ACTIONS_TOKEN }}'
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./public/publish-zip/smash.proxy-osx-x64-single.zip
+        asset_name: smash.proxy-osx-x64-single.zip
+        asset_content_type: application/zip
+
+    - name: upload proxy osx arm64
+      id: upload-proxy-osx-arm64
+      uses: actions/upload-release-asset@master
+      env:
+          GITHUB_TOKEN: '${{ secrets.ACTIONS_TOKEN }}'
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./public/publish-zip/smash.proxy-osx-arm64-single.zip
+        asset_name: smash.proxy-osx-arm64-single.zip
+        asset_content_type: application/zip
