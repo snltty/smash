@@ -12,7 +12,7 @@ do
 	do
 		for r in ${rs[@]} 
 		do
-			dotnet publish ./${f}/${f}.service -c release -f net7.0 -o ./public/publish/docker/linux-${p}-${r}/${f}  -r ${p}-${r}  --self-contained true -p:TieredPGO=true  -p:DebugType=none -p:DebugSymbols=false  -p:PublishSingleFile=true -p:PublishTrimmed=true -p:EnableCompressionInSingleFile=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:HttpActivityPropagationSupport=false -p:InvariantGlobalization=true  -p:MetadataUpdaterSupport=false  -p:UseSystemResourceKeys=true  -p:TrimMode=partial
+			dotnet publish ./${f} -c release -f net7.0 -o ./public/publish/docker/linux-${p}-${r}/${f}  -r ${p}-${r}  --self-contained true -p:TieredPGO=true  -p:DebugType=none -p:DebugSymbols=false  -p:PublishSingleFile=true -p:PublishTrimmed=true -p:EnableCompressionInSingleFile=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:HttpActivityPropagationSupport=false -p:InvariantGlobalization=true  -p:MetadataUpdaterSupport=false  -p:UseSystemResourceKeys=true  -p:TrimMode=partial
 			cp -rf public/publish/docker/linux-${p}-${r}/${f}/${f} public/publish/docker/linux-${p}-${r}/${f}/${f}.run
 			rm -rf public/publish/docker/linux-${p}-${r}/${f}/${f}
 			cp -rf smash.proxy/Dockerfile-${p} public/publish/linux-${p}-${r}/${f}/Dockerfile-${p}
