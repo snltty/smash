@@ -1,5 +1,8 @@
 ﻿using common.libs.database;
+using common.libs.extends;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
+using System.Text.Json.Serialization;
 
 namespace smash.plugins.sysProxy
 {
@@ -12,6 +15,7 @@ namespace smash.plugins.sysProxy
         {
             this.configDataProvider = configDataProvider;
             SysProxyConfig _config = configDataProvider.Load().Result ?? new SysProxyConfig();
+            UseSysProxy = _config.UseSysProxy;
             SysProxy = _config.SysProxy;
             SysProxys = _config.SysProxys;
             Save();
@@ -21,16 +25,16 @@ namespace smash.plugins.sysProxy
         /// 是否设置系统代理
         /// </summary>
         public bool UseSysProxy { get; set; }
-        public string PacRoot { get; set; } = "./pacs/";
-        public ushort PacServerPort { get; set; }
-
-        #region 系统代理
         public SysProxyInfo SysProxy { get; set; } = new SysProxyInfo { Name = "默认", IsEnv = true, IsPac = true, Pac = "default.pac" };
         public List<SysProxyInfo> SysProxys { get; set; } = new List<SysProxyInfo>
         {
             new SysProxyInfo { Name="默认", IsEnv = true, IsPac = true, Pac="default.pac" }
         };
-        #endregion
+
+        [JsonIgnore]
+        public string PacRoot { get; set; } = "./pacs/";
+        [JsonIgnore]
+        public ushort PacServerPort { get; set; }
 
         public void Save()
         {

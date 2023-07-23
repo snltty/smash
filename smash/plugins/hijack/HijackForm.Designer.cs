@@ -41,35 +41,35 @@
             // cbFilterDns
             // 
             cbFilterDns.AutoSize = true;
-            cbFilterDns.Location = new Point(260, 114);
+            cbFilterDns.Location = new Point(310, 114);
             cbFilterDns.Name = "cbFilterDns";
-            cbFilterDns.Size = new Size(194, 35);
+            cbFilterDns.Size = new Size(98, 35);
             cbFilterDns.TabIndex = 6;
-            cbFilterDns.Text = "代理DNS解析";
+            cbFilterDns.Text = "DNS";
             cbFilterDns.UseVisualStyleBackColor = true;
-            cbFilterDns.CheckedChanged += CheckedChanged;
+            cbFilterDns.Click += CheckedChanged;
             // 
             // cbFilterUdp
             // 
             cbFilterUdp.AutoSize = true;
-            cbFilterUdp.Location = new Point(157, 114);
+            cbFilterUdp.Location = new Point(207, 114);
             cbFilterUdp.Name = "cbFilterUdp";
             cbFilterUdp.Size = new Size(97, 35);
             cbFilterUdp.TabIndex = 5;
             cbFilterUdp.Text = "UDP";
             cbFilterUdp.UseVisualStyleBackColor = true;
-            cbFilterUdp.CheckedChanged += CheckedChanged;
+            cbFilterUdp.Click += CheckedChanged;
             // 
             // cbFilterTcp
             // 
             cbFilterTcp.AutoSize = true;
-            cbFilterTcp.Location = new Point(60, 114);
+            cbFilterTcp.Location = new Point(110, 114);
             cbFilterTcp.Name = "cbFilterTcp";
             cbFilterTcp.Size = new Size(91, 35);
             cbFilterTcp.TabIndex = 4;
             cbFilterTcp.Text = "TCP";
             cbFilterTcp.UseVisualStyleBackColor = true;
-            cbFilterTcp.CheckedChanged += CheckedChanged;
+            cbFilterTcp.Click += CheckedChanged;
             // 
             // cbUseHijack
             // 
@@ -80,7 +80,7 @@
             cbUseHijack.TabIndex = 3;
             cbUseHijack.Text = "启用";
             cbUseHijack.UseVisualStyleBackColor = true;
-            cbUseHijack.CheckedChanged += CheckedChanged;
+            cbUseHijack.Click += CheckedChanged;
             // 
             // cmbGroup
             // 

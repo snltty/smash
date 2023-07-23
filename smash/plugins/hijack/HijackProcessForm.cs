@@ -33,8 +33,6 @@ namespace smash.plugins
             }
         }
 
-
-
         ProcessInfo processInfo;
         private void CmbGroup_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -44,8 +42,8 @@ namespace smash.plugins
                 editInfo = processInfo;
             }
             BindFileNames();
-            BindEdit();
         }
+
         private void BindGroup()
         {
             cmbGroup.DataSource = null;
@@ -60,66 +58,6 @@ namespace smash.plugins
 
 
         ProcessInfo editInfo;
-        private void BindEdit()
-        {
-            if (editInfo == null)
-            {
-                inputName.Text = string.Empty;
-            }
-            else
-            {
-                inputName.Text = editInfo.Name;
-            }
-        }
-        private void btnSaveGroup_Click(object sender, EventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(inputName.Text)) return;
-
-            int selectIndex = cmbGroup.SelectedIndex;
-
-            if (editInfo != null)
-            {
-                editInfo.Name = inputName.Text;
-            }
-            else
-            {
-                editInfo = new ProcessInfo { Name = inputName.Text, FileNames = new List<string>() };
-                hijackConfig.Processs.Add(editInfo);
-                selectIndex = hijackConfig.Processs.Count - 1;
-            }
-            BindGroup();
-
-            if (selectIndex > 0)
-            {
-                cmbGroup.SelectedIndex = selectIndex;
-            }
-            hijackConfig.Save();
-        }
-        private void btnClearForm_Click(object sender, EventArgs e)
-        {
-            editInfo = null;
-            BindEdit();
-        }
-
-        private void btnDelGroup_Click(object sender, EventArgs e)
-        {
-            if (processInfo == null) return;
-            if (hijackConfig.Processs.Count <= 1) return;
-
-            int selectIndex = cmbGroup.SelectedIndex;
-            hijackConfig.Processs.Remove(processInfo);
-            BindGroup();
-            if (selectIndex > hijackConfig.Processs.Count - 1)
-            {
-                selectIndex = hijackConfig.Processs.Count - 1;
-            }
-            if (selectIndex > 0)
-            {
-                cmbGroup.SelectedIndex = selectIndex;
-            }
-            hijackConfig.Save();
-        }
-
         private void btnDelProcess_Click(object sender, EventArgs e)
         {
             if (processInfo != null && listProcess.SelectedItem != null)
@@ -129,7 +67,6 @@ namespace smash.plugins
             BindFileNames();
             hijackConfig.Save();
         }
-
         private void btnAddProcess_Click(object sender, EventArgs e)
         {
             if (processInfo == null) return;
@@ -149,6 +86,55 @@ namespace smash.plugins
                     BindFileNames();
                     hijackConfig.Save();
                 }
+            }
+        }
+        private void OnMainMenuDelGroup(object sender, EventArgs e)
+        {
+            if (processInfo == null) return;
+            if (hijackConfig.Processs.Count <= 1) return;
+
+            int selectIndex = cmbGroup.SelectedIndex;
+            hijackConfig.Processs.Remove(processInfo);
+            BindGroup();
+            if (selectIndex > hijackConfig.Processs.Count - 1)
+            {
+                selectIndex = hijackConfig.Processs.Count - 1;
+            }
+            if (selectIndex > 0)
+            {
+                cmbGroup.SelectedIndex = selectIndex;
+            }
+            hijackConfig.Save();
+        }
+
+        private void OnBtnSaveGroupClick(object sender, EventArgs e)
+        {
+            if (editInfo != null)
+            {
+                editInfo.Name = cmbGroup.Text;
+                hijackConfig.Save();
+                BindGroup();
+            }
+        }
+
+        private void OnMainMenuAddGroupClick(object sender, EventArgs e)
+        {
+            if(hijackConfig.Processs.FirstOrDefault(c=>c.Name == "新分组") != null)
+            {
+                MessageBox.Show("已存在一个新分组");
+                return;
+            }
+
+            editInfo = new ProcessInfo { Name = "新分组", FileNames = new List<string>() };
+            hijackConfig.Processs.Add(editInfo);
+            int selectIndex = hijackConfig.Processs.Count - 1;
+
+            hijackConfig.Save();
+            BindGroup();
+
+            if (selectIndex > 0)
+            {
+                cmbGroup.SelectedIndex = selectIndex;
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using smash.plugins.sysProxy;
+﻿using common.libs.extends;
+using smash.plugins.sysProxy;
 using System.Diagnostics;
 using System.Net;
 
@@ -21,9 +22,10 @@ namespace smash.plugins
             sysProxysView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             sysProxysView.ContextMenuStrip = contextMenu;
             sysProxysView.CellMouseUp += SysProxysView_CellMouseUp; ;
-            sysProxysView.SelectionChanged += SysProxysView_SelectionChanged; ;
+            sysProxysView.SelectionChanged += SysProxysView_SelectionChanged;
             BindData();
         }
+
         private void BindData()
         {
             sysProxysView.DataSource = null;
@@ -71,19 +73,31 @@ namespace smash.plugins
             }
         }
 
-
         private void MainMenuDelProxy_Click(object sender, EventArgs e)
         {
             if (sysProxyConfig.SysProxys.Count <= 1) return;
             sysProxyConfig.SysProxys.Remove(proxy);
-            btnClear.PerformClick();
             BindData();
         }
-
-        private void btnClear_Click(object sender, EventArgs e)
+        private void OnMainMenuAddProxyClick(object sender, EventArgs e)
         {
+            if (sysProxyConfig.SysProxys.FirstOrDefault(c => c.Name == "新项") != null)
+            {
+                MessageBox.Show("已存在一个新项");
+                return;
+            }
+            sysProxyConfig.SysProxys.Add(new SysProxyInfo
+            {
+                IsEnv = false,
+                IsPac = false,
+                Name = "新项",
+                Pac = string.Empty
+            });
+            BindData();
             sysProxysView.ClearSelection();
+            sysProxysView.Rows[sysProxyConfig.SysProxys.Count - 1].Selected = true;
         }
+
         private void btnSave_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(inputName.Text))
@@ -102,23 +116,9 @@ namespace smash.plugins
                 proxy.IsPac = cbPac.Checked;
                 proxy.Pac = cmbPac.SelectedItem.ToString();
                 proxy.IsEnv = cbEnv.Checked;
+                BindData();
             }
-            else
-            {
-                sysProxyConfig.SysProxys.Add(new SysProxyInfo
-                {
-                    Name = inputName.Text,
-                    IsPac = cbPac.Checked,
-                    Pac = cmbPac.SelectedItem.ToString(),
-                    IsEnv = cbEnv.Checked
-                });
-
-            }
-            BindData();
-            btnClear.PerformClick();
-            sysProxysView.Rows[sysProxysView.Rows.Count - 1].Selected = true;
         }
-
         private void OnBtnPacPathClick(object sender, EventArgs e)
         {
             Process.Start("explorer.exe", $"{Path.GetFullPath(sysProxyConfig.PacRoot)}");
@@ -129,5 +129,7 @@ namespace smash.plugins
         {
             return Directory.GetFiles(sysProxyConfig.PacRoot).Select(c => Path.GetFileName(c)).Where(c => c.StartsWith("--") == false).ToList();
         }
+
+
     }
 }

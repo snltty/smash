@@ -32,17 +32,17 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SysProxySettingForm));
             sysProxysView = new DataGridView();
             groupBox1 = new GroupBox();
+            cmbPac = new ComboBox();
             btnPacPath = new Button();
             label2 = new Label();
-            btnClear = new Button();
             btnSave = new Button();
             cbEnv = new CheckBox();
             inputName = new TextBox();
             label1 = new Label();
             cbPac = new CheckBox();
             contextMenu = new ContextMenuStrip(components);
+            mainMenuAddProxy = new ToolStripMenuItem();
             mainMenuDelProxy = new ToolStripMenuItem();
-            cmbPac = new ComboBox();
             ((System.ComponentModel.ISupportInitialize)sysProxysView).BeginInit();
             groupBox1.SuspendLayout();
             contextMenu.SuspendLayout();
@@ -63,7 +63,6 @@
             groupBox1.Controls.Add(cmbPac);
             groupBox1.Controls.Add(btnPacPath);
             groupBox1.Controls.Add(label2);
-            groupBox1.Controls.Add(btnClear);
             groupBox1.Controls.Add(btnSave);
             groupBox1.Controls.Add(cbEnv);
             groupBox1.Controls.Add(inputName);
@@ -75,6 +74,14 @@
             groupBox1.TabIndex = 1;
             groupBox1.TabStop = false;
             groupBox1.Text = "设置";
+            // 
+            // cmbPac
+            // 
+            cmbPac.FormattingEnabled = true;
+            cmbPac.Location = new Point(557, 43);
+            cmbPac.Name = "cmbPac";
+            cmbPac.Size = new Size(205, 39);
+            cmbPac.TabIndex = 9;
             // 
             // btnPacPath
             // 
@@ -96,19 +103,9 @@
             label2.Text = "某些程序会去读取系统环境变量的代理设置";
             label2.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // btnClear
-            // 
-            btnClear.Location = new Point(223, 107);
-            btnClear.Name = "btnClear";
-            btnClear.Size = new Size(150, 46);
-            btnClear.TabIndex = 6;
-            btnClear.Text = "清空表单";
-            btnClear.UseVisualStyleBackColor = true;
-            btnClear.Click += btnClear_Click;
-            // 
             // btnSave
             // 
-            btnSave.Location = new Point(388, 107);
+            btnSave.Location = new Point(286, 107);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(150, 46);
             btnSave.TabIndex = 5;
@@ -155,24 +152,23 @@
             // contextMenu
             // 
             contextMenu.ImageScalingSize = new Size(32, 32);
-            contextMenu.Items.AddRange(new ToolStripItem[] { mainMenuDelProxy });
+            contextMenu.Items.AddRange(new ToolStripItem[] { mainMenuAddProxy, mainMenuDelProxy });
             contextMenu.Name = "contextMenu";
-            contextMenu.Size = new Size(137, 42);
+            contextMenu.Size = new Size(301, 124);
+            // 
+            // mainMenuAddProxy
+            // 
+            mainMenuAddProxy.Name = "mainMenuAddProxy";
+            mainMenuAddProxy.Size = new Size(300, 38);
+            mainMenuAddProxy.Text = "添加新项";
+            mainMenuAddProxy.Click += OnMainMenuAddProxyClick;
             // 
             // mainMenuDelProxy
             // 
             mainMenuDelProxy.Name = "mainMenuDelProxy";
-            mainMenuDelProxy.Size = new Size(136, 38);
-            mainMenuDelProxy.Text = "删除";
+            mainMenuDelProxy.Size = new Size(300, 38);
+            mainMenuDelProxy.Text = "删除选中";
             mainMenuDelProxy.Click += MainMenuDelProxy_Click;
-            // 
-            // cmbPac
-            // 
-            cmbPac.FormattingEnabled = true;
-            cmbPac.Location = new Point(557, 43);
-            cmbPac.Name = "cmbPac";
-            cmbPac.Size = new Size(205, 39);
-            cmbPac.TabIndex = 9;
             // 
             // SysProxySettingForm
             // 
@@ -202,9 +198,9 @@
         private Button btnSave;
         private ContextMenuStrip contextMenu;
         private ToolStripMenuItem mainMenuDelProxy;
-        private Button btnClear;
         private Label label2;
         private Button btnPacPath;
         private ComboBox cmbPac;
+        private ToolStripMenuItem mainMenuAddProxy;
     }
 }

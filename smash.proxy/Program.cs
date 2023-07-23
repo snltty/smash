@@ -67,6 +67,27 @@ namespace smash.proxy
                         Logger.Instance.Info(string.Empty.PadLeft(32, '='));
                     }
                     break;
+                case "server":
+                    {
+                        Logger.Instance.Info($"smash server are running");
+                        ProxyServerConfig proxyServerConfig = new ProxyServerConfig
+                        {
+                            BufferSize = (EnumBufferSize)byte.Parse(dic["buff"]),
+                            Key = dic["key"],
+                            ListenPort = ushort.Parse(dic["port"]),
+                            FakeEP = IPEndPoint.Parse(dic["fake"])
+                        };
+                        ProxyServer proxyServer = new ProxyServer(proxyServerConfig);
+                        proxyServer.Start();
+
+                        Logger.Instance.Info(string.Empty.PadLeft(32, '='));
+                        Logger.Instance.Info($"listen 0.0.0.0:{proxyServerConfig.ListenPort}");
+                        Logger.Instance.Info($"fake {proxyServerConfig.FakeEP}");
+                        Logger.Instance.Info($"buff {proxyServerConfig.BufferSize}");
+                        Logger.Instance.Info($"key {proxyServerConfig.KeyMemory.GetString()}");
+                        Logger.Instance.Info(string.Empty.PadLeft(32, '='));
+                    }
+                    break;
                 default:
                     Logger.Instance.Warning($"smash nothing is running");
                     break;

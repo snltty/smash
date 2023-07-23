@@ -21,7 +21,6 @@ namespace smash.plugins.proxy
             BindProxy();
         }
 
-        #region 代理
         private void BindProxy()
         {
             int index = cmbProxy.SelectedIndex;
@@ -44,7 +43,6 @@ namespace smash.plugins.proxy
                 proxyConfig.Save();
             }
         }
-        #endregion
 
         ProxySettingForm proxySettingForm;
         private void OnMainMenuOptionsClick(object sender, EventArgs e)

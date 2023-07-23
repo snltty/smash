@@ -1,5 +1,6 @@
-﻿using smash.plugin;
-using smash.plugins.hijack;
+﻿using common.libs.extends;
+using smash.plugin;
+using System.Diagnostics;
 
 namespace smash.plugins.sysProxy
 {
@@ -20,7 +21,6 @@ namespace smash.plugins.sysProxy
             BindSysProxy();
         }
 
-        #region 系统代理
         private void BindSysProxy()
         {
             int index = cmbSysProxy.SelectedIndex;
@@ -54,12 +54,13 @@ namespace smash.plugins.sysProxy
                 sysProxyConfig.SysProxy.IsPac = cbIsPac.Checked;
             }
             BindInfo();
+            sysProxyConfig.Save();
         }
         private void CheckedChanged(object sender, EventArgs e)
         {
+            Debug.WriteLine("CheckedChanged");
             UpdateConfig();
         }
-        #endregion
 
 
         SysProxySettingForm sysProxySettingForm;

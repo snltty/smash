@@ -56,7 +56,7 @@
             cbIsEnv.TabIndex = 7;
             cbIsEnv.Text = "环境变量";
             cbIsEnv.UseVisualStyleBackColor = true;
-            cbIsEnv.CheckedChanged += CheckedChanged;
+            cbIsEnv.Click += CheckedChanged;
             // 
             // cbIsPac
             // 
@@ -67,7 +67,7 @@
             cbIsPac.TabIndex = 6;
             cbIsPac.Text = "PAC";
             cbIsPac.UseVisualStyleBackColor = true;
-            cbIsPac.CheckedChanged += CheckedChanged;
+            cbIsPac.Click += CheckedChanged;
             // 
             // cbUseSysProxy
             // 
@@ -78,7 +78,7 @@
             cbUseSysProxy.TabIndex = 5;
             cbUseSysProxy.Text = "启用";
             cbUseSysProxy.UseVisualStyleBackColor = true;
-            cbUseSysProxy.CheckedChanged += CheckedChanged;
+            cbUseSysProxy.Click += CheckedChanged;
             // 
             // cmbSysProxy
             // 

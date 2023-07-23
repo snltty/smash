@@ -25,11 +25,10 @@ namespace smash.plugins
             proxysView.SelectionChanged += ProxysView_SelectionChanged;
             proxysView.CellFormatting += ProxysView_CellFormatting;
 
-            ShowUsed();
             Ping();
         }
 
-      
+
         private void BindData()
         {
             proxysView.DataSource = null;
@@ -87,10 +86,6 @@ namespace smash.plugins
             }
         }
 
-        private void btnClear_Click(object sender, EventArgs e)
-        {
-            proxysView.ClearSelection();
-        }
         private void btnSave_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(inputHost.Text) || string.IsNullOrWhiteSpace(inputName.Text) || string.IsNullOrWhiteSpace(inputPort.Text))
@@ -132,24 +127,10 @@ namespace smash.plugins
 
             }
             BindData();
-            btnClear.PerformClick();
+            proxysView.ClearSelection();
             proxysView.Rows[proxysView.Rows.Count - 1].Selected = true;
         }
 
-        private void ShowUsed()
-        {
-            if (proxyConfig.Proxy == null && proxyConfig.Proxys.Count > 0)
-            {
-                Use(proxyConfig.Proxys.FirstOrDefault());
-            }
-            useName.Text = proxyConfig.Proxy.Name;
-            useHost.Text = $"{proxyConfig.Proxy.Host}:{proxyConfig.Proxy.Port}";
-        }
-        private void Use(ProxyInfo proxy)
-        {
-            if (proxy == null) return;
-            proxyConfig.Proxy = proxy;
-        }
 
         private bool isPing = false;
         CancellationTokenSource cts = new CancellationTokenSource();
@@ -208,12 +189,26 @@ namespace smash.plugins
             if (proxyConfig.Proxys.Count <= 1) return;
             proxyConfig.Proxys.Remove(proxy);
             BindData();
-            btnClear.PerformClick();
         }
         private void MainManuUseProxy_Click(object sender, EventArgs e)
         {
-            Use(proxy);
-            ShowUsed();
+            if (proxyConfig.Proxys.FirstOrDefault(c => c.Name == "新项") != null)
+            {
+                MessageBox.Show("已存在一个新项");
+                return;
+            }
+            proxyConfig.Proxys.Add(new ProxyInfo
+            {
+                Delay = 0,
+                Host = "127.0.0.1",
+                Name = "新项",
+                Password = string.Empty,
+                Port = 5413,
+                UserName = string.Empty
+            });
+            BindData();
+            proxysView.ClearSelection();
+            proxysView.Rows[proxyConfig.Proxys.Count - 1].Selected = true;
         }
     }
 }
