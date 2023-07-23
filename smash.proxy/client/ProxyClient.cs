@@ -8,6 +8,7 @@ using System.Text;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Collections.Concurrent;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace smash.proxy.server
 {
@@ -151,14 +152,18 @@ namespace smash.proxy.server
         {
             try
             {
-                Socket socket = new Socket(proxyClientConfig.ServerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                await socket.ConnectAsync(proxyClientConfig.ServerEP);
-                SslStream sslStream = new SslStream(new NetworkStream(socket), true, ValidateServerCertificate, null);
-                await sslStream.AuthenticateAsClientAsync(string.Empty);
+                token.ServerSocket = new Socket(proxyClientConfig.ServerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                await token.ServerSocket.ConnectAsync(proxyClientConfig.ServerEP);
+                if (proxyClientConfig.IsSSL)
+                {
+                    SslStream sslStream = new SslStream(new NetworkStream(token.ServerSocket), true, ValidateServerCertificate, null);
+                    await sslStream.AuthenticateAsClientAsync(string.Empty);
+                    token.ServerStream = sslStream;
+                }
 
-                token.ServerStream = sslStream;
                 byte[] bytes = info.PackConnect(proxyClientConfig.KeyMemory, out int length);
                 info.Data = bytes.AsMemory(0, length);
+
                 await Request(token);
                 info.Return(bytes);
                 BindServerReceive(token);
@@ -176,12 +181,40 @@ namespace smash.proxy.server
         {
             return true;
         }
+
         private void BindServerReceive(ProxyClientUserToken token)
         {
-            if (token.ServerStream == null || token.ServerStream.CanRead == false) return;
+            if (proxyClientConfig.IsSSL)
+            {
+                if (token.ServerStream == null || token.ServerStream.CanRead == false) return;
 
-            token.ServerPoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
-            token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
+                token.ServerPoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
+                token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
+            }
+            else
+            {
+                token.ServerPoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
+                token.ServerSocket.BeginReceive(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, SocketFlags.None, ServerReceiveRawCallback, token);
+            }
+        }
+        private async void ServerReceiveRawCallback(IAsyncResult result)
+        {
+            ProxyClientUserToken token = result.AsyncState as ProxyClientUserToken;
+            try
+            {
+                int length = token.ServerSocket.EndReceive(result);
+
+                token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
+                await InputData(token, token.Request);
+
+                token.ServerSocket.BeginReceive(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, SocketFlags.None, ServerReceiveRawCallback, token);
+            }
+            catch (Exception ex)
+            {
+                CloseClientSocket(token);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error(ex);
+            }
         }
         private async void ServerReceiveCallback(IAsyncResult result)
         {
@@ -319,11 +352,14 @@ namespace smash.proxy.server
                     };
                     udpConnections.TryAdd(rep, token);
                     GetRemoteEndPoint(token.Request, out int index);
+
+                    Memory<byte> data = token.Request.Data;
                     if (await ConnectServer(token, token.Request) == false)
                     {
                         result = UdpClient.BeginReceive(ProcessReceiveUdp, token);
                         return;
                     }
+                    token.Request.Data = data;
                 }
                 else
                 {
@@ -335,8 +371,11 @@ namespace smash.proxy.server
                 {
                     if (await HandleRequestData(token, token.Request))
                     {
-                        await Request(token);
-                        token.Request.Data = Helper.EmptyArray;
+                        if (token.Request.Data.Length > 0)
+                        {
+                            await Request(token);
+                            token.Request.Data = Helper.EmptyArray;
+                        }
                     }
                 }
                 result = UdpClient.BeginReceive(ProcessReceiveUdp, token);
@@ -382,11 +421,19 @@ namespace smash.proxy.server
         }
         private async Task<bool> Request(ProxyClientUserToken token)
         {
-            if (token.ServerStream == null || token.ServerStream.CanWrite == false)
+            if (proxyClientConfig.IsSSL)
             {
-                return false;
+                if (token.ServerStream == null || token.ServerStream.CanWrite == false)
+                {
+                    return false;
+                }
+                await token.ServerStream.WriteAsync(token.Request.Data);
             }
-            await token.ServerStream.WriteAsync(token.Request.Data);
+            else
+            {
+                await token.ServerSocket.SendAsync(token.Request.Data);
+            }
+
             return true;
         }
 
@@ -409,7 +456,7 @@ namespace smash.proxy.server
                     {
                         //组装udp包
                         byte[] bytes = Socks5Parser.MakeUdpResponse(new IPEndPoint(new IPAddress(info.TargetAddress.Span), info.TargetPort), info.Data, out int legnth);
-                        await UdpClient.SendAsync(info.Data, token.SourceEP);
+                        await UdpClient.SendAsync(bytes, token.SourceEP);
                         Socks5Parser.Return(bytes);
                     }
                     else
@@ -479,12 +526,6 @@ namespace smash.proxy.server
                     //解析出udp包的数据部分
                     info.Data = Socks5Parser.GetUdpData(info.Data);
                 }
-
-                if (info.TargetPort == 53)
-                {
-                    if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                        Logger.Instance.Debug($"[DNS查询]:{string.Join(",", info.Data.ToArray())}:{Encoding.UTF8.GetString(info.Data.ToArray())}");
-                }
             }
             if (info.TargetAddress.GetIsAnyAddress()) return false;
 
@@ -549,7 +590,14 @@ namespace smash.proxy.server
                 udpConnections.TryRemove(token.SourceEP, out _);
             }
             token.ClientSocket?.SafeClose();
-            token.ServerStream?.Dispose();
+            if (proxyClientConfig.IsSSL)
+            {
+                token.ServerStream?.Dispose();
+            }
+            else
+            {
+                token.ServerSocket?.SafeClose();
+            }
             token.PoolBuffer = null;
             token.ServerPoolBuffer = null;
             token.Request = null;
@@ -581,6 +629,7 @@ namespace smash.proxy.server
 
         public IPEndPoint SourceEP { get; set; }
 
+        public Socket ServerSocket { get; set; }
         public SslStream ServerStream { get; set; }
         public byte[] ServerPoolBuffer { get; set; }
 
@@ -602,5 +651,11 @@ namespace smash.proxy.server
         public IPEndPoint ServerEP { get; set; }
 
         public EnumBufferSize BufferSize { get; set; } = EnumBufferSize.KB_8;
+
+#if DEBUG
+        public bool IsSSL { get; set; } = false;
+#else
+        public bool IsSSL { get; set; } = true;
+#endif
     }
 }

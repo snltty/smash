@@ -128,21 +128,21 @@ namespace smash.proxy.server
 
                 int totalLength = e.BytesTransferred;
                 Memory<byte> data = e.Buffer.AsMemory(e.Offset, e.BytesTransferred);
-                //有些客户端，会把一个包拆开发送，很奇怪，不得不验证一下数据完整性
                 if (token.Step <= Socks5EnumStep.Command)
                 {
                     await ConnectTarget(token, data);
-                    return;
 
-                }
-
-                if (token.Command == Socks5EnumRequestCommand.Connect)
-                {
-                    await token.TargetSocket.SendAsync(data, SocketFlags.None);
                 }
                 else
                 {
-                    await token.TargetSocket.SendToAsync(data, SocketFlags.None, token.TargerEP);
+                    if (token.Command == Socks5EnumRequestCommand.Connect)
+                    {
+                        await token.TargetSocket.SendAsync(data, SocketFlags.None);
+                    }
+                    else
+                    {
+                        await token.TargetSocket.SendToAsync(data, SocketFlags.None, token.TargerEP);
+                    }
                 }
 
                 if (token.ClientSocket.Available > 0)
@@ -155,6 +155,7 @@ namespace smash.proxy.server
                             CloseClientSocket(e);
                             return;
                         }
+                        data = e.Buffer.AsMemory(0, length);
                         if (token.Command == Socks5EnumRequestCommand.Connect)
                         {
                             await token.TargetSocket.SendAsync(data, SocketFlags.None);
@@ -179,7 +180,8 @@ namespace smash.proxy.server
             catch (Exception ex)
             {
                 CloseClientSocket(e);
-                Logger.Instance.Error(ex);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error(ex);
             }
         }
 
@@ -188,22 +190,12 @@ namespace smash.proxy.server
             try
             {
                 ProxyInfo info = new ProxyInfo();
-
                 token.TargerEP = proxyServerConfig.FakeEP;
-
-                if (info.ValidateKey(data))
+                if (info.ValidateKey(data, proxyServerConfig.KeyMemory))
                 {
-                    if (info.ValidateConnect(data) == false)
-                    {
-                        if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                            Logger.Instance.Error($"connect server -> error  validate connect pack fail");
-
-                        CloseClientSocket(token);
-                        return false;
-                    }
-
                     info.UnPackConnect(data, proxyServerConfig.KeyMemory);
                     token.TargerEP = ReadRemoteEndPoint(info);
+
                 }
 
                 token.Command = info.Command;
@@ -221,7 +213,7 @@ namespace smash.proxy.server
                 {
                     token.TargetSocket = new Socket(token.TargerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                     proxyServerUserToken.TargetSocket = token.TargetSocket;
-                    await proxyServerUserToken.TargetSocket.ConnectAsync(proxyServerUserToken.TargerEP);
+                    await proxyServerUserToken.TargetSocket.ConnectAsync(proxyServerUserToken.TargerEP).WaitAsync(TimeSpan.FromSeconds(5));
                     BindTargetReceive(proxyServerUserToken);
                 }
                 else
@@ -232,6 +224,7 @@ namespace smash.proxy.server
 
                     proxyServerUserToken.TargetSocket = token.TargetSocket;
                     proxyServerUserToken.PoolBuffer = new byte[65535];
+                    token.TargetSocket.Bind(new IPEndPoint(IPAddress.Any, 0));
                     IAsyncResult result = token.TargetSocket.BeginReceiveFrom(proxyServerUserToken.PoolBuffer, 0, proxyServerUserToken.PoolBuffer.Length, SocketFlags.None, ref proxyServerUserToken.TempRemoteEP, ReceiveCallbackUdp, proxyServerUserToken);
 
                 }
@@ -335,10 +328,11 @@ namespace smash.proxy.server
                 }
                 result = token.TargetSocket.BeginReceiveFrom(token.PoolBuffer, 0, token.PoolBuffer.Length, SocketFlags.None, ref token.TempRemoteEP, ReceiveCallbackUdp, token);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 CloseClientSocket(token);
-                //Logger.Instance.DebugError($"socks5 forward udp -> receive" + ex);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error($"socks5 forward udp -> receive" + ex);
             }
         }
         private IPEndPoint ReadRemoteEndPoint(ProxyInfo info)

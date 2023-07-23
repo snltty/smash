@@ -94,6 +94,49 @@ namespace smash.proxy
             }
         }
 
+        private static void LoggerConsole()
+        {
+            if (Directory.Exists("log") == false)
+            {
+                Directory.CreateDirectory("log");
+            }
+            Logger.Instance.OnLogger += (model) =>
+            {
+                ConsoleColor currentForeColor = Console.ForegroundColor;
+                switch (model.Type)
+                {
+                    case LoggerTypes.DEBUG:
+                        Console.ForegroundColor = ConsoleColor.Blue;
+                        break;
+                    case LoggerTypes.INFO:
+                        Console.ForegroundColor = ConsoleColor.White;
+                        break;
+                    case LoggerTypes.WARNING:
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        break;
+                    case LoggerTypes.ERROR:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        break;
+                    default:
+                        break;
+                }
+                string line = $"[{model.Type,-7}][{model.Time:yyyy-MM-dd HH:mm:ss}]:{model.Content}";
+                Console.WriteLine(line);
+                Console.ForegroundColor = currentForeColor;
+
+                try
+                {
+                    using StreamWriter sw = File.AppendText(Path.Combine("log", $"{DateTime.Now:yyyy-MM-dd}.log"));
+                    sw.WriteLine(line);
+                    sw.Flush();
+                    sw.Close();
+                    sw.Dispose();
+                }
+                catch (Exception)
+                {
+                }
+            };
+        }
 
         static Dictionary<string, string> ParseParams(string[] args)
         {
@@ -214,43 +257,5 @@ namespace smash.proxy
             return true;
         }
 
-
-        private static void LoggerConsole()
-        {
-            if (Directory.Exists("log") == false)
-            {
-                Directory.CreateDirectory("log");
-            }
-            Logger.Instance.OnLogger += (model) =>
-            {
-                ConsoleColor currentForeColor = Console.ForegroundColor;
-                switch (model.Type)
-                {
-                    case LoggerTypes.DEBUG:
-                        Console.ForegroundColor = ConsoleColor.Blue;
-                        break;
-                    case LoggerTypes.INFO:
-                        Console.ForegroundColor = ConsoleColor.White;
-                        break;
-                    case LoggerTypes.WARNING:
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        break;
-                    case LoggerTypes.ERROR:
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        break;
-                    default:
-                        break;
-                }
-                string line = $"[{model.Type,-7}][{model.Time:yyyy-MM-dd HH:mm:ss}]:{model.Content}";
-                Console.WriteLine(line);
-                Console.ForegroundColor = currentForeColor;
-
-                using StreamWriter sw = File.AppendText(Path.Combine("log", $"{DateTime.Now:yyyy-MM-dd}.log"));
-                sw.WriteLine(line);
-                sw.Flush();
-                sw.Close();
-                sw.Dispose();
-            };
-        }
     }
 }

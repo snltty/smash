@@ -27,9 +27,9 @@ namespace smash.proxy
         public Memory<byte> Data { get; set; }
 
 
-        public bool ValidateKey(Memory<byte> key)
+        public bool ValidateKey(Memory<byte> data,Memory<byte> key)
         {
-            return Data.Length >= key.Length && Data.Span.Slice(key.Length).SequenceEqual(key.Span);
+            return data.Length >= key.Length && data.Span.Slice(0,key.Length).SequenceEqual(key.Span);
         }
 
         public byte[] PackConnect(Memory<byte> key, out int length)
@@ -62,9 +62,9 @@ namespace smash.proxy
 
             return bytes;
         }
-        public bool ValidateConnect(Memory<byte> key)
+        public bool ValidateConnect(Memory<byte> data,Memory<byte> key)
         {
-            if (Data.Length < key.Length + 1 + 1 + 1 + 2)
+            if (data.Length < key.Length + 1 + 1 + 1 + 2)
             {
                 return false;
             }
@@ -73,17 +73,17 @@ namespace smash.proxy
             index += key.Length + 1;
 
 
-            byte tLength = Data.Span[index];
+            byte tLength = data.Span[index];
             index += 1 + tLength + 2;
 
-            return Data.Length >= index;
+            return data.Length >= index;
         }
         public bool UnPackConnect(Memory<byte> bytes, Memory<byte> key)
         {
             var span = bytes.Span;
             int index = 0;
 
-            if (bytes.Length < key.Length || span.Slice(key.Length).SequenceEqual(key.Span) == false) return false;
+            if (bytes.Length < key.Length || span.Slice(0,key.Length).SequenceEqual(key.Span) == false) return false;
 
             index += key.Length;
 
