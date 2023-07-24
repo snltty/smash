@@ -23,7 +23,7 @@
 代理协议本身不具备加密，需要通过nginx部署SSL，可以使得代理流量与正常HTTP无异
 1. 配置 443 SSL监听，代理至 服务端 127.0.0.1:5413
 2. 配置 其它任意端口监听，部署网站，作为 --fake 站点
-#### 运行参数
+#### 参数
 
 **--mode client | server** 客户端或服务端，**默认server**
 
@@ -37,7 +37,7 @@
 
 **--buff 3** bufferSize 0-10，2^n次方，**默认3**
 
-#### 部署
+#### 托管
 1. windows 可以使用nssm部署为windows service
 2. docker镜像 **snltty/smash.proxy-alpine-x64** or **snltty/smash.proxy-alpine-arm64**
 ```
@@ -73,7 +73,7 @@ systemctl start smash.proxy
 systemctl restart smash.proxy
 ```
 
-#### nginx示例
+#### nginx
 1. wordpress站点  127.0.0.1:8080
 2. 协议服务端      127.0.0.1:5413  **--fake 127.0.0.1:8080**
 3. nginx **proxy_pass http://127.0.0.1:5413/**
