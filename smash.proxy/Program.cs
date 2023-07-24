@@ -24,19 +24,16 @@ namespace smash.proxy
             LoggerConsole();
 
             Dictionary<string, string> dic = ParseParams(args);
-            if (ValidateParams(dic) == false)
+            if (ValidateParams(dic))
             {
-                return;
-            }
-
-            try
-            {
-                Run(dic);
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.Error(ex);
-                return;
+                try
+                {
+                    Run(dic);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Error(ex);
+                }
             }
 
             await Helper.Await();
