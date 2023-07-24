@@ -20,10 +20,10 @@ do
 
 		cd public/publish/docker/linux-${p}-x64/${f}
 		docker buildx build -f ${target}/public/publish/docker/linux-${p}-x64/${f}/Dockerfile-${p} --platform="linux/x86_64"  --force-rm -t "${image}-${p}-x64" . --push
-		cd ../../../../
+		cd ../../../../../
 
 		cd public/publish/docker/linux-${p}-arm64/${f}
 		docker buildx build -f ${target}/public/publish/docker/linux-${p}-arm64/${f}/Dockerfile-${p} --platform="linux/arm64"  --force-rm -t "${image}-${p}-arm64" . --push
-		cd ../../../../
+		cd ../../../../../
 	done
 done
