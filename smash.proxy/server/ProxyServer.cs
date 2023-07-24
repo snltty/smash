@@ -4,6 +4,7 @@ using System;
 using System.Net.Sockets;
 using common.libs;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace smash.proxy.server
 {
@@ -214,6 +215,10 @@ namespace smash.proxy.server
                     token.TargetSocket = new Socket(token.TargerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                     proxyServerUserToken.TargetSocket = token.TargetSocket;
                     await proxyServerUserToken.TargetSocket.ConnectAsync(proxyServerUserToken.TargerEP).WaitAsync(TimeSpan.FromSeconds(5));
+                    if (data.Length > 0 && proxyServerUserToken.TargerEP.Equals(proxyServerConfig.FakeEP))
+                    {
+                        await proxyServerUserToken.TargetSocket.SendAsync(data);
+                    }
                     BindTargetReceive(proxyServerUserToken);
                 }
                 else
