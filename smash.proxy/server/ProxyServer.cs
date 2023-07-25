@@ -354,7 +354,7 @@ namespace smash.proxy.server
                     break;
                 case Socks5EnumAddressType.Domain:
                     {
-                        Console.WriteLine($"read domain:{info.TargetAddress.GetString()}");
+                        //Console.WriteLine($"read domain:{info.TargetAddress.GetString()}");
                         ip = NetworkHelper.GetDomainIp(info.TargetAddress.GetString());
                     }
                     break;
