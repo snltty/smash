@@ -1,5 +1,6 @@
 ﻿using common.libs;
 using common.libs.extends;
+using smash.proxy.client;
 using smash.proxy.server;
 using System;
 using System.Collections.Generic;
@@ -46,12 +47,14 @@ namespace smash.proxy
                 case "client":
                     {
                         Logger.Instance.Info($"smash client are running");
+                        string[] arr = dic["server"].Split(':');
+                        string port = arr.Length > 1 ? arr[1] : "443";
                         ProxyClientConfig proxyClientConfig = new ProxyClientConfig
                         {
                             BufferSize = (EnumBufferSize)byte.Parse(dic["buff"]),
                             Key = dic["key"],
                             ListenPort = ushort.Parse(dic["port"]),
-                            ServerEP = IPEndPoint.Parse(dic["server"])
+                            ServerEP = IPEndPoint.Parse($"{NetworkHelper.GetDomainIp(arr[0])}:{port}")
                         };
                         ProxyClient proxyClient = new ProxyClient(proxyClientConfig);
                         proxyClient.Start();
@@ -60,19 +63,21 @@ namespace smash.proxy
                         Logger.Instance.Info($"listen 0.0.0.0:{proxyClientConfig.ListenPort}");
                         Logger.Instance.Info($"server {proxyClientConfig.ServerEP}");
                         Logger.Instance.Info($"buff {proxyClientConfig.BufferSize}");
-                        Logger.Instance.Info($"key {proxyClientConfig.KeyMemory.GetString()}");
+                        Logger.Instance.Info($"key {proxyClientConfig.HttpHeaderMemory.GetString()}");
                         Logger.Instance.Info(string.Empty.PadLeft(32, '='));
                     }
                     break;
                 case "server":
                     {
                         Logger.Instance.Info($"smash server are running");
+                        string[] arr = dic["fake"].Split(':');
+                        string port = arr.Length > 1 ? arr[1] : "443";
                         ProxyServerConfig proxyServerConfig = new ProxyServerConfig
                         {
                             BufferSize = (EnumBufferSize)byte.Parse(dic["buff"]),
                             Key = dic["key"],
                             ListenPort = ushort.Parse(dic["port"]),
-                            FakeEP = IPEndPoint.Parse(dic["fake"])
+                            FakeEP = IPEndPoint.Parse($"{NetworkHelper.GetDomainIp(arr[0])}:{port}")
                         };
                         ProxyServer proxyServer = new ProxyServer(proxyServerConfig);
                         proxyServer.Start();
@@ -238,7 +243,7 @@ namespace smash.proxy
                 }
                 else
                 {
-                    dic["key"] = Guid.NewGuid().ToString().ToUpper().Substring(0, 8);
+                    dic["key"] = Helper.RandomPasswordString(8);
                 }
 #endif
             }

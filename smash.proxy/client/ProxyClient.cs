@@ -4,15 +4,13 @@ using System.Net.Sockets;
 using System.Net;
 using System.Threading.Tasks;
 using common.libs.extends;
-using System.Text;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Collections.Concurrent;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace smash.proxy.server
+namespace smash.proxy.client
 {
-    internal sealed class ProxyClient
+    public sealed class ProxyClient
     {
         private readonly ProxyClientConfig proxyClientConfig;
 
@@ -161,7 +159,7 @@ namespace smash.proxy.server
                     token.ServerStream = sslStream;
                 }
 
-                byte[] bytes = info.PackConnect(proxyClientConfig.KeyMemory, out int length);
+                byte[] bytes = info.PackConnect(proxyClientConfig.HttpHeaderMemory, out int length);
                 info.Data = bytes.AsMemory(0, length);
 
                 await Request(token);
@@ -619,7 +617,7 @@ namespace smash.proxy.server
         }
     }
 
-    internal sealed class ProxyClientUserToken
+    public sealed class ProxyClientUserToken
     {
         public Socket ClientSocket { get; set; }
         public SocketAsyncEventArgs Saea { get; set; }
@@ -635,18 +633,18 @@ namespace smash.proxy.server
 
     }
 
-    internal sealed class ProxyClientConfig
+    public sealed class ProxyClientConfig
     {
         public ushort ListenPort { get; set; }
         public string Key
         {
             set
             {
-                keyMemory = value.ToBytes();
+                httpHeaderMemory = $"{value} / HTTP/1.1\r\nhost: proxy.snltty.com\r\ncontent-length: ".ToBytes(); //13,10,13,10
             }
         }
-        private Memory<byte> keyMemory;
-        public Memory<byte> KeyMemory { get => keyMemory; }
+        private Memory<byte> httpHeaderMemory;
+        public Memory<byte> HttpHeaderMemory { get => httpHeaderMemory; }
 
         public IPEndPoint ServerEP { get; set; }
 

@@ -8,7 +8,7 @@ using System.Text;
 
 namespace smash.proxy.server
 {
-    internal sealed class ProxyServer
+    public sealed class ProxyServer
     {
         private readonly ProxyServerConfig proxyServerConfig;
         private Socket Socket;
@@ -194,7 +194,7 @@ namespace smash.proxy.server
                 token.TargerEP = proxyServerConfig.FakeEP;
                 if (info.ValidateKey(data, proxyServerConfig.KeyMemory))
                 {
-                    info.UnPackConnect(data, proxyServerConfig.KeyMemory);
+                    info.UnPackConnect(data);
                     token.TargerEP = ReadRemoteEndPoint(info);
 
                 }
@@ -390,7 +390,7 @@ namespace smash.proxy.server
         }
     }
 
-    internal sealed class ProxyServerUserToken
+    public sealed class ProxyServerUserToken
     {
         public Socket ClientSocket { get; set; }
         public SocketAsyncEventArgs Saea { get; set; }
@@ -404,7 +404,7 @@ namespace smash.proxy.server
 
     }
 
-    internal sealed class ProxyServerConfig
+    public sealed class ProxyServerConfig
     {
         public ushort ListenPort { get; set; }
         public string Key

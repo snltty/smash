@@ -1,12 +1,14 @@
 ﻿using common.libs.extends;
 using System;
 using System.Buffers;
-using System.Net;
+using System.Text;
 
 namespace smash.proxy
 {
-    internal sealed class ProxyInfo
+    public sealed class ProxyInfo
     {
+        static Memory<byte> HeaderEnd = Encoding.UTF8.GetBytes("\r\n\r\n");
+
         /// <summary>
         /// 地址类型
         /// </summary>
@@ -27,17 +29,25 @@ namespace smash.proxy
         public Memory<byte> Data { get; set; }
 
 
-        public bool ValidateKey(Memory<byte> data,Memory<byte> key)
+        public bool ValidateKey(Memory<byte> data, Memory<byte> key)
         {
-            return data.Length >= key.Length && data.Span.Slice(0,key.Length).SequenceEqual(key.Span);
+            return data.Length >= key.Length && data.Span.Slice(0, key.Length).SequenceEqual(key.Span);
         }
 
-        public byte[] PackConnect(Memory<byte> key, out int length)
+        public byte[] PackConnect(Memory<byte> httpHeader, out int length)
         {
+            int protocolLength =
+                +1 // 0000 0000 address type + command
+                + 1 + TargetAddress.Length + 2;// target length
+
+            //协议数据长度 + 描述长度的4字节
+            int contentLength = protocolLength + 4;
+            byte[] contentLengthStr = contentLength.ToString().ToBytes();
+
             length =
-               +key.Length //ke
-               + 1 // 0000 0000 address type + command
-               + 1 + TargetAddress.Length + 2; // target length
+               +httpHeader.Length //http header
+               + contentLengthStr.Length + HeaderEnd.Length //content-length 数值长度 + \r\n\r\n
+               + contentLength;
 
 
             byte[] bytes = ArrayPool<byte>.Shared.Rent(length);
@@ -45,12 +55,19 @@ namespace smash.proxy
             var span = memory.Span;
             int index = 0;
 
-            key.CopyTo(memory.Slice(index));
-            index += key.Length;
+            //http请求头
+            httpHeader.CopyTo(memory.Slice(index));
+            index += httpHeader.Length;
 
+            contentLengthStr.CopyTo(memory.Slice(index));
+            index += contentLengthStr.Length;
+
+            HeaderEnd.CopyTo(memory.Slice(index));
+            index += HeaderEnd.Length;
+
+            //协议内容
             bytes[index] = (byte)((byte)AddressType << 4 | (byte)Command);
             index += 1;
-
 
             bytes[index] = (byte)TargetAddress.Length;
             index += 1;
@@ -60,32 +77,19 @@ namespace smash.proxy
             TargetPort.ToBytes(memory.Slice(index));
             index += 2;
 
+            //协议长度
+            protocolLength.ToBytes(memory.Slice(index));
+            index += 4;
+
             return bytes;
         }
-        public bool ValidateConnect(Memory<byte> data,Memory<byte> key)
-        {
-            if (data.Length < key.Length + 1 + 1 + 1 + 2)
-            {
-                return false;
-            }
-
-            int index = 0;
-            index += key.Length + 1;
-
-
-            byte tLength = data.Span[index];
-            index += 1 + tLength + 2;
-
-            return data.Length >= index;
-        }
-        public bool UnPackConnect(Memory<byte> bytes, Memory<byte> key)
+        public bool UnPackConnect(Memory<byte> bytes)
         {
             var span = bytes.Span;
+
+            int protocolLength = span.Slice(span.Length - 4, 4).ToInt32();
+            span = span.Slice(span .Length - protocolLength - 4, protocolLength);
             int index = 0;
-
-            if (bytes.Length < key.Length || span.Slice(0,key.Length).SequenceEqual(key.Span) == false) return false;
-
-            index += key.Length;
 
             AddressType = (Socks5EnumAddressType)(span[index] >> 4);
             Command = (Socks5EnumRequestCommand)(span[index] & 0b0000_1111);
@@ -109,7 +113,7 @@ namespace smash.proxy
 
     }
 
-    internal enum EnumBufferSize : byte
+    public enum EnumBufferSize : byte
     {
         KB_1 = 0,
         KB_2 = 1,
@@ -129,7 +133,7 @@ namespace smash.proxy
     /// 数据验证结果
     /// </summary>
     [Flags]
-    internal enum EnumProxyValidateDataResult : byte
+    public enum EnumProxyValidateDataResult : byte
     {
         Equal = 1,
         TooShort = 2,
@@ -140,7 +144,7 @@ namespace smash.proxy
     /// <summary>
     /// 当前处于socks5协议的哪一步
     /// </summary>
-    internal enum Socks5EnumStep : byte
+    public enum Socks5EnumStep : byte
     {
         /// <summary>
         /// 第一次请求，处理认证方式
@@ -169,7 +173,7 @@ namespace smash.proxy
     /// <summary>
     /// socks5的连接地址类型
     /// </summary>
-    internal enum Socks5EnumAddressType : byte
+    public enum Socks5EnumAddressType : byte
     {
         IPV4 = 1,
         Domain = 3,
@@ -179,7 +183,7 @@ namespace smash.proxy
     /// <summary>
     /// socks5的认证类型
     /// </summary>
-    internal enum Socks5EnumAuthType : byte
+    public enum Socks5EnumAuthType : byte
     {
         NoAuth = 0x00,
         GSSAPI = 0x01,
@@ -191,7 +195,7 @@ namespace smash.proxy
     /// <summary>
     /// socks5的认证状态0成功 其它失败
     /// </summary>
-    internal enum Socks5EnumAuthState : byte
+    public enum Socks5EnumAuthState : byte
     {
         Success = 0x00,
         UnKnow = 0xff,
@@ -199,7 +203,7 @@ namespace smash.proxy
     /// <summary>
     /// socks5的请求指令
     /// </summary>
-    internal enum Socks5EnumRequestCommand : byte
+    public enum Socks5EnumRequestCommand : byte
     {
         /// <summary>
         /// 连接上游服务器
@@ -217,7 +221,7 @@ namespace smash.proxy
     /// <summary>
     /// socks5的请求的回复数据的指令
     /// </summary>
-    internal enum Socks5EnumResponseCommand : byte
+    public enum Socks5EnumResponseCommand : byte
     {
         /// <summary>
         /// 代理服务器连接目标服务器成功
