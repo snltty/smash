@@ -88,7 +88,8 @@ namespace smash.proxy
             var span = bytes.Span;
 
             int protocolLength = span.Slice(span.Length - 4, 4).ToInt32();
-            span = span.Slice(span .Length - protocolLength - 4, protocolLength);
+            bytes = bytes.Slice(span.Length - protocolLength - 4, protocolLength);
+            span = bytes.Span;
             int index = 0;
 
             AddressType = (Socks5EnumAddressType)(span[index] >> 4);

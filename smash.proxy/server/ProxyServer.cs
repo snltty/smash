@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using common.libs;
 using System.Threading.Tasks;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace smash.proxy.server
 {
@@ -293,7 +294,7 @@ namespace smash.proxy.server
                             length = await token.TargetSocket.ReceiveAsync(e.Buffer.AsMemory(), SocketFlags.None);
                             if (length > 0)
                             {
-                                await token.ClientSocket.SendAsync(e.Buffer.AsMemory(offset, length), SocketFlags.None);
+                                await token.ClientSocket.SendAsync(e.Buffer.AsMemory(0, length), SocketFlags.None);
                             }
                         }
                     }
@@ -353,6 +354,7 @@ namespace smash.proxy.server
                     break;
                 case Socks5EnumAddressType.Domain:
                     {
+                        Console.WriteLine($"read domain:{info.TargetAddress.GetString()}");
                         ip = NetworkHelper.GetDomainIp(info.TargetAddress.GetString());
                     }
                     break;
