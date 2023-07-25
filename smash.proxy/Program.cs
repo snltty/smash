@@ -63,7 +63,7 @@ namespace smash.proxy
                         Logger.Instance.Info($"listen 0.0.0.0:{proxyClientConfig.ListenPort}");
                         Logger.Instance.Info($"server {proxyClientConfig.ServerEP}");
                         Logger.Instance.Info($"buff {proxyClientConfig.BufferSize}");
-                        Logger.Instance.Info($"key {proxyClientConfig.HttpHeaderMemory.GetString()}");
+                        Logger.Instance.Info($"key {proxyClientConfig.KeyMemory.GetString()}");
                         Logger.Instance.Info(string.Empty.PadLeft(32, '='));
                     }
                     break;

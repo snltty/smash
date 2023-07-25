@@ -321,7 +321,8 @@ namespace smash.proxy.client
             catch (Exception ex)
             {
                 CloseClientSocket(e);
-                Logger.Instance.Error(ex);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error(ex);
             }
         }
 
@@ -571,7 +572,8 @@ namespace smash.proxy.client
             }
             catch (Exception ex)
             {
-                Logger.Instance.Error(ex);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error(ex);
                 throw;
             }
         }
@@ -640,9 +642,14 @@ namespace smash.proxy.client
         {
             set
             {
+                keyMemory = value.ToBytes();
                 httpHeaderMemory = $"{value} / HTTP/1.1\r\nhost: proxy.snltty.com\r\ncontent-length: ".ToBytes(); //13,10,13,10
             }
         }
+
+        private Memory<byte> keyMemory;
+        public Memory<byte> KeyMemory { get => keyMemory; }
+
         private Memory<byte> httpHeaderMemory;
         public Memory<byte> HttpHeaderMemory { get => httpHeaderMemory; }
 
