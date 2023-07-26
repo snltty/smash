@@ -7,6 +7,7 @@ using common.libs.extends;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Collections.Concurrent;
+using System.Text;
 
 namespace smash.proxy.client
 {
@@ -161,7 +162,6 @@ namespace smash.proxy.client
 
                 byte[] bytes = info.PackConnect(proxyClientConfig.HttpHeaderMemory, out int length);
                 info.Data = bytes.AsMemory(0, length);
-
                 await Request(token);
                 info.Return(bytes);
                 BindServerReceive(token);
@@ -420,18 +420,31 @@ namespace smash.proxy.client
         }
         private async Task<bool> Request(ProxyClientUserToken token)
         {
-            if (proxyClientConfig.IsSSL)
+            if (proxyClientConfig.IsSSL && (token.ServerStream == null || token.ServerStream.CanWrite == false))
             {
-                if (token.ServerStream == null || token.ServerStream.CanWrite == false)
+                return false;
+            }
+
+            byte[] data = token.Request.PackData(proxyClientConfig.HttpHeaderMemory, out int length);
+            try
+            {
+                if (proxyClientConfig.IsSSL)
                 {
-                    return false;
+                    await token.ServerStream.WriteAsync(data.AsMemory(0, length));
                 }
-                await token.ServerStream.WriteAsync(token.Request.Data);
+                else
+                {
+                    await token.ServerSocket.SendAsync(data.AsMemory(0, length));
+                }
             }
-            else
+            catch (Exception)
             {
-                await token.ServerSocket.SendAsync(token.Request.Data);
             }
+            finally
+            {
+                token.Request.Return(data);
+            }
+
 
             return true;
         }
@@ -451,6 +464,7 @@ namespace smash.proxy.client
 
                 if (HandleAnswerData(token, info))
                 {
+                    //Console.WriteLine(Encoding.UTF8.GetString(info.Data.Span));
                     if (token.Step == Socks5EnumStep.ForwardUdp)
                     {
                         //组装udp包

@@ -1,4 +1,5 @@
-﻿using common.libs.extends;
+﻿using common.libs;
+using common.libs.extends;
 using System;
 using System.Buffers;
 using System.Text;
@@ -105,6 +106,42 @@ namespace smash.proxy
             index += 2;
 
             return true;
+        }
+
+        public byte[] PackData(Memory<byte> httpHeader, out int length)
+        {
+
+            byte[] contentLengthStr = Data.Length.ToString().ToBytes();
+            length =
+              +httpHeader.Length //http header
+              + contentLengthStr.Length + HeaderEnd.Length //content-length 数值长度 + \r\n\r\n
+              + Data.Length;
+
+
+            byte[] bytes = ArrayPool<byte>.Shared.Rent(length);
+            Memory<byte> memory = bytes.AsMemory(0, length);
+            var span = memory.Span;
+            int index = 0;
+
+
+            //http请求头
+            httpHeader.CopyTo(memory.Slice(index));
+            index += httpHeader.Length;
+
+            contentLengthStr.CopyTo(memory.Slice(index));
+            index += contentLengthStr.Length;
+
+            HeaderEnd.CopyTo(memory.Slice(index));
+            index += HeaderEnd.Length;
+
+            Data.CopyTo(memory.Slice(index));
+
+            return bytes;
+
+        }
+        public static int GetContentLength(Memory<byte> data)
+        {
+            return HttpParser.GetContentLength(data);
         }
 
         public void Return(byte[] data)

@@ -137,14 +137,7 @@ namespace smash.proxy.server
                 }
                 else
                 {
-                    if (token.Command == Socks5EnumRequestCommand.Connect)
-                    {
-                        await token.TargetSocket.SendAsync(data, SocketFlags.None);
-                    }
-                    else
-                    {
-                        await token.TargetSocket.SendToAsync(data, SocketFlags.None, token.TargerEP);
-                    }
+                    await SendToRemote(token, data);
                 }
 
                 if (token.ClientSocket.Available > 0)
@@ -158,14 +151,8 @@ namespace smash.proxy.server
                             return;
                         }
                         data = e.Buffer.AsMemory(0, length);
-                        if (token.Command == Socks5EnumRequestCommand.Connect)
-                        {
-                            await token.TargetSocket.SendAsync(data, SocketFlags.None);
-                        }
-                        else
-                        {
-                            await token.TargetSocket.SendToAsync(data, SocketFlags.None, token.TargerEP);
-                        }
+                        await SendToRemote(token, data);
+
                     }
                 }
 
@@ -187,6 +174,67 @@ namespace smash.proxy.server
             }
         }
 
+        private async Task SendToRemote(ProxyServerUserToken token, Memory<byte> data)
+        {
+            /*
+            if (token.IsProxy)
+            {
+                do
+                {
+                    //有数据长度，那就只剩下两种情况，要么只读到了content-length，但是未读到 \r\n\r\n，要么都读到了，但是数据未读完
+                    if (token.LastLength > 0)
+                    {
+                        //数据未读完
+                        if (token.HeaderEnd)
+                        {
+                            Memory<byte> sendDta = data;
+                            if (data.Length > token.LastLength)
+                            {
+                                token.LastLength = 0;
+                                sendDta = sendDta.Slice(token.LastLength);
+                            }
+                            else
+                            {
+                                token.LastLength -= sendDta.Length;
+                            }
+                            data = data.Slice(sendDta.Length);
+                        }
+                        else //读一下http header 结束位置
+                        {
+                            int index = HttpParser.GetHeaderEndIndex(data);
+                            token.HeaderEnd = index >= 0;
+                            if (token.HeaderEnd)
+                            {
+                                data = data.Slice(index + 4); //\r\n\r\n 4个长度
+                            }
+                            else
+                            {
+                                int length = await token.ClientSocket.ReceiveAsync(data.Slice(data.Length), SocketFlags.None);
+                            }
+                        }
+                    }
+                    else //没长度，就说明没读到Content-Length
+                    {
+
+
+                        int length = await token.ClientSocket.ReceiveAsync(data, SocketFlags.None);
+                    }
+
+                } while (data.Length > 0);
+
+                return;
+            }
+            */
+            if (token.Command == Socks5EnumRequestCommand.Connect)
+            {
+                await token.TargetSocket.SendAsync(data, SocketFlags.None);
+            }
+            else
+            {
+                await token.TargetSocket.SendToAsync(data, SocketFlags.None, token.TargerEP);
+            }
+        }
+
         private async Task<bool> ConnectTarget(ProxyServerUserToken token, Memory<byte> data)
         {
             try
@@ -197,7 +245,7 @@ namespace smash.proxy.server
                 {
                     info.UnPackConnect(data);
                     token.TargerEP = ReadRemoteEndPoint(info);
-
+                    token.IsProxy = true;
                 }
 
                 token.Command = info.Command;
@@ -400,9 +448,16 @@ namespace smash.proxy.server
         public Socks5EnumStep Step { get; set; } = Socks5EnumStep.Command;
         public Socks5EnumRequestCommand Command { get; set; }
 
-        public IPEndPoint TargerEP { get; set; }
         public Socket TargetSocket { get; set; }
+
+        //udp
+        public IPEndPoint TargerEP { get; set; }
         public EndPoint TempRemoteEP = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort);
+
+        //解包
+        public bool IsProxy { get; set; }
+        public bool HeaderEnd { get; set; }
+        public int LastLength { get; set; }
 
     }
 
