@@ -2,6 +2,7 @@
 using BenchmarkDotNet.Running;
 using common.libs;
 using common.libs.extends;
+using Microsoft.Diagnostics.Tracing.Etlx;
 using smash.proxy;
 using smash.proxy.client;
 using smash.proxy.server;
@@ -12,6 +13,7 @@ using System.Management;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -21,15 +23,16 @@ namespace test
 {
     internal class Program
     {
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            //BenchmarkRunner.Run<Test>();
+          //  Test();
+            BenchmarkRunner.Run<Test>();
 
         }
 
 
         static byte[] bytes = Encoding.UTF8.GetBytes($"GET / HTTP/1.1\r\naaa: bbb\r\nccc: ddd\r\ndddddddddddddddddddddddddddddddddddddddddd: dffffffffffffffffffffffffffffffffffffffffffffffffffff\r\nContent-Length: 123\r\n\r\n123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890---");
-        private void Test()
+        private static void Test()
         {
             //>0表示已经找到了 content-length，拿到了长度
             int contentLength = 0;
@@ -41,8 +44,60 @@ namespace test
             Memory<byte> data = buffer.Slice(0, length);
             do
             {
+                //Console.WriteLine($"data:{Encoding.UTF8.GetString(data.Span)}");
+                if (contentLength > 0)
+                {
+                    if (Headed)
+                    {
+                        Memory<byte> sendDta = data;
+                        if (sendDta.Length > contentLength)
+                        {
+                            sendDta = sendDta.Slice(contentLength);
+                            contentLength = 0;
+                           
+                        }
+                        else
+                        {
+                            contentLength -= sendDta.Length;
+                        }
+
+                        Console.WriteLine(Encoding.UTF8.GetString(sendDta.Span));
+
+                        data = data.Slice(sendDta.Length);
+
+                        if(contentLength > 0)
+                        {
+                            length = ReadData(buffer.Slice(data.Length));
+                            data = buffer.Slice(0, data.Length + length);
+                        }
+                        continue;
+
+                    }
+                    int headIndex = HttpParser.GetHeaderEndIndex(data);
+                    Console.WriteLine($"headIndex:{headIndex}");
+                    if (headIndex >= 0)
+                    {
+                        Headed = true;
+                        data = data.Slice(headIndex + 4);
+                        continue;
+                    }
+                    length = ReadData(buffer.Slice(data.Length));
+                    data = buffer.Slice(0, data.Length + length);
+                }
+                else
+                {
+                    contentLength = HttpParser.GetContentLength(data);
+                   // Console.WriteLine($"contentLength:{contentLength}");
+                    if (contentLength > 0)
+                    {
+                        continue;
+                    }
+                    length = ReadData(buffer.Slice(data.Length));
+                    data = buffer.Slice(0, data.Length + length);
+                }
 
             } while (data.Length > 0);
+            Console.WriteLine("//");
         }
 
         static int readIndex = 0;
@@ -50,10 +105,10 @@ namespace test
         {
             if (readIndex >= bytes.Length) return 0;
 
-            int length = new Random().Next(10, 50);
-            if (data.Length - readIndex < length)
+            int length = new Random().Next(5, 20);
+            if (readIndex + length >= bytes.Length)
             {
-                length = data.Length - readIndex;
+                length = bytes.Length - readIndex;
             }
             bytes.AsMemory(readIndex, length).CopyTo(data);
             readIndex += length;
@@ -75,7 +130,7 @@ namespace test
                 TargetAddress = new byte[] { 127, 0, 0, 2 },
                 TargetPort = 880
             };
-            byte[] proxy = info.PackConnect(proxyClientConfig.HttpHeaderMemory, out int length);
+            byte[] proxy = info.PackConnect(proxyClientConfig.HttpRequestHeader, out int length);
             Console.WriteLine("==============================================");
 
 
@@ -104,22 +159,15 @@ namespace test
         [GlobalSetup]
         public void Startup()
         {
+            saea.SetBuffer(new byte[8*1024]);
         }
 
-        byte[] bytes = Encoding.UTF8.GetBytes($"GET / HTTP/1.1\r\naaa: bbb\r\nccc: ddd\r\ndddddddddddddddddddddddddddddddddddddddddd: dffffffffffffffffffffffffffffffffffffffffffffffffffff\r\nContent-Length: 1000\r\n\r\n");
-        byte[] contentsp = Encoding.UTF8.GetBytes("\r\n\r\n");
-        byte[] contentLengthBytes = Encoding.ASCII.GetBytes("Content-Length: ");
-        byte[] end = Encoding.UTF8.GetBytes("\r\n");
-        [Benchmark]
-        public void GetLength()
+        SocketAsyncEventArgs saea = new SocketAsyncEventArgs(); 
+         [Benchmark]
+        public void SetBuffer()
         {
-            int value = HttpParser.GetContentLength(bytes);
+            saea.SetBuffer(saea.Buffer, 1024,8*1024);
 
-        }
-        [Benchmark]
-        public void ContentStart()
-        {
-            bytes.AsSpan().IndexOf(contentsp);
         }
 
     }

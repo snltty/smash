@@ -137,14 +137,41 @@ namespace smash.proxy
             Data.CopyTo(memory.Slice(index));
 
             return bytes;
-
         }
-        public static int GetContentLength(Memory<byte> data)
+        public static byte[] PackResponse(Memory<byte> httpHeader, Memory<byte> data, out int length)
         {
-            return HttpParser.GetContentLength(data);
+
+            byte[] contentLengthStr = data.Length.ToString().ToBytes();
+            length =
+              +httpHeader.Length //http header
+              + contentLengthStr.Length + HeaderEnd.Length //content-length 数值长度 + \r\n\r\n
+              + data.Length;
+
+
+            byte[] bytes = ArrayPool<byte>.Shared.Rent(length);
+            Memory<byte> memory = bytes.AsMemory(0, length);
+            int index = 0;
+
+            //http请求头
+            httpHeader.CopyTo(memory.Slice(index));
+            index += httpHeader.Length;
+
+            contentLengthStr.CopyTo(memory.Slice(index));
+            index += contentLengthStr.Length;
+
+            HeaderEnd.CopyTo(memory.Slice(index));
+            index += HeaderEnd.Length;
+
+            data.CopyTo(memory.Slice(index));
+
+            return bytes;
         }
 
         public void Return(byte[] data)
+        {
+            ReturnStatic(data);
+        }
+        public static void ReturnStatic(byte[] data)
         {
             ArrayPool<byte>.Shared.Return(data);
         }
