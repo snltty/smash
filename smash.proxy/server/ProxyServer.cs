@@ -13,9 +13,11 @@ namespace smash.proxy.server
         private readonly ProxyServerConfig proxyServerConfig;
         private Socket Socket;
 
+        private ICrypto crypto;
         public ProxyServer(ProxyServerConfig proxyServerConfig)
         {
             this.proxyServerConfig = proxyServerConfig;
+            crypto = new CryptoFactory().CreateSymmetric("12345678901234567890123456789011");
         }
 
         public bool Start()
@@ -129,7 +131,7 @@ namespace smash.proxy.server
 
                 int totalLength = e.BytesTransferred;
                 Memory<byte> data = e.Buffer.AsMemory(0, e.BytesTransferred);
-                Console.WriteLine($"ProcessReceive:{token.IsProxy}:{data.Length}");
+                Console.WriteLine($"ProcessReceive:{token.ClientSocket.GetHashCode()}:{token.Step}:{token.IsProxy}:{data.Length}");
                 if (token.Step <= Socks5EnumStep.Command)
                 {
                     await ConnectTarget(token, data);
@@ -144,6 +146,7 @@ namespace smash.proxy.server
                     CloseClientSocket(e);
                     return;
                 }
+                Console.WriteLine($"ProcessReceive:start receive");
                 if (token.ClientSocket.ReceiveAsync(e) == false)
                 {
                     ProcessReceive(e);
@@ -187,7 +190,7 @@ namespace smash.proxy.server
         {
             try
             {
-                Console.WriteLine("ConnectTarget");
+                Console.WriteLine($"ConnectTarget:{token.ClientSocket.GetHashCode()}");
                 ProxyInfo info = new ProxyInfo();
                 token.TargerEP = proxyServerConfig.FakeEP;
                 if (info.ValidateKey(data, proxyServerConfig.KeyMemory))
@@ -235,6 +238,7 @@ namespace smash.proxy.server
                 }
 
                 token.Step = Socks5EnumStep.Forward;
+                await Response(proxyServerUserToken, Encoding.UTF8.GetBytes("success"));
                 return true;
             }
             catch (Exception ex)
@@ -425,7 +429,7 @@ namespace smash.proxy.server
         private Memory<byte> keyMemory;
         public Memory<byte> KeyMemory { get => keyMemory; }
 
-        public Memory<byte> HttpResponseHeader { get; set; } = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\ncontent-length: ");
+        public Memory<byte> HttpResponseHeader { get; set; } = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\nconnection: keep-alive\r\ncontent-length: ");
 
         public IPEndPoint FakeEP { get; set; }
 

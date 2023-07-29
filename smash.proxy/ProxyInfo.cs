@@ -1,5 +1,4 @@
-﻿using common.libs;
-using common.libs.extends;
+﻿using common.libs.extends;
 using System;
 using System.Buffers;
 using System.Text;
@@ -34,6 +33,7 @@ namespace smash.proxy
         {
             return data.Length >= key.Length && data.Span.Slice(0, key.Length).SequenceEqual(key.Span);
         }
+
 
         public byte[] PackConnect(Memory<byte> httpHeader, out int length)
         {
@@ -110,8 +110,7 @@ namespace smash.proxy
 
         public byte[] PackData(Memory<byte> httpHeader, out int length)
         {
-
-            byte[] contentLengthStr = Data.Length.ToString().ToBytes();
+            byte[] contentLengthStr = (Data.Length).ToString().ToBytes();
             length =
               +httpHeader.Length //http header
               + contentLengthStr.Length + HeaderEnd.Length //content-length 数值长度 + \r\n\r\n
@@ -135,6 +134,7 @@ namespace smash.proxy
             index += HeaderEnd.Length;
 
             Data.CopyTo(memory.Slice(index));
+            index += Data.Length;
 
             return bytes;
         }
@@ -163,6 +163,7 @@ namespace smash.proxy
             index += HeaderEnd.Length;
 
             data.CopyTo(memory.Slice(index));
+
 
             return bytes;
         }

@@ -8,7 +8,6 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Collections.Concurrent;
 using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace smash.proxy.client
 {
@@ -19,10 +18,12 @@ namespace smash.proxy.client
         private Socket Socket;
         private UdpClient UdpClient;
         private ConcurrentDictionary<IPEndPoint, ProxyClientUserToken> udpConnections = new ConcurrentDictionary<IPEndPoint, ProxyClientUserToken>();
+        private ICrypto crypto;
 
         public ProxyClient(ProxyClientConfig proxyClientConfig)
         {
             this.proxyClientConfig = proxyClientConfig;
+            crypto = new CryptoFactory().CreateSymmetric("12345678901234567890123456789011");
         }
 
         public bool Start()
@@ -157,7 +158,7 @@ namespace smash.proxy.client
                 if (proxyClientConfig.IsSSL)
                 {
                     SslStream sslStream = new SslStream(new NetworkStream(token.ServerSocket), true, ValidateServerCertificate, null);
-                    await sslStream.AuthenticateAsClientAsync(string.Empty);
+                    await sslStream.AuthenticateAsClientAsync("aaa.snltty.com");
                     token.ServerStream = sslStream;
                 }
 
@@ -207,7 +208,7 @@ namespace smash.proxy.client
                 token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
                 await InputData(token, token.Request, true);
 
-                token.ServerSocket.BeginReceive(token.ServerPoolBuffer, token.ServerPollBufferOffset, token.ServerPoolBuffer.Length- token.ServerPollBufferOffset, SocketFlags.None, ServerReceiveRawCallback, token);
+                token.ServerSocket.BeginReceive(token.ServerPoolBuffer, token.ServerPollBufferOffset, token.ServerPoolBuffer.Length - token.ServerPollBufferOffset, SocketFlags.None, ServerReceiveRawCallback, token);
             }
             catch (Exception ex)
             {
@@ -226,7 +227,7 @@ namespace smash.proxy.client
                 token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
                 await InputData(token, token.Request, true);
 
-                token.ServerStream.BeginRead(token.ServerPoolBuffer, token.ServerPollBufferOffset, token.ServerPoolBuffer.Length- token.ServerPollBufferOffset, ServerReceiveCallback, token);
+                token.ServerStream.BeginRead(token.ServerPoolBuffer, token.ServerPollBufferOffset, token.ServerPoolBuffer.Length - token.ServerPollBufferOffset, ServerReceiveCallback, token);
             }
             catch (Exception ex)
             {
@@ -340,7 +341,7 @@ namespace smash.proxy.client
                     GetRemoteEndPoint(token.Request, out int index);
                     Memory<byte> data = token.Request.Data;
                     bool res = await ConnectServer(token, token.Request);
-                    token.Step = Socks5EnumStep.ForwardUdp;
+                    //token.Step = Socks5EnumStep.ForwardUdp;
                     if (res == false)
                     {
                         result = UdpClient.BeginReceive(ProcessReceiveUdp, token);
@@ -388,8 +389,9 @@ namespace smash.proxy.client
                 {
                     return;
                 }
-
+                Console.WriteLine($"Receive");
                 bool res = await Request(token);
+                Console.WriteLine($"Receive");
                 if (res == false)
                 {
                     CloseClientSocket(token);
@@ -410,8 +412,13 @@ namespace smash.proxy.client
             byte[] data = Helper.EmptyArray;
             if (token.Step > Socks5EnumStep.Command)
             {
-                data = token.Request.PackData(proxyClientConfig.HttpRequestHeader, out int length);
-                memory = data.AsMemory(0, length);
+                //token.Request.Data = crypto.Encode(token.Request.Data);
+                //data = token.Request.PackData(proxyClientConfig.HttpRequestHeader, out int length);
+                // memory = data.AsMemory(0, length);
+
+                Console.WriteLine($"Request:{memory.Length}");
+                Console.WriteLine($"Request:----{string.Join(",", memory.ToArray())}----");
+                Console.WriteLine($"Request:----{Encoding.UTF8.GetString(memory.Span)}----");
             }
 
             try
@@ -452,7 +459,7 @@ namespace smash.proxy.client
 
                 if (packed)
                 {
-                   // Console.WriteLine($"InputData:packed:{Encoding.UTF8.GetString(info.Data.Span)}");
+                    // Console.WriteLine($"InputData:packed:{Encoding.UTF8.GetString(info.Data.Span)}");
                     int lastLength = token.LastLength;
                     bool headed = token.HeaderEnd;
                     info.Data = HttpParser.GetContentData(info.Data, token.ServerPoolBuffer, ref lastLength, ref headed, out int offset);
@@ -466,9 +473,9 @@ namespace smash.proxy.client
                     }
                 }
 
-
-                Console.WriteLine($"InputData step:{token.Step}");
-                if (HandleAnswerData(token, info))
+                Console.WriteLine("================================");
+                Console.WriteLine($"InputData: {packed} step:{token.Step}");
+                if (HandleAnswerData(token, info) && Encoding.UTF8.GetString(info.Data.Span) != "success")
                 {
                     if (token.Step == Socks5EnumStep.ForwardUdp)
                     {
@@ -479,11 +486,11 @@ namespace smash.proxy.client
                     }
                     else
                     {
-                        Console.WriteLine($"InputData data:{token.Step}:{string.Join(",", info.Data.ToArray())}");
+                        Console.WriteLine($"InputData: {packed} data:{token.Step}:{Encoding.UTF8.GetString(info.Data.Span)}");
                         await token.ClientSocket.SendAsync(info.Data, SocketFlags.None).AsTask().WaitAsync(TimeSpan.FromSeconds(5));
                     }
                 }
-
+                Console.WriteLine("================================");
                 if (commandAndFail)
                 {
                     CloseClientSocket(token);
@@ -526,7 +533,7 @@ namespace smash.proxy.client
                     //解析出目标地址
                     GetRemoteEndPoint(info, out int index);
                     bool res = await ConnectServer(token, info);
-                    token.Step = Socks5EnumStep.Forward;
+                    //token.Step = Socks5EnumStep.Forward;
                     if (res == false)
                     {
                         info.Data = new byte[] { (byte)Socks5EnumResponseCommand.NetworkError };
@@ -559,11 +566,13 @@ namespace smash.proxy.client
             //request auth 步骤的，只需回复一个字节的状态码
             if (token.Step < Socks5EnumStep.Command)
             {
+                Console.WriteLine($"HandleAnswerData step:{token.Step}");
                 info.Data = new byte[] { 5, info.Data.Span[0] };
                 token.Step++;
                 return true;
             }
 
+            Console.WriteLine($"HandleAnswerData step:{token.Step}");
             switch (token.Step)
             {
                 case Socks5EnumStep.Command:
@@ -671,7 +680,7 @@ namespace smash.proxy.client
             set
             {
                 keyMemory = value.ToBytes();
-                httpRequestHeader = $"{value} / HTTP/1.1\r\nhost: proxy.snltty.com\r\ncontent-length: ".ToBytes();
+                httpRequestHeader = $"{value} / HTTP/1.1\r\nhost: proxy.snltty.com\r\ncontent-type: text/plain\r\nconnection: keep-alive\r\ncontent-length: ".ToBytes();
             }
         }
 
@@ -681,7 +690,7 @@ namespace smash.proxy.client
         private Memory<byte> httpRequestHeader;
         public Memory<byte> HttpRequestHeader { get => httpRequestHeader; }
 
-        public Memory<byte> HttpResponse { get; set; } = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\ncontent-length: ");
+        public Memory<byte> HttpResponse { get; set; } = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\nconnection: keep-alive\r\ncontent-length: ");
 
         public IPEndPoint ServerEP { get; set; }
 
