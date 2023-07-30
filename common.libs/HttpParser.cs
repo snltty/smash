@@ -13,10 +13,10 @@ namespace common.libs
         {
             Span<byte> span = memory.Span;
             int index = span.IndexOf(contentLengthBytes);
-            if (index < 0) return 0;
+            if (index < 0) return -1;
 
             int endIndex = span.Slice(index + contentLengthBytes.Length).IndexOf(lineEnd);
-            if (endIndex < 0) return 0;
+            if (endIndex < 0) return -1;
 
             Span<byte> sps = span.Slice(index + contentLengthBytes.Length, endIndex);
 
@@ -38,59 +38,65 @@ namespace common.libs
         }
         public static Memory<byte> GetContentData(Memory<byte> data, byte[] receiveBuffer, ref int lastLength, ref bool headerEnd, out int offset)
         {
-
-        restart:
-            if (lastLength == 0)
+            while (true)
             {
-                lastLength = GetContentLength(data);
-                //没找到content-length，去重新接收
                 if (lastLength == 0)
                 {
-                    offset = data.Length;
-                    return Helper.EmptyArray;
+                    lastLength = GetContentLength(data);
+                    //没找到content-length，继续接收
+                    if (lastLength == -1)
+                    {
+                        lastLength = 0;
+                        offset = data.Length;
+                        return Helper.EmptyArray;
+                    }
+                    //content-length确实为0，重新接收
+                    else if (lastLength == 0)
+                    {
+                        offset = 0;
+                        return Helper.EmptyArray;
+                    }
                 }
-                goto restart;
-            }
-            else if (headerEnd == false)
-            {
-                int index = GetHeaderEndIndex(data);
-                //没找到\r\n\r\n去重新接收
-                if (index < 0)
+                else if (headerEnd == false)
                 {
-                    offset = data.Length;
-                    return Helper.EmptyArray;
-                }
-                headerEnd = true;
-                //重新决定做什么
-                data = data.Slice(index + 4);
-                goto restart;
-            }
-            else
-            {
-                if (data.Length == 0)
-                {
-                    offset = 0;
-                    return Helper.EmptyArray;
-                }
-
-                if (data.Length >= lastLength)
-                {
-                    //剩下的数据。是下个包的
-                    data.Slice(lastLength).CopyTo(receiveBuffer);
-                    offset = lastLength;
-
-                    data = data.Slice(0, lastLength);
-                    lastLength = 0;
-                    headerEnd = false;
+                    int index = GetHeaderEndIndex(data);
+                    //没找到\r\n\r\n去重新接收
+                    if (index < 0)
+                    {
+                        offset = data.Length;
+                        return Helper.EmptyArray;
+                    }
+                    headerEnd = true;
+                    //截取数据部分
+                    data = data.Slice(index + 4);
                 }
                 else
                 {
-                    lastLength -= data.Length;
-                    offset = 0;
+                    if (data.Length == 0)
+                    {
+                        offset = 0;
+                        return Helper.EmptyArray;
+                    }
+
+                    if (data.Length >= lastLength)
+                    {
+                        //剩下的数据。是下个包的，需要前移
+                        if (data.Length > lastLength)
+                            data.Slice(lastLength).CopyTo(receiveBuffer);
+
+                        data = data.Slice(0, lastLength);
+                        lastLength = 0;
+                        offset = lastLength;
+                        headerEnd = false;
+                    }
+                    else
+                    {
+                        lastLength -= data.Length;
+                        offset = lastLength;
+                    }
+                    return data;
                 }
             }
-
-            return data;
         }
 
     }

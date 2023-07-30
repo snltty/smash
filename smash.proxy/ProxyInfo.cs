@@ -162,8 +162,8 @@ namespace smash.proxy
             HeaderEnd.CopyTo(memory.Slice(index));
             index += HeaderEnd.Length;
 
-            data.CopyTo(memory.Slice(index));
-
+            if (data.Length > 0)
+                data.CopyTo(memory.Slice(index));
 
             return bytes;
         }
