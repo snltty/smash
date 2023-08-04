@@ -21,7 +21,7 @@ namespace smash.proxy.server
         public bool Start()
         {
             BindAccept();
-            return true;
+            return true; 
         }
 
         private void BindAccept()

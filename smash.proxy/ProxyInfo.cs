@@ -85,8 +85,6 @@ namespace smash.proxy
             int contentLength = HttpParser.GetContentLength(bytes);
             int endIndex = HttpParser.GetHeaderEndIndex(bytes);
 
-           // Console.WriteLine($"data:{bytes.Length},contentLength:{contentLength},endIndex:{endIndex}");
-
             Memory<byte> protocolMemory = bytes.Slice(endIndex + 4, contentLength);
             Span<byte> protocolSpan = protocolMemory.Span;
 
