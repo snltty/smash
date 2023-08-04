@@ -54,6 +54,7 @@ namespace smash.proxy
                             BufferSize = (EnumBufferSize)byte.Parse(dic["buff"]),
                             Key = dic["key"],
                             ListenPort = ushort.Parse(dic["port"]),
+                            Domain = arr[0],
                             ServerEP = IPEndPoint.Parse($"{NetworkHelper.GetDomainIp(arr[0])}:{port}")
                         };
                         ProxyClient proxyClient = new ProxyClient(proxyClientConfig);
@@ -61,7 +62,7 @@ namespace smash.proxy
 
                         Logger.Instance.Info(string.Empty.PadLeft(32, '='));
                         Logger.Instance.Info($"listen 0.0.0.0:{proxyClientConfig.ListenPort}");
-                        Logger.Instance.Info($"server {proxyClientConfig.ServerEP}");
+                        Logger.Instance.Info($"server {dic["server"]}");
                         Logger.Instance.Info($"buff {proxyClientConfig.BufferSize}");
                         Logger.Instance.Info($"key {proxyClientConfig.KeyMemory.GetString()}");
                         Logger.Instance.Info(string.Empty.PadLeft(32, '='));

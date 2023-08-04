@@ -7,7 +7,6 @@ using common.libs.extends;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Collections.Concurrent;
-using System.Text;
 
 namespace smash.proxy.client
 {
@@ -156,7 +155,7 @@ namespace smash.proxy.client
                 if (proxyClientConfig.IsSSL)
                 {
                     SslStream sslStream = new SslStream(new NetworkStream(token.ServerSocket), true, ValidateServerCertificate, null);
-                    await sslStream.AuthenticateAsClientAsync("blog.snltty.com");
+                    await sslStream.AuthenticateAsClientAsync(proxyClientConfig.Domain);
                     token.ServerStream = sslStream;
                 }
 
@@ -188,12 +187,12 @@ namespace smash.proxy.client
                 if (token.ServerStream == null || token.ServerStream.CanRead == false) return;
 
                 token.ServerPoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
-                token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
+                token.ServerStream.BeginRead(token.ServerPoolBuffer, token.ServerPollBufferOffset, token.ServerPoolBuffer.Length- token.ServerPollBufferOffset, ServerReceiveCallback, token);
             }
             else
             {
                 token.ServerPoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
-                token.ServerSocket.BeginReceive(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, SocketFlags.None, ServerReceiveRawCallback, token);
+                token.ServerSocket.BeginReceive(token.ServerPoolBuffer, token.ServerPollBufferOffset, token.ServerPoolBuffer.Length- token.ServerPollBufferOffset, SocketFlags.None, ServerReceiveRawCallback, token);
             }
         }
         private async void ServerReceiveRawCallback(IAsyncResult result)
@@ -224,7 +223,6 @@ namespace smash.proxy.client
 
                 token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
                 await InputData(token, token.Request);
-
                 token.ServerStream.BeginRead(token.ServerPoolBuffer, token.ServerPollBufferOffset, token.ServerPoolBuffer.Length - token.ServerPollBufferOffset, ServerReceiveCallback, token);
             }
             catch (Exception ex)
@@ -283,7 +281,7 @@ namespace smash.proxy.client
 
                 int totalLength = e.BytesTransferred;
                 bool canNext = true;
-                token.Request.Data = e.Buffer.AsMemory(0, e.BytesTransferred);
+                token.Request.Data = e.Buffer.AsMemory(0, totalLength);
                 //有些客户端，会把一个包拆开发送，很奇怪，不得不验证一下数据完整性
                 if (token.Step <= Socks5EnumStep.Command)
                 {
@@ -329,10 +327,9 @@ namespace smash.proxy.client
         private async void ProcessReceiveUdp(IAsyncResult result)
         {
             IPEndPoint rep = null;
+            ProxyClientUserToken receiveToken = result.AsyncState as ProxyClientUserToken;
             try
             {
-                ProxyClientUserToken receiveToken = result.AsyncState as ProxyClientUserToken;
-
                 receiveToken.Request.Data = UdpClient.EndReceive(result, ref rep);
                 receiveToken.SourceEP = rep;
 
@@ -352,7 +349,9 @@ namespace smash.proxy.client
 
                     GetRemoteEndPoint(token.Request, out int index);
                     Memory<byte> data = token.Request.Data;
+                    token.Step = Socks5EnumStep.Command;
                     bool res = await ConnectServer(token, token.Request);
+                    token.Step = Socks5EnumStep.ForwardUdp;
                     if (res == false)
                     {
                         result = UdpClient.BeginReceive(ProcessReceiveUdp, token);
@@ -408,7 +407,8 @@ namespace smash.proxy.client
             }
             catch (Exception ex)
             {
-                Logger.Instance.Error(ex);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error(ex);
             }
         }
         private async Task<bool> Request(ProxyClientUserToken token)
@@ -418,37 +418,25 @@ namespace smash.proxy.client
                 return false;
             }
 
-            Memory<byte> memory = token.Request.Data;
-            byte[] data = Helper.EmptyArray;
-            if (token.Step > Socks5EnumStep.Command)
-            {
-                data = token.Request.PackData(proxyClientConfig.HttpRequestHeader, out int length);
-                memory = data.AsMemory(0, length);
-            }
             try
             {
                 if (proxyClientConfig.IsSSL)
                 {
-                    await token.ServerStream.WriteAsync(memory);
+                    await token.ServerStream.WriteAsync(token.Request.Data);
                 }
                 else
                 {
-                    await token.ServerSocket.SendAsync(memory);
+                    await token.ServerSocket.SendAsync(token.Request.Data);
                 }
             }
             catch (Exception)
             {
             }
-            finally
-            {
-                if (data.Length > 0)
-                    token.Request.Return(data);
-            }
 
             return true;
         }
 
-        private async Task InputData(ProxyClientUserToken token, ProxyInfo info, bool packed = false)
+        private async Task InputData(ProxyClientUserToken token, ProxyInfo info)
         {
             try
             {
@@ -458,19 +446,6 @@ namespace smash.proxy.client
                     return;
                 }
 
-                if (packed)
-                {
-                    int lastLength = token.LastLength;
-                    bool headed = token.HeaderEnd;
-                    info.Data = HttpParser.GetContentData(info.Data, token.ServerPoolBuffer, ref lastLength, ref headed, out int offset);
-                    token.LastLength = lastLength;
-                    token.HeaderEnd = headed;
-                    token.ServerPollBufferOffset = offset;
-                    if (info.Data.Length == 0)
-                    {
-                        return;
-                    }
-                }
                 if (HandleAnswerData(token, info))
                 {
                     if (token.Step == Socks5EnumStep.ForwardUdp)
@@ -482,7 +457,7 @@ namespace smash.proxy.client
                     }
                     else
                     {
-                        await token.ClientSocket.SendAsync(info.Data, SocketFlags.None);
+                        int length = await token.ClientSocket.SendAsync(info.Data, SocketFlags.None);
                     }
                 }
             }
@@ -650,11 +625,7 @@ namespace smash.proxy.client
         public Socket ServerSocket { get; set; }
         public SslStream ServerStream { get; set; }
         public byte[] ServerPoolBuffer { get; set; }
-        public int ServerPollBufferOffset { get; set; } = 0;
-
-        public bool HeaderEnd { get; set; }
-        public int LastLength { get; set; }
-
+        public int ServerPollBufferOffset { get; set; }
     }
 
     public sealed class ProxyClientConfig
@@ -665,7 +636,7 @@ namespace smash.proxy.client
             set
             {
                 keyMemory = value.ToBytes();
-                httpRequestHeader = $"{value} / HTTP/1.1\r\nhost: proxy.snltty.com\r\ncontent-type: text/plain\r\nconnection: keep-alive\r\ncontent-length: ".ToBytes();
+                httpRequestHeader = $"{value} / HTTP/1.1\r\nHost: proxy.snltty.com\r\nContent-Length: ".ToBytes();
             }
         }
 
@@ -675,11 +646,11 @@ namespace smash.proxy.client
         private Memory<byte> httpRequestHeader;
         public Memory<byte> HttpRequestHeader { get => httpRequestHeader; }
 
-        public Memory<byte> HttpResponse { get; set; } = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\nconnection: keep-alive\r\ncontent-length: ");
-
         public IPEndPoint ServerEP { get; set; }
 
         public EnumBufferSize BufferSize { get; set; } = EnumBufferSize.KB_8;
+
+        public string Domain { get; set; }
 
 #if DEBUG
         public bool IsSSL { get; set; } = true;

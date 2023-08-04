@@ -112,8 +112,8 @@ namespace smash.proxy.server
             }
             catch (Exception ex)
             {
-                // if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                Logger.Instance.Error(ex);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error(ex);
             }
         }
 
@@ -164,26 +164,12 @@ namespace smash.proxy.server
             catch (Exception ex)
             {
                 CloseClientSocket(e);
-                // if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                Logger.Instance.Error(ex);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error(ex);
             }
         }
         private async Task SendToRemote(SocketAsyncEventArgs e, ProxyServerUserToken token, Memory<byte> data)
         {
-            if (token.IsProxy)
-            {
-                int lastLength = token.LastLength;
-                bool headed = token.HeaderEnd;
-                data = HttpParser.GetContentData(data, e.Buffer, ref lastLength, ref headed, out int offset);
-                token.LastLength = lastLength;
-                token.HeaderEnd = headed;
-                if (offset != e.Offset)
-                {
-                    e.SetBuffer(e.Buffer, offset, e.Buffer.Length);
-                }
-
-                if (data.Length == 0) return;
-            }
             if (token.Command == Socks5EnumRequestCommand.Connect)
             {
                 await token.TargetSocket.SendAsync(data, SocketFlags.None);
@@ -206,6 +192,10 @@ namespace smash.proxy.server
                     token.TargerEP = ReadRemoteEndPoint(info);
                     token.IsProxy = true;
                 }
+                else
+                {
+                    info.Data = data;
+                }
 
                 token.Command = info.Command;
                 ProxyServerUserToken proxyServerUserToken = new ProxyServerUserToken
@@ -224,9 +214,9 @@ namespace smash.proxy.server
                     token.TargetSocket = new Socket(token.TargerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                     proxyServerUserToken.TargetSocket = token.TargetSocket;
                     await proxyServerUserToken.TargetSocket.ConnectAsync(proxyServerUserToken.TargerEP).WaitAsync(TimeSpan.FromSeconds(5));
-                    if (data.Length > 0 && proxyServerUserToken.TargerEP.Equals(proxyServerConfig.FakeEP))
+                    if (info.Data.Length > 0)
                     {
-                        await proxyServerUserToken.TargetSocket.SendAsync(data);
+                        await proxyServerUserToken.TargetSocket.SendAsync(info.Data);
                     }
                     BindTargetReceive(proxyServerUserToken);
                 }
@@ -238,13 +228,18 @@ namespace smash.proxy.server
 
                     proxyServerUserToken.TargetSocket = token.TargetSocket;
                     proxyServerUserToken.PoolBuffer = new byte[65535];
-                    token.TargetSocket.Bind(new IPEndPoint(IPAddress.Any, 0));
-                    IAsyncResult result = token.TargetSocket.BeginReceiveFrom(proxyServerUserToken.PoolBuffer, 0, proxyServerUserToken.PoolBuffer.Length, SocketFlags.None, ref proxyServerUserToken.TempRemoteEP, ReceiveCallbackUdp, proxyServerUserToken);
+                    proxyServerUserToken.TargetSocket.Bind(new IPEndPoint(IPAddress.Any, 0));
+
+                    if (info.Data.Length > 0)
+                    {
+                        await proxyServerUserToken.TargetSocket.SendToAsync(info.Data, SocketFlags.None, token.TargerEP);
+                    }
+
+                    IAsyncResult result = proxyServerUserToken.TargetSocket.BeginReceiveFrom(proxyServerUserToken.PoolBuffer, 0, proxyServerUserToken.PoolBuffer.Length, SocketFlags.None, ref proxyServerUserToken.TempRemoteEP, ReceiveCallbackUdp, proxyServerUserToken);
 
                 }
 
                 token.Step = Socks5EnumStep.Forward;
-                await Response(proxyServerUserToken, Helper.EmptyArray);
                 return true;
             }
             catch (Exception ex)
@@ -321,22 +316,13 @@ namespace smash.proxy.server
             catch (Exception ex)
             {
                 CloseClientSocket(e);
-                //  if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                Logger.Instance.Error(ex);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error(ex);
             }
         }
         private async Task Response(ProxyServerUserToken token, Memory<byte> data)
         {
-            if (token.IsProxy)
-            {
-                byte[] bytes = ProxyInfo.PackResponse(proxyServerConfig.HttpResponseHeader, data, out int length);
-                await token.ClientSocket.SendAsync(bytes.AsMemory(0, length), SocketFlags.None);
-                ProxyInfo.ReturnStatic(bytes);
-            }
-            else
-            {
-                await token.ClientSocket.SendAsync(data, SocketFlags.None);
-            }
+            await token.ClientSocket.SendAsync(data, SocketFlags.None);
         }
 
         private async void ReceiveCallbackUdp(IAsyncResult result)
@@ -426,8 +412,6 @@ namespace smash.proxy.server
 
         //解包
         public bool IsProxy { get; set; }
-        public bool HeaderEnd { get; set; }
-        public int LastLength { get; set; }
     }
 
     public sealed class ProxyServerConfig
@@ -442,8 +426,6 @@ namespace smash.proxy.server
         }
         private Memory<byte> keyMemory;
         public Memory<byte> KeyMemory { get => keyMemory; }
-
-        public Memory<byte> HttpResponseHeader { get; set; } = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\nconnection: keep-alive\r\ncontent-length: ");
 
         public IPEndPoint FakeEP { get; set; }
 

@@ -1,4 +1,5 @@
-﻿using common.libs.extends;
+﻿using common.libs;
+using common.libs.extends;
 using System;
 using System.Buffers;
 using System.Text;
@@ -41,14 +42,13 @@ namespace smash.proxy
                 +1 // 0000 0000 address type + command
                 + 1 + TargetAddress.Length + 2;// target length
 
-            //协议数据长度 + 描述长度的4字节
-            int contentLength = protocolLength + 4;
-            byte[] contentLengthStr = contentLength.ToString().ToBytes();
+            //协议数据长度
+            byte[] contentLengthStr = protocolLength.ToString().ToBytes();
 
             length =
                +httpHeader.Length //http header
                + contentLengthStr.Length + HeaderEnd.Length //content-length 数值长度 + \r\n\r\n
-               + contentLength;
+               + protocolLength;
 
 
             byte[] bytes = ArrayPool<byte>.Shared.Rent(length);
@@ -78,94 +78,34 @@ namespace smash.proxy
             TargetPort.ToBytes(memory.Slice(index));
             index += 2;
 
-            //协议长度
-            protocolLength.ToBytes(memory.Slice(index));
-            index += 4;
-
             return bytes;
         }
         public bool UnPackConnect(Memory<byte> bytes)
         {
-            var span = bytes.Span;
+            int contentLength = HttpParser.GetContentLength(bytes);
+            int endIndex = HttpParser.GetHeaderEndIndex(bytes);
 
-            int protocolLength = span.Slice(span.Length - 4, 4).ToInt32();
-            bytes = bytes.Slice(span.Length - protocolLength - 4, protocolLength);
-            span = bytes.Span;
+           // Console.WriteLine($"data:{bytes.Length},contentLength:{contentLength},endIndex:{endIndex}");
+
+            Memory<byte> protocolMemory = bytes.Slice(endIndex + 4, contentLength);
+            Span<byte> protocolSpan = protocolMemory.Span;
+
+
             int index = 0;
-
-            AddressType = (Socks5EnumAddressType)(span[index] >> 4);
-            Command = (Socks5EnumRequestCommand)(span[index] & 0b0000_1111);
+            AddressType = (Socks5EnumAddressType)(protocolSpan[index] >> 4);
+            Command = (Socks5EnumRequestCommand)(protocolSpan[index] & 0b0000_1111);
             index += 1;
 
-
-            byte targetepLength = span[index];
+            byte targetepLength = protocolSpan[index];
             index += 1;
-            TargetAddress = bytes.Slice(index, targetepLength);
+            TargetAddress = protocolMemory.Slice(index, targetepLength);
             index += targetepLength;
-            TargetPort = span.Slice(index, 2).ToUInt16();
+            TargetPort = protocolSpan.Slice(index, 2).ToUInt16();
             index += 2;
 
+            Data = bytes.Slice(endIndex + 4 + contentLength);
+
             return true;
-        }
-
-        public byte[] PackData(Memory<byte> httpHeader, out int length)
-        {
-            byte[] contentLengthStr = (Data.Length).ToString().ToBytes();
-            length =
-              +httpHeader.Length //http header
-              + contentLengthStr.Length + HeaderEnd.Length //content-length 数值长度 + \r\n\r\n
-              + Data.Length;
-
-
-            byte[] bytes = ArrayPool<byte>.Shared.Rent(length);
-            Memory<byte> memory = bytes.AsMemory(0, length);
-            var span = memory.Span;
-            int index = 0;
-
-
-            //http请求头
-            httpHeader.CopyTo(memory.Slice(index));
-            index += httpHeader.Length;
-
-            contentLengthStr.CopyTo(memory.Slice(index));
-            index += contentLengthStr.Length;
-
-            HeaderEnd.CopyTo(memory.Slice(index));
-            index += HeaderEnd.Length;
-
-            Data.CopyTo(memory.Slice(index));
-            index += Data.Length;
-
-            return bytes;
-        }
-        public static byte[] PackResponse(Memory<byte> httpHeader, Memory<byte> data, out int length)
-        {
-
-            byte[] contentLengthStr = data.Length.ToString().ToBytes();
-            length =
-              +httpHeader.Length //http header
-              + contentLengthStr.Length + HeaderEnd.Length //content-length 数值长度 + \r\n\r\n
-              + data.Length;
-
-
-            byte[] bytes = ArrayPool<byte>.Shared.Rent(length);
-            Memory<byte> memory = bytes.AsMemory(0, length);
-            int index = 0;
-
-            //http请求头
-            httpHeader.CopyTo(memory.Slice(index));
-            index += httpHeader.Length;
-
-            contentLengthStr.CopyTo(memory.Slice(index));
-            index += contentLengthStr.Length;
-
-            HeaderEnd.CopyTo(memory.Slice(index));
-            index += HeaderEnd.Length;
-
-            if (data.Length > 0)
-                data.CopyTo(memory.Slice(index));
-
-            return bytes;
         }
 
         public void Return(byte[] data)

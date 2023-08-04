@@ -25,96 +25,11 @@ namespace test
     {
         static void Main(string[] args)
         {
-          //  Test();
-            BenchmarkRunner.Run<Test>();
+            //  Test();
+            // BenchmarkRunner.Run<Test>();
 
         }
 
-
-        static byte[] bytes = Encoding.UTF8.GetBytes($"GET / HTTP/1.1\r\naaa: bbb\r\nccc: ddd\r\ndddddddddddddddddddddddddddddddddddddddddd: dffffffffffffffffffffffffffffffffffffffffffffffffffff\r\nContent-Length: 123\r\n\r\n123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890---");
-        private static void Test()
-        {
-            //>0表示已经找到了 content-length，拿到了长度
-            int contentLength = 0;
-            //是否已经找到了\r\n\r\n结束标记
-            bool Headed = false;
-
-            Memory<byte> buffer = new byte[8 * 1024];
-            int length = ReadData(buffer);
-            Memory<byte> data = buffer.Slice(0, length);
-            do
-            {
-                //Console.WriteLine($"data:{Encoding.UTF8.GetString(data.Span)}");
-                if (contentLength > 0)
-                {
-                    if (Headed)
-                    {
-                        Memory<byte> sendDta = data;
-                        if (sendDta.Length > contentLength)
-                        {
-                            sendDta = sendDta.Slice(contentLength);
-                            contentLength = 0;
-                           
-                        }
-                        else
-                        {
-                            contentLength -= sendDta.Length;
-                        }
-
-                        Console.WriteLine(Encoding.UTF8.GetString(sendDta.Span));
-
-                        data = data.Slice(sendDta.Length);
-
-                        if(contentLength > 0)
-                        {
-                            length = ReadData(buffer.Slice(data.Length));
-                            data = buffer.Slice(0, data.Length + length);
-                        }
-                        continue;
-
-                    }
-                    int headIndex = HttpParser.GetHeaderEndIndex(data);
-                    Console.WriteLine($"headIndex:{headIndex}");
-                    if (headIndex >= 0)
-                    {
-                        Headed = true;
-                        data = data.Slice(headIndex + 4);
-                        continue;
-                    }
-                    length = ReadData(buffer.Slice(data.Length));
-                    data = buffer.Slice(0, data.Length + length);
-                }
-                else
-                {
-                    contentLength = HttpParser.GetContentLength(data);
-                   // Console.WriteLine($"contentLength:{contentLength}");
-                    if (contentLength > 0)
-                    {
-                        continue;
-                    }
-                    length = ReadData(buffer.Slice(data.Length));
-                    data = buffer.Slice(0, data.Length + length);
-                }
-
-            } while (data.Length > 0);
-            Console.WriteLine("//");
-        }
-
-        static int readIndex = 0;
-        private static int ReadData(Memory<byte> data)
-        {
-            if (readIndex >= bytes.Length) return 0;
-
-            int length = new Random().Next(5, 20);
-            if (readIndex + length >= bytes.Length)
-            {
-                length = bytes.Length - readIndex;
-            }
-            bytes.AsMemory(readIndex, length).CopyTo(data);
-            readIndex += length;
-
-            return length;
-        }
 
 
         private async Task ProxyTest()
@@ -159,14 +74,14 @@ namespace test
         [GlobalSetup]
         public void Startup()
         {
-            saea.SetBuffer(new byte[8*1024]);
+            saea.SetBuffer(new byte[8 * 1024]);
         }
 
-        SocketAsyncEventArgs saea = new SocketAsyncEventArgs(); 
-         [Benchmark]
+        SocketAsyncEventArgs saea = new SocketAsyncEventArgs();
+        [Benchmark]
         public void SetBuffer()
         {
-            saea.SetBuffer(saea.Buffer, 1024,8*1024);
+            saea.SetBuffer(saea.Buffer, 1024, 8 * 1024);
 
         }
 

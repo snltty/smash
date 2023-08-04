@@ -76,7 +76,7 @@ systemctl restart smash.proxy
 #### nginx
 1. wordpress站点  127.0.0.1:8080
 2. 协议服务端      127.0.0.1:5413  **--fake 127.0.0.1:8080**
-3. nginx **proxy_pass http://127.0.0.1:5413/**
+3. nginx **proxy_pass 127.0.0.1:5413**
 
 ```
 user www-data;
@@ -86,51 +86,23 @@ include /etc/nginx/modules-enabled/*.conf;
 
 events {
 	worker_connections 102400;
-	# multi_accept on;
 }
 
-http {
-	include /etc/nginx/mime.types;
-	default_type application/octet-stream;
-
-	ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3; # Dropping SSLv3, ref: POODLE
-	ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;
-	ssl_prefer_server_ciphers on;
-
-	access_log /var/log/nginx/access.log;
-	error_log /var/log/nginx/error.log;
-
-	gzip on;
-
+stream {
 	server{
 		listen 80;
 		listen 443 ssl;
-		server_name 域名;
-		ssl_certificate  ssl pem文件;
-    	ssl_certificate_key ssl key文件;
-			
-		if ($scheme = http) {                 
-			return 301 https://$server_name$request_uri;            
-		} 
+		ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3; # Dropping SSLv3, ref: POODLE
+		ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;
+		ssl_prefer_server_ciphers on;
+		ssl_certificate  /usr/local/smash.proxy/pem.pem;
+    	ssl_certificate_key /usr/local/smash.proxy/key.key;
         	
-		location / {
-			//协议服务端
-			proxy_pass http://127.0.0.1:5413/;
-			
-			#转一下真实ip
-			proxy_set_header  X-Real-IP  $remote_addr;
-			proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
-			
-			#不重置host和connection
-			proxy_set_header Host "";
-			proxy_set_header Connection "";
-			
-			#wordpress 不升级为https，css js等文件无法访问
-			proxy_set_header  X-Forwarded-Proto https;
-			add_header Content-Security-Policy "upgrade-insecure-requests";
-    	}
+		proxy_ssl_session_reuse on;
+		proxy_pass 127.0.0.1:5413;
 		
 	}
 }
+
 
 ```
