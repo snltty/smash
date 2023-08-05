@@ -21,7 +21,7 @@ namespace smash.proxy.server
         public bool Start()
         {
             BindAccept();
-            return true; 
+            return true;
         }
 
         private void BindAccept()
@@ -188,7 +188,7 @@ namespace smash.proxy.server
                 token.TargerEP = proxyServerConfig.FakeEP;
                 if (info.ValidateKey(data, proxyServerConfig.KeyMemory))
                 {
-                    info.UnPackConnect(data);
+                    info.UnPackConnect(data, proxyServerConfig.KeyMemory);
                     token.TargerEP = ReadRemoteEndPoint(info);
                     token.IsProxy = true;
                 }

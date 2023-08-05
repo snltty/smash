@@ -23,48 +23,25 @@ namespace test
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static unsafe void Main(string[] args)
         {
+
+            ProxyClientConfig proxyClientConfig = new ProxyClientConfig();
+            proxyClientConfig.Key = "abcdefg";
+
+            ProxyInfo proxyInfo = new ProxyInfo { AddressType = Socks5EnumAddressType.Domain, Command = Socks5EnumRequestCommand.Connect, TargetAddress = Encoding.UTF8.GetBytes("www.baidu.com"), TargetPort = 443 };
+
+            byte[] bytes = proxyInfo.PackConnect(proxyClientConfig.KeyMemory, out int length);
+
+            ProxyInfo proxyInfo1 = new ProxyInfo();
+            proxyInfo1.UnPackConnect(bytes.AsMemory(0,length), proxyClientConfig.KeyMemory);
+
             //  Test();
             // BenchmarkRunner.Run<Test>();
 
         }
 
 
-
-        private async Task ProxyTest()
-        {
-
-            ProxyClientConfig proxyClientConfig = new ProxyClientConfig();
-            proxyClientConfig.Key = "SNLTTYSSS";
-
-            ProxyInfo info = new ProxyInfo
-            {
-                AddressType = Socks5EnumAddressType.IPV4,
-                Command = Socks5EnumRequestCommand.Connect,
-                TargetAddress = new byte[] { 127, 0, 0, 2 },
-                TargetPort = 880
-            };
-            byte[] proxy = info.PackConnect(proxyClientConfig.HttpRequestHeader, out int length);
-            Console.WriteLine("==============================================");
-
-
-            IPEndPoint ep = new IPEndPoint(IPAddress.Parse("8.210.20.111"), 443);
-            var socket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(ep);
-
-            SslStream sslStream = new SslStream(new NetworkStream(socket), true, (object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) =>
-            {
-                return true;
-            }, null);
-            await sslStream.AuthenticateAsClientAsync(string.Empty);
-            await sslStream.WriteAsync(proxy.AsMemory(0, length));
-
-            byte[] bytes = new byte[1024];
-            length = await sslStream.ReadAsync(bytes, 0, bytes.Length);
-
-            Console.WriteLine(Encoding.UTF8.GetString(bytes.AsSpan(0, length)));
-        }
 
     }
 

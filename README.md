@@ -27,7 +27,7 @@
 
 **--mode client | server** 客户端或服务端，**默认server**
 
-**--server 127.0.0.1:5413** 客户端填写服务器地址，必填
+**--server 127.0.0.1:5413** 客户端填写服务器地址，必填，使用域名，将会作为SNI
 
 **--fake 127.0.0.1:8080** 服务端填写伪装地址，必填
 
@@ -43,7 +43,6 @@
 ```
 docker run -it -d --name="smash.proxy.server" -p 5413:5413/tcp snltty/smash.proxy-alpine-x64 \
 --entrypoint ./smash.proxy.run --mode server --key SNLTTY --fake 127.0.0.1:8080
- 
 ```
 3. linux 使用 systemd 托管
 ```

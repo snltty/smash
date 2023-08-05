@@ -1,15 +1,11 @@
-﻿using common.libs;
-using common.libs.extends;
+﻿using common.libs.extends;
 using System;
 using System.Buffers;
-using System.Text;
 
 namespace smash.proxy
 {
     public sealed class ProxyInfo
     {
-        static Memory<byte> HeaderEnd = Encoding.UTF8.GetBytes("\r\n\r\n");
-
         /// <summary>
         /// 地址类型
         /// </summary>
@@ -36,35 +32,20 @@ namespace smash.proxy
         }
 
 
-        public byte[] PackConnect(Memory<byte> httpHeader, out int length)
+        public byte[] PackConnect(Memory<byte> key, out int length)
         {
-            int protocolLength =
-                +1 // 0000 0000 address type + command
-                + 1 + TargetAddress.Length + 2;// target length
-
-            //协议数据长度
-            byte[] contentLengthStr = protocolLength.ToString().ToBytes();
-
             length =
-               +httpHeader.Length //http header
-               + contentLengthStr.Length + HeaderEnd.Length //content-length 数值长度 + \r\n\r\n
-               + protocolLength;
+               +key.Length //key
+               + 1 // 0000 0000 address type + command
+               + 1 + TargetAddress.Length + 2;// target length
 
 
             byte[] bytes = ArrayPool<byte>.Shared.Rent(length);
             Memory<byte> memory = bytes.AsMemory(0, length);
-            var span = memory.Span;
             int index = 0;
 
-            //http请求头
-            httpHeader.CopyTo(memory.Slice(index));
-            index += httpHeader.Length;
-
-            contentLengthStr.CopyTo(memory.Slice(index));
-            index += contentLengthStr.Length;
-
-            HeaderEnd.CopyTo(memory.Slice(index));
-            index += HeaderEnd.Length;
+            key.CopyTo(memory.Slice(index));
+            index += key.Length;
 
             //协议内容
             bytes[index] = (byte)((byte)AddressType << 4 | (byte)Command);
@@ -80,28 +61,24 @@ namespace smash.proxy
 
             return bytes;
         }
-        public bool UnPackConnect(Memory<byte> bytes)
+        public bool UnPackConnect(Memory<byte> bytes, Memory<byte> key)
         {
-            int contentLength = HttpParser.GetContentLength(bytes);
-            int endIndex = HttpParser.GetHeaderEndIndex(bytes);
+            Span<byte> span = bytes.Span;
 
-            Memory<byte> protocolMemory = bytes.Slice(endIndex + 4, contentLength);
-            Span<byte> protocolSpan = protocolMemory.Span;
+            int index = key.Length;
 
-
-            int index = 0;
-            AddressType = (Socks5EnumAddressType)(protocolSpan[index] >> 4);
-            Command = (Socks5EnumRequestCommand)(protocolSpan[index] & 0b0000_1111);
+            AddressType = (Socks5EnumAddressType)(span[index] >> 4);
+            Command = (Socks5EnumRequestCommand)(span[index] & 0b0000_1111);
             index += 1;
 
-            byte targetepLength = protocolSpan[index];
+            byte targetepLength = span[index];
             index += 1;
-            TargetAddress = protocolMemory.Slice(index, targetepLength);
+            TargetAddress = bytes.Slice(index, targetepLength);
             index += targetepLength;
-            TargetPort = protocolSpan.Slice(index, 2).ToUInt16();
+            TargetPort = span.Slice(index, 2).ToUInt16();
             index += 2;
 
-            Data = bytes.Slice(endIndex + 4 + contentLength);
+            Data = bytes.Slice(index);
 
             return true;
         }
