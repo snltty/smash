@@ -19,10 +19,15 @@
 ## smash 进程劫持，系统代理
 一个winform，运行exe即可
 
-## smash.proxy 代理协议客户端、服务端
-代理协议本身不具备加密，需要通过nginx部署SSL，可以使得代理流量与正常HTTP无异
-1. 配置 443 SSL监听，代理至 服务端 127.0.0.1:5413
-2. 配置 其它任意端口监听，部署网站，作为 --fake 站点
+## smash.proxy 代理协议
+1. nginx转发
+2. tls over tls
+3. ssl hello padding，下层tls hello随机填充长度
+4. fake，非代理协议正常请求网站
+
+#### 流程
+待添加
+
 #### 参数
 
 **--mode client | server** 客户端或服务端，**默认server**
