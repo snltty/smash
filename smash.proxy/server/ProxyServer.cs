@@ -12,6 +12,7 @@ namespace smash.proxy.server
     {
         private readonly ProxyServerConfig proxyServerConfig;
         private Socket Socket;
+        private Random random = new Random();
 
         public ProxyServer(ProxyServerConfig proxyServerConfig)
         {
@@ -116,8 +117,6 @@ namespace smash.proxy.server
                     Logger.Instance.Error(ex);
             }
         }
-
-
 
         private async void ProcessReceive(SocketAsyncEventArgs e)
         {
@@ -244,8 +243,8 @@ namespace smash.proxy.server
             }
             catch (Exception ex)
             {
-                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                    Logger.Instance.Error($"connect server -> error " + ex);
+                //if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                Logger.Instance.Error($"connect server -> error " + ex);
 
                 CloseClientSocket(token);
             }
@@ -322,7 +321,30 @@ namespace smash.proxy.server
         }
         private async Task Response(ProxyServerUserToken token, Memory<byte> data)
         {
-            await token.ClientSocket.SendAsync(data, SocketFlags.None);
+            Memory<byte> memory = data;
+            byte[] bytes = Helper.EmptyArray;
+            try
+            {
+                if (token.FirstPack == false)
+                {
+                    token.FirstPack = true;
+                    int padding = random.Next(512, 1024);
+                    bytes = ProxyInfo.PackFirstResponse(data, padding, out int length);
+                    memory = bytes.AsMemory(0, length);
+                }
+
+                await token.ClientSocket.SendAsync(memory, SocketFlags.None);
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                if (bytes.Length > 0)
+                {
+                    ProxyInfo.ReturnStatic(bytes);
+                }
+            }
         }
 
         private async void ReceiveCallbackUdp(IAsyncResult result)
@@ -412,6 +434,7 @@ namespace smash.proxy.server
 
         //解包
         public bool IsProxy { get; set; }
+        public bool FirstPack { get; set; }
     }
 
     public sealed class ProxyServerConfig

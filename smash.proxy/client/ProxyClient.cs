@@ -8,6 +8,7 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Collections.Concurrent;
 using System.Buffers;
+using System.Linq;
 
 namespace smash.proxy.client
 {
@@ -18,6 +19,7 @@ namespace smash.proxy.client
         private Socket Socket;
         private UdpClient UdpClient;
         private ConcurrentDictionary<IPEndPoint, ProxyClientUserToken> udpConnections = new ConcurrentDictionary<IPEndPoint, ProxyClientUserToken>();
+        private Random random = new Random();
 
         public ProxyClient(ProxyClientConfig proxyClientConfig)
         {
@@ -160,8 +162,8 @@ namespace smash.proxy.client
                     token.ServerStream = sslStream;
                 }
 
-                token.ConnectData = info.PackConnect(proxyClientConfig.KeyMemory, out int length);
-                token.ConnectDataLength = length;
+                token.BuildConnectData(info, proxyClientConfig.KeyMemory);
+
                 BindServerReceive(token);
 
                 return true;
@@ -418,16 +420,10 @@ namespace smash.proxy.client
             byte[] bytes = Helper.EmptyArray;
             if (token.ConnectDataLength > 0)
             {
-                int totalLength = token.ConnectDataLength + data.Length;
-                bytes = ArrayPool<byte>.Shared.Rent(totalLength);
-                token.ConnectData.AsMemory(0, token.ConnectDataLength).CopyTo(bytes);
-                data.CopyTo(bytes.AsMemory(token.ConnectDataLength));
-
-                data = bytes.AsMemory(0, totalLength);
-
-                token.ConnectDataLength = 0;
-                token.Request.Return(token.ConnectData);
-                token.ConnectData = Helper.EmptyArray;
+                int padding = random.Next(100, 512);
+                bytes = token.Request.PackConnect(token.ConnectData, token.ConnectDataLength, data, padding, out int length);
+                data = bytes.AsMemory(0, length);
+                token.ReturnConnectData();
             }
 
             try
@@ -440,9 +436,6 @@ namespace smash.proxy.client
                 {
                     await token.ServerSocket.SendAsync(data);
                 }
-            }
-            catch (Exception)
-            {
             }
             finally
             {
@@ -564,11 +557,21 @@ namespace smash.proxy.client
                 case Socks5EnumStep.Forward:
                     {
                         token.Step = Socks5EnumStep.Forward;
+                        if (token.FirstPack == false)
+                        {
+                            token.FirstPack = true;
+                            info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
+                        }
                     }
                     break;
                 case Socks5EnumStep.ForwardUdp:
                     {
                         token.Step = Socks5EnumStep.ForwardUdp;
+                        if (token.FirstPack == false)
+                        {
+                            token.FirstPack = true;
+                            info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
+                        }
                     }
                     break;
             }
@@ -652,6 +655,20 @@ namespace smash.proxy.client
 
         public byte[] ConnectData { get; set; }
         public int ConnectDataLength { get; set; }
+
+        public bool FirstPack { get; set; }
+
+        public void BuildConnectData(ProxyInfo info, Memory<byte> keyMemory)
+        {
+            ConnectData = info.PackPrevConnect(keyMemory, out int length);
+            ConnectDataLength = length;
+        }
+        public void ReturnConnectData()
+        {
+            ConnectDataLength = 0;
+            Request.Return(ConnectData);
+            ConnectData = Helper.EmptyArray;
+        }
     }
 
     public sealed class ProxyClientConfig

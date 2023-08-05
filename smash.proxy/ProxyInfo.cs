@@ -32,7 +32,7 @@ namespace smash.proxy
         }
 
 
-        public byte[] PackConnect(Memory<byte> key, out int length)
+        public byte[] PackPrevConnect(Memory<byte> key, out int length)
         {
             length =
                +key.Length //key
@@ -61,9 +61,28 @@ namespace smash.proxy
 
             return bytes;
         }
-        public bool UnPackConnect(Memory<byte> bytes, Memory<byte> key)
+        public byte[] PackConnect(Memory<byte> connectData, int connectDataLength, Memory<byte> data, int padding, out int length)
         {
-            Span<byte> span = bytes.Span;
+            length = connectDataLength + 4 + data.Length + padding;
+
+            byte[] bytes = ArrayPool<byte>.Shared.Rent(length);
+            Memory<byte> memory = bytes.AsMemory();
+
+            int index = 0;
+            connectData.Slice(0, connectDataLength).CopyTo(memory.Slice(index));
+            index += connectDataLength;
+
+            data.Length.ToBytes(memory.Slice(index));
+            index += 4;
+
+            data.CopyTo(memory.Slice(index));
+            index += data.Length;
+
+            return bytes;
+        }
+        public bool UnPackConnect(Memory<byte> data, Memory<byte> key)
+        {
+            Span<byte> span = data.Span;
 
             int index = key.Length;
 
@@ -73,15 +92,43 @@ namespace smash.proxy
 
             byte targetepLength = span[index];
             index += 1;
-            TargetAddress = bytes.Slice(index, targetepLength);
+            TargetAddress = data.Slice(index, targetepLength);
             index += targetepLength;
             TargetPort = span.Slice(index, 2).ToUInt16();
             index += 2;
 
-            Data = bytes.Slice(index);
+            int length = span.Slice(index, 4).ToInt32();
+            index += 4;
+
+            Data = data.Slice(index, length);
 
             return true;
         }
+
+        public static byte[] PackFirstResponse(Memory<byte> data, int padding, out int length)
+        {
+            length = data.Length + padding;
+
+            byte[] bytes = ArrayPool<byte>.Shared.Rent(length);
+            Memory<byte> memory = bytes.AsMemory();
+
+            int index = 0;
+            data.Length.ToBytes(memory.Slice(index));
+            index += 4;
+
+            data.CopyTo(memory.Slice(index));
+            index += data.Length;
+
+            return bytes;
+        }
+        public static Memory<byte> UnPackFirstResponse(Memory<byte> data)
+        {
+            int length = data.ToInt32();
+
+            data = data.Slice(4, length);
+            return data;
+        }
+
 
         public void Return(byte[] data)
         {
@@ -91,7 +138,6 @@ namespace smash.proxy
         {
             ArrayPool<byte>.Shared.Return(data);
         }
-
     }
 
     public enum EnumBufferSize : byte

@@ -25,19 +25,7 @@ namespace test
     {
         static unsafe void Main(string[] args)
         {
-
-            ProxyClientConfig proxyClientConfig = new ProxyClientConfig();
-            proxyClientConfig.Key = "abcdefg";
-
-            ProxyInfo proxyInfo = new ProxyInfo { AddressType = Socks5EnumAddressType.Domain, Command = Socks5EnumRequestCommand.Connect, TargetAddress = Encoding.UTF8.GetBytes("www.baidu.com"), TargetPort = 443 };
-
-            byte[] bytes = proxyInfo.PackConnect(proxyClientConfig.KeyMemory, out int length);
-
-            ProxyInfo proxyInfo1 = new ProxyInfo();
-            proxyInfo1.UnPackConnect(bytes.AsMemory(0,length), proxyClientConfig.KeyMemory);
-
-            //  Test();
-            // BenchmarkRunner.Run<Test>();
+            BenchmarkRunner.Run<Test>();
 
         }
 
@@ -51,16 +39,15 @@ namespace test
         [GlobalSetup]
         public void Startup()
         {
-            saea.SetBuffer(new byte[8 * 1024]);
         }
 
-        SocketAsyncEventArgs saea = new SocketAsyncEventArgs();
+        Random rd = new Random();
         [Benchmark]
-        public void SetBuffer()
+        public void TestFunc()
         {
-            saea.SetBuffer(saea.Buffer, 1024, 8 * 1024);
-
+            rd.Next(100,1024);
         }
+
 
     }
 
