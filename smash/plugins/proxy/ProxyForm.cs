@@ -23,15 +23,25 @@ namespace smash.plugins.proxy
 
         private void BindProxy()
         {
-            int index = cmbProxy.SelectedIndex;
             cmbProxy.DataSource = null;
             if (proxyConfig.Proxy != null)
             {
+                int index = 0;
+                for (int i = 0; i< proxyConfig.Proxys.Count; i++)
+                {
+                    if (proxyConfig.Proxys[i].Name == proxyConfig.Proxy.Name)
+                    {
+                        index = i;
+                        break;
+                    }
+                }
                 cmbProxy.DataSource = proxyConfig.Proxys.Select(c => c.Name).ToList();
+                cmbProxy.SelectedIndex = index;
             }
-            if (index < proxyConfig.Proxys.Count && proxyConfig.Proxys.Count > 0)
+            else if(proxyConfig.Proxys.Count > 0)
             {
-                cmbProxy.SelectedIndex = index < 0 ? 0 : index;
+                cmbProxy.DataSource = proxyConfig.Proxys.Select(c => c.Name).ToList();
+                cmbProxy.SelectedIndex = 0;
             }
         }
         private void cmbProxy_SelectedIndexChanged(object sender, EventArgs e)

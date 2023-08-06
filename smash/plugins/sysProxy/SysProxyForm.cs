@@ -1,6 +1,9 @@
 ﻿using common.libs.extends;
 using smash.plugin;
+using smash.plugins.proxy;
+using System;
 using System.Diagnostics;
+using System.Net;
 
 namespace smash.plugins.sysProxy
 {
@@ -23,16 +26,27 @@ namespace smash.plugins.sysProxy
 
         private void BindSysProxy()
         {
-            int index = cmbSysProxy.SelectedIndex;
+            cbUseSysProxy.Checked = sysProxyConfig.UseSysProxy;
             cmbSysProxy.DataSource = null;
-            if (sysProxyConfig.SysProxys != null)
+           
+            if (sysProxyConfig.SysProxy != null)
+            {
+                int index = 0;
+                for (int i = 0; i < sysProxyConfig.SysProxys.Count; i++)
+                {
+                    if (sysProxyConfig.SysProxys[i].Name == sysProxyConfig.SysProxy.Name)
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+                cmbSysProxy.DataSource = sysProxyConfig.SysProxys.Select(c => c.Name).ToList();
+                cmbSysProxy.SelectedIndex = index;
+            }
+            else if (sysProxyConfig.SysProxys.Count > 0)
             {
                 cmbSysProxy.DataSource = sysProxyConfig.SysProxys.Select(c => c.Name).ToList();
-            }
-            cbUseSysProxy.Checked = sysProxyConfig.UseSysProxy;
-            if (index < sysProxyConfig.SysProxys.Count && sysProxyConfig.SysProxys.Count > 0)
-            {
-                cmbSysProxy.SelectedIndex = index < 0 ? 0 : index;
+                cmbSysProxy.SelectedIndex =  0;
             }
         }
         private void cmbSysProxy_SelectedIndexChanged(object sender, EventArgs e)
@@ -43,6 +57,8 @@ namespace smash.plugins.sysProxy
                 lbPac.Text = $"{sysProxyConfig.SysProxy.Pac}";
                 cbIsPac.Checked = sysProxyConfig.SysProxy.IsPac;
                 cbIsEnv.Checked = sysProxyConfig.SysProxy.IsEnv;
+
+                sysProxyConfig.Save();
             }
         }
         private void UpdateConfig()
@@ -58,7 +74,6 @@ namespace smash.plugins.sysProxy
         }
         private void CheckedChanged(object sender, EventArgs e)
         {
-            Debug.WriteLine("CheckedChanged");
             UpdateConfig();
         }
 

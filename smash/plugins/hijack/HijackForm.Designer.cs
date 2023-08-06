@@ -89,6 +89,7 @@
             cmbGroup.Name = "cmbGroup";
             cmbGroup.Size = new Size(230, 39);
             cmbGroup.TabIndex = 1;
+            cmbGroup.SelectedIndexChanged += cmbGroup_SelectedIndexChanged;
             // 
             // mainMenu
             // 

@@ -19,34 +19,56 @@ namespace smash.plugins.hijack
             BindGroup();
         }
 
-        #region 进程劫持
         private void cmbGroup_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (cmbGroup.SelectedItem != null)
             {
                 hijackConfig.Process = hijackConfig.Processs.FirstOrDefault(c => c.Name == cmbGroup.SelectedItem.ToString());
+                SaveCheckbox();
+                hijackConfig.Save();
             }
         }
         private void BindGroup()
         {
-            int index = cmbGroup.SelectedIndex;
             cmbGroup.DataSource = null;
-            cmbGroup.DataSource = hijackConfig.Processs.Select(c => c.Name).ToList();
+            UpdateCheckbox();
+
+            if (hijackConfig.Process != null)
+            {
+                int index = 0;
+                for (int i = 0; i < hijackConfig.Processs.Count; i++)
+                {
+                    if (hijackConfig.Processs[i].Name == hijackConfig.Process.Name)
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+                cmbGroup.DataSource = hijackConfig.Processs.Select(c => c.Name).ToList();
+                cmbGroup.SelectedIndex = index;
+            }
+            else if (hijackConfig.Processs.Count > 0)
+            {
+                cmbGroup.SelectedIndex = 0;
+            }
+        }
+        private void UpdateCheckbox()
+        {
             cbUseHijack.Checked = hijackConfig.UseHijack;
             cbFilterTcp.Checked = hijackConfig.FilterTCP;
             cbFilterUdp.Checked = hijackConfig.FilterUDP;
             cbFilterDns.Checked = hijackConfig.FilterDNS;
-            if (index < hijackConfig.Processs.Count && hijackConfig.Processs.Count > 0)
-            {
-                cmbGroup.SelectedIndex = index < 0 ? 0 : index;
-            }
         }
-        private void UpdateConfig()
+        private void SaveCheckbox()
         {
             hijackConfig.UseHijack = cbUseHijack.Checked;
             hijackConfig.FilterTCP = cbFilterTcp.Checked;
             hijackConfig.FilterUDP = cbFilterUdp.Checked;
             hijackConfig.FilterDNS = cbFilterDns.Checked;
+        }
+        private void UpdateConfig()
+        {
+            SaveCheckbox();
             hijackConfig.Save();
             BindInfo();
         }
@@ -54,7 +76,6 @@ namespace smash.plugins.hijack
         {
             UpdateConfig();
         }
-        #endregion
 
 
         HijackProcessForm hijackProcessForm;
