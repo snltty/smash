@@ -330,14 +330,13 @@ namespace smash.proxy.server
                 if (token.FirstPack == false)
                 {
                     token.FirstPack = true;
-                    if(memory.Length < 1024)
+                    if (token.IsProxy && memory.Length < 1024)
                     {
                         int padding = random.Next(128, 1024);
                         bytes = ProxyInfo.PackFirstResponse(data, padding, out int length);
                         memory = bytes.AsMemory(0, length);
                     }
                 }
-
                 await token.ClientSocket.SendAsync(memory, SocketFlags.None);
             }
             catch (Exception)
