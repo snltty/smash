@@ -5,10 +5,12 @@ using System.Net.Sockets;
 using common.libs;
 using System.Threading.Tasks;
 using System.Text;
+using smash.proxy.protocol;
+using common.libs.socks5;
 
 namespace smash.proxy.server
 {
-    public sealed class ProxyServer
+    internal sealed class ProxyServer
     {
         private readonly ProxyServerConfig proxyServerConfig;
         private Socket Socket;
@@ -328,9 +330,12 @@ namespace smash.proxy.server
                 if (token.FirstPack == false)
                 {
                     token.FirstPack = true;
-                    int padding = random.Next(512, 1024);
-                    bytes = ProxyInfo.PackFirstResponse(data, padding, out int length);
-                    memory = bytes.AsMemory(0, length);
+                    if(memory.Length < 1024)
+                    {
+                        int padding = random.Next(128, 1024);
+                        bytes = ProxyInfo.PackFirstResponse(data, padding, out int length);
+                        memory = bytes.AsMemory(0, length);
+                    }
                 }
 
                 await token.ClientSocket.SendAsync(memory, SocketFlags.None);

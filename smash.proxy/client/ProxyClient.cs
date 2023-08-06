@@ -8,11 +8,12 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Collections.Concurrent;
 using System.Buffers;
-using System.Linq;
+using smash.proxy.protocol;
+using common.libs.socks5;
 
 namespace smash.proxy.client
 {
-    public sealed class ProxyClient
+    internal sealed class ProxyClient
     {
         private readonly ProxyClientConfig proxyClientConfig;
 
@@ -147,127 +148,6 @@ namespace smash.proxy.client
                     Logger.Instance.Error(ex);
             }
         }
-
-
-        private async Task<bool> ConnectServer(ProxyClientUserToken token, ProxyInfo info)
-        {
-            try
-            {
-                token.ServerSocket = new Socket(proxyClientConfig.ServerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                await token.ServerSocket.ConnectAsync(proxyClientConfig.ServerEP);
-                if (proxyClientConfig.IsSSL)
-                {
-                    SslStream sslStream = new SslStream(new NetworkStream(token.ServerSocket), true, ValidateServerCertificate, null);
-                    await sslStream.AuthenticateAsClientAsync(proxyClientConfig.Domain);
-                    token.ServerStream = sslStream;
-                }
-
-                token.BuildConnectData(info, proxyClientConfig.KeyMemory);
-
-                BindServerReceive(token);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                    Logger.Instance.Error($"connect server -> error " + ex);
-            }
-            return false;
-        }
-        private bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
-        {
-            return true;
-        }
-
-        private void BindServerReceive(ProxyClientUserToken token)
-        {
-            if (proxyClientConfig.IsSSL)
-            {
-                if (token.ServerStream == null || token.ServerStream.CanRead == false) return;
-
-                token.ServerPoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
-                token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
-            }
-            else
-            {
-                token.ServerPoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
-                token.ServerSocket.BeginReceive(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, SocketFlags.None, ServerReceiveRawCallback, token);
-            }
-        }
-        private async void ServerReceiveRawCallback(IAsyncResult result)
-        {
-            ProxyClientUserToken token = result.AsyncState as ProxyClientUserToken;
-            try
-            {
-                int length = token.ServerSocket.EndReceive(result);
-
-                token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
-                await InputData(token, token.Request);
-
-                token.ServerSocket.BeginReceive(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, SocketFlags.None, ServerReceiveRawCallback, token);
-            }
-            catch (Exception ex)
-            {
-                CloseClientSocket(token);
-                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                    Logger.Instance.Error(ex);
-            }
-        }
-        private async void ServerReceiveCallback(IAsyncResult result)
-        {
-            ProxyClientUserToken token = result.AsyncState as ProxyClientUserToken;
-            try
-            {
-                int length = token.ServerStream.EndRead(result);
-
-                token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
-                await InputData(token, token.Request);
-                token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
-            }
-            catch (Exception ex)
-            {
-                CloseClientSocket(token);
-                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                    Logger.Instance.Error(ex);
-            }
-        }
-
-
-        private async Task<bool> ReceiveCommandData(ProxyClientUserToken token, SocketAsyncEventArgs e, int totalLength)
-        {
-            EnumProxyValidateDataResult validate = ValidateData(token);
-            if ((validate & EnumProxyValidateDataResult.TooShort) == EnumProxyValidateDataResult.TooShort)
-            {
-                //太短
-                while ((validate & EnumProxyValidateDataResult.TooShort) == EnumProxyValidateDataResult.TooShort)
-                {
-                    totalLength += await token.ClientSocket.ReceiveAsync(e.Buffer.AsMemory(e.Offset + totalLength), SocketFlags.None);
-                    token.Request.Data = e.Buffer.AsMemory(e.Offset, totalLength);
-                    validate = ValidateData(token);
-                }
-            }
-
-            //不短，又不相等，直接关闭连接
-            if ((validate & EnumProxyValidateDataResult.Equal) != EnumProxyValidateDataResult.Equal)
-            {
-                CloseClientSocket(e);
-                return false;
-            }
-            return true;
-        }
-        private EnumProxyValidateDataResult ValidateData(ProxyClientUserToken token)
-        {
-            return token.Step switch
-            {
-                Socks5EnumStep.Request => Socks5Parser.ValidateRequestData(token.Request.Data),
-                Socks5EnumStep.Command => Socks5Parser.ValidateCommandData(token.Request.Data),
-                Socks5EnumStep.Auth => Socks5Parser.ValidateAuthData(token.Request.Data, Socks5EnumAuthType.Password),
-                Socks5EnumStep.Forward => EnumProxyValidateDataResult.Equal,
-                Socks5EnumStep.ForwardUdp => EnumProxyValidateDataResult.Equal,
-                _ => EnumProxyValidateDataResult.Equal
-            };
-        }
         private async void ProcessReceive(SocketAsyncEventArgs e)
         {
             ProxyClientUserToken token = (ProxyClientUserToken)e.UserToken;
@@ -383,6 +263,113 @@ namespace smash.proxy.client
                     Logger.Instance.Error($"listen udp -> error " + ex);
             }
         }
+        private async Task<bool> ReceiveCommandData(ProxyClientUserToken token, SocketAsyncEventArgs e, int totalLength)
+        {
+            EnumProxyValidateDataResult validate = Socks5Parser.ValidateData(token.Step, token.Request.Data);
+            if ((validate & EnumProxyValidateDataResult.TooShort) == EnumProxyValidateDataResult.TooShort)
+            {
+                //太短
+                while ((validate & EnumProxyValidateDataResult.TooShort) == EnumProxyValidateDataResult.TooShort)
+                {
+                    totalLength += await token.ClientSocket.ReceiveAsync(e.Buffer.AsMemory(e.Offset + totalLength), SocketFlags.None);
+                    token.Request.Data = e.Buffer.AsMemory(e.Offset, totalLength);
+                    validate = Socks5Parser.ValidateData(token.Step, token.Request.Data);
+                }
+            }
+
+            //不短，又不相等，直接关闭连接
+            if ((validate & EnumProxyValidateDataResult.Equal) != EnumProxyValidateDataResult.Equal)
+            {
+                CloseClientSocket(e);
+                return false;
+            }
+            return true;
+        }
+
+
+        private async Task<bool> ConnectServer(ProxyClientUserToken token, ProxyInfo info)
+        {
+            try
+            {
+                token.ServerSocket = new Socket(proxyClientConfig.ServerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                await token.ServerSocket.ConnectAsync(proxyClientConfig.ServerEP);
+                if (proxyClientConfig.IsSSL)
+                {
+                    SslStream sslStream = new SslStream(new NetworkStream(token.ServerSocket), true, ValidateServerCertificate, null);
+                    await sslStream.AuthenticateAsClientAsync(proxyClientConfig.Domain);
+                    token.ServerStream = sslStream;
+                }
+
+                token.BuildConnectData(info, proxyClientConfig.KeyMemory);
+
+                BindServerReceive(token);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error($"connect server -> error " + ex);
+            }
+            return false;
+        }
+        private bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
+        }
+
+        private void BindServerReceive(ProxyClientUserToken token)
+        {
+            if (proxyClientConfig.IsSSL)
+            {
+                if (token.ServerStream == null || token.ServerStream.CanRead == false) return;
+
+                token.ServerPoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
+                token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
+            }
+            else
+            {
+                token.ServerPoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
+                token.ServerSocket.BeginReceive(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, SocketFlags.None, ServerReceiveRawCallback, token);
+            }
+        }
+        private async void ServerReceiveRawCallback(IAsyncResult result)
+        {
+            ProxyClientUserToken token = result.AsyncState as ProxyClientUserToken;
+            try
+            {
+                int length = token.ServerSocket.EndReceive(result);
+
+                token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
+                await InputData(token, token.Request);
+
+                token.ServerSocket.BeginReceive(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, SocketFlags.None, ServerReceiveRawCallback, token);
+            }
+            catch (Exception ex)
+            {
+                CloseClientSocket(token);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error(ex);
+            }
+        }
+        private async void ServerReceiveCallback(IAsyncResult result)
+        {
+            ProxyClientUserToken token = result.AsyncState as ProxyClientUserToken;
+            try
+            {
+                int length = token.ServerStream.EndRead(result);
+
+                token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
+                await InputData(token, token.Request);
+                token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
+            }
+            catch (Exception ex)
+            {
+                CloseClientSocket(token);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error(ex);
+            }
+        }
 
 
         private async Task Receive(ProxyClientUserToken token)
@@ -447,7 +434,6 @@ namespace smash.proxy.client
 
             return true;
         }
-
         private async Task InputData(ProxyClientUserToken token, ProxyInfo info)
         {
             try
@@ -464,7 +450,7 @@ namespace smash.proxy.client
                     {
                         //组装udp包
                         byte[] bytes = Socks5Parser.MakeUdpResponse(new IPEndPoint(new IPAddress(info.TargetAddress.Span), info.TargetPort), info.Data, out int legnth);
-                        await UdpClient.SendAsync(bytes, token.SourceEP);
+                        await UdpClient.SendAsync(bytes.AsMemory(0, legnth), token.SourceEP);
                         Socks5Parser.Return(bytes);
                     }
                     else
@@ -480,6 +466,7 @@ namespace smash.proxy.client
                     Logger.Instance.Error(ex);
             }
         }
+
 
         private async Task<bool> HandleRequestData(ProxyClientUserToken token, ProxyInfo info)
         {
@@ -532,7 +519,6 @@ namespace smash.proxy.client
                     info.Data = Socks5Parser.GetUdpData(info.Data);
                 }
             }
-            if (info.TargetAddress.GetIsAnyAddress()) return false;
 
             return true;
         }
@@ -560,7 +546,8 @@ namespace smash.proxy.client
                         if (token.FirstPack == false)
                         {
                             token.FirstPack = true;
-                            info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
+                            if (info.Data.Length < 2048)
+                                info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
                         }
                     }
                     break;
@@ -570,7 +557,8 @@ namespace smash.proxy.client
                         if (token.FirstPack == false)
                         {
                             token.FirstPack = true;
-                            info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
+                            if (info.Data.Length < 2048)
+                                info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
                         }
                     }
                     break;
@@ -639,7 +627,7 @@ namespace smash.proxy.client
         }
     }
 
-    public sealed class ProxyClientUserToken
+    internal sealed class ProxyClientUserToken
     {
         public Socket ClientSocket { get; set; }
         public SocketAsyncEventArgs Saea { get; set; }
@@ -655,9 +643,7 @@ namespace smash.proxy.client
 
         public byte[] ConnectData { get; set; }
         public int ConnectDataLength { get; set; }
-
         public bool FirstPack { get; set; }
-
         public void BuildConnectData(ProxyInfo info, Memory<byte> keyMemory)
         {
             ConnectData = info.PackPrevConnect(keyMemory, out int length);

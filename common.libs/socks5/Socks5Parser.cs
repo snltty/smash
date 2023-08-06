@@ -1,17 +1,16 @@
-﻿using common.libs;
-using common.libs.extends;
+﻿using common.libs.extends;
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Net;
 using System.Text;
 
-namespace smash.proxy
+namespace common.libs.socks5
 {
     /// <summary>
     /// socks5 数据包解析和组装
     /// </summary>
-    internal sealed class Socks5Parser
+    public sealed class Socks5Parser
     {
 
         /// <summary>
@@ -53,7 +52,7 @@ namespace smash.proxy
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        public static Memory<byte> GetRemoteEndPoint(Memory<byte> data, out Socks5EnumAddressType addressType, out ushort port,out int index)
+        public static Memory<byte> GetRemoteEndPoint(Memory<byte> data, out Socks5EnumAddressType addressType, out ushort port, out int index)
         {
             //VERSION COMMAND RSV ATYPE  DST.ADDR  DST.PORT
             //去掉 VERSION COMMAND RSV
@@ -123,7 +122,7 @@ namespace smash.proxy
         {
             //VER REP  RSV ATYPE BND.ADDR BND.PORT
 
-            byte[] res = new byte[6 + remoteEndPoint.Address.Length()];
+            byte[] res = new byte[6 + (remoteEndPoint.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? 4 : 16)];
             var span = res.AsSpan();
 
             res[0] = 5;
@@ -151,12 +150,12 @@ namespace smash.proxy
         /// <param name="remoteEndPoint"></param>
         /// <param name="data"></param>
         /// <returns></returns>
-        public static unsafe byte[] MakeUdpResponse(IPEndPoint remoteEndPoint, Memory<byte> data,out int length)
+        public static unsafe byte[] MakeUdpResponse(IPEndPoint remoteEndPoint, Memory<byte> data, out int length)
         {
             //RSV FRAG ATYPE DST.ADDR DST.PORT DATA
             //RSV占俩字节
 
-            int ipLength = remoteEndPoint.Address.Length();
+            int ipLength = (remoteEndPoint.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? 4 : 16);
             length = 4 + ipLength + 2 + data.Length;
 
             byte[] res = ArrayPool<byte>.Shared.Rent(length);
@@ -192,6 +191,18 @@ namespace smash.proxy
         }
 
 
+        public static EnumProxyValidateDataResult ValidateData(Socks5EnumStep step, Memory<byte> data)
+        {
+            return step switch
+            {
+                Socks5EnumStep.Request => ValidateRequestData(data),
+                Socks5EnumStep.Command => ValidateCommandData(data),
+                Socks5EnumStep.Auth => ValidateAuthData(data, Socks5EnumAuthType.Password),
+                Socks5EnumStep.Forward => EnumProxyValidateDataResult.Equal,
+                Socks5EnumStep.ForwardUdp => EnumProxyValidateDataResult.Equal,
+                _ => EnumProxyValidateDataResult.Equal
+            };
+        }
         /// <summary>
         /// 验证 request数据完整性
         /// </summary>
@@ -307,13 +318,5 @@ namespace smash.proxy
             return EnumProxyValidateDataResult.Equal;
         }
 
-        [Flags]
-        public enum Socks5ValidateResult : byte
-        {
-            Equal = 1,
-            TooShort = 2,
-            TooLong = 4,
-            Bad = 8,
-        }
     }
 }

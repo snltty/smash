@@ -5,11 +5,9 @@ VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "smash", "smash\smash.csproj", "{1BC4D8BB-CF8C-47AF-ACFC-41A7432CAD98}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "test", "test\test.csproj", "{66D15672-B3FA-4259-838B-7302B2553C1C}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "common.libs", "common.libs\common.libs.csproj", "{DB78787D-E128-4E25-87FE-BBBBC25FE861}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "smash.proxy", "smash.proxy\smash.proxy.csproj", "{8CADCB0F-C581-44BC-9654-A96D31F25680}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "smash.proxy", "smash.proxy\smash.proxy.csproj", "{8CADCB0F-C581-44BC-9654-A96D31F25680}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,18 +31,6 @@ Global
 		{1BC4D8BB-CF8C-47AF-ACFC-41A7432CAD98}.Release|x64.Build.0 = Release|Any CPU
 		{1BC4D8BB-CF8C-47AF-ACFC-41A7432CAD98}.Release|x86.ActiveCfg = Release|Any CPU
 		{1BC4D8BB-CF8C-47AF-ACFC-41A7432CAD98}.Release|x86.Build.0 = Release|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Debug|x64.Build.0 = Debug|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Debug|x86.Build.0 = Debug|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Release|x64.ActiveCfg = Release|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Release|x64.Build.0 = Release|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Release|x86.ActiveCfg = Release|Any CPU
-		{66D15672-B3FA-4259-838B-7302B2553C1C}.Release|x86.Build.0 = Release|Any CPU
 		{DB78787D-E128-4E25-87FE-BBBBC25FE861}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DB78787D-E128-4E25-87FE-BBBBC25FE861}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB78787D-E128-4E25-87FE-BBBBC25FE861}.Debug|x64.ActiveCfg = Debug|Any CPU
