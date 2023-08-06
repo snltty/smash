@@ -25,9 +25,6 @@
 3. ssl hello padding，下层tls hello随机填充长度
 4. fake，非代理协议正常请求网站
 
-#### 流程
-待添加
-
 #### 参数
 
 **--mode client | server** 客户端或服务端，**默认server**
@@ -61,7 +58,7 @@ Description=smash.proxy
 
 [Service]
 WorkingDirectory=/usr/local/smash.proxy
-ExecStart=/usr/local/smash.proxy/smash.proxy
+ExecStart=/usr/local/smash.proxy/smash.proxy --mode server --key SNLTTY --fake 127.0.0.1:8080
 ExecStop=/bin/kill $MAINPID
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
