@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using smash.plugin;
 using smash.plugins.proxy;
+using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
 using File = System.IO.File;
@@ -51,7 +52,7 @@ namespace smash.plugins.sysProxy
             if (sysProxyConfig.SysProxy.IsEnv)
             {
                 isEnv = true;
-                SetEnv($"socks5://{proxyConfig.Proxy.Host}:{proxyConfig.Proxy.Port}", proxyConfig.Proxy.UserName, proxyConfig.Proxy.Password);
+                SetEnv($"socks5h://{proxyConfig.Proxy.Host}:{proxyConfig.Proxy.Port}", proxyConfig.Proxy.UserName, proxyConfig.Proxy.Password);
             }
             return true;
         }

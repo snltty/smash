@@ -273,25 +273,33 @@ namespace smash.plugins
             if (starting) return;
             starting = true;
             SetButtonTest();
-            try
+            Task.Run(() =>
             {
-                foreach (IController controller in PluginLoader.Controllers)
+                try
                 {
-                    controller.Stop();
+                    foreach (IController controller in PluginLoader.Controllers)
+                    {
+                        controller.Stop();
+                    }
+                    starting = false;
+                    running = false;
+                    config.Running = false;
+                    config.Save();
+                    GCHelper.FlushMemory();
                 }
-                starting = false;
-                running = false;
-                config.Running = false;
-                config.Save();
-                GCHelper.FlushMemory();
-            }
-            catch (Exception ex)
-            {
-                starting = false;
-                MessageBox.Show(ex.Message);
-            }
-            SetButtonTest();
-            CommandHelper.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
+                catch (Exception ex)
+                {
+                    starting = false;
+                    MessageBox.Show(ex.Message);
+                }
+
+                Invoke(() =>
+                {
+                    SetButtonTest();
+                });
+                CommandHelper.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
+            });
+            
         }
 
         private void startBtn_Click(object sender, EventArgs e)

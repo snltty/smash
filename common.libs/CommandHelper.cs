@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 
 namespace common.libs
 {
@@ -52,10 +53,10 @@ namespace common.libs
                     proc.StandardInput.WriteLine(commands[i]);
                 }
             }
-
             proc.StandardInput.AutoFlush = true;
             proc.StandardInput.WriteLine("exit");
-            string output = proc.StandardOutput.ReadToEnd();
+            proc.StandardInput.Close();
+            string output =  proc.StandardOutput.ReadToEnd();
             string error = proc.StandardError.ReadToEnd();
             proc.WaitForExit();
             proc.Close();
