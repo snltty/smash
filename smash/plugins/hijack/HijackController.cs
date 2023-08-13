@@ -28,12 +28,19 @@ public sealed class HijackController : IController
     {
         error = string.Empty;
 
+        hijackConfig.ParseProcesss();
+        if (hijackConfig.Processs.Count(c => c.Use) > 0 && hijackConfig.CurrentProcesss.Length == 0)
+        {
+            error = "进程劫持:未选择任何进程";
+            return false;
+        }
+
         return true;
     }
     public bool Start()
     {
+        return true;
         //初始化一些数据
-        hijackConfig.ParseProcesss();
         Stop();
 
         //检查安装驱动

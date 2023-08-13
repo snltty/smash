@@ -65,7 +65,7 @@ namespace smash.plugins
             c.DataSource = GetPacFiles();
             c.DataPropertyName = "Pac";
             c.HeaderText = "pac文件";
-            c.DefaultCellStyle.NullValue = "default.pac";
+            //c.DefaultCellStyle.NullValue = "default.pac";
             sysProxysView.Columns.Add(c);
 
             sysProxysView.Columns["Use"].FillWeight = 50;

@@ -1,4 +1,5 @@
 ﻿using common.libs;
+using common.libs.extends;
 using Microsoft.Win32;
 using smash.plugin;
 using smash.plugins.proxy;
@@ -33,18 +34,24 @@ namespace smash.plugins.sysProxy
         {
             error = string.Empty;
             sysProxyConfig.SysProxy = sysProxyConfig.SysProxys.FirstOrDefault(c => c.Use);
-            if (sysProxyConfig.SysProxy == null) return false;
-
-            if (sysProxyConfig.SysProxy.IsPac == false && sysProxyConfig.SysProxy.IsEnv == false)
+            if (sysProxyConfig.SysProxy != null)
             {
-                error = $"系统代理:至少选择一种方式";
+                if (sysProxyConfig.SysProxy.IsPac == false && sysProxyConfig.SysProxy.IsEnv == false)
+                {
+                    error = $"系统代理:未选择pac代理或环境变量中的任意一种";
+                    return false;
+                }
+                if (string.IsNullOrWhiteSpace(sysProxyConfig.SysProxy.Pac))
+                {
+                    error = $"系统代理:未选择任何pac文件";
+                    return false;
+                }
             }
 
             return true;
         }
         public bool Start()
         {
-            if (sysProxyConfig.SysProxy == null) return false;
             if (sysProxyConfig.SysProxy.IsPac)
             {
                 isPac = true;
