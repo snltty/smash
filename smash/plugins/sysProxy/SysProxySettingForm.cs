@@ -1,12 +1,13 @@
-﻿using common.libs.extends;
+﻿using smash.plugin;
 using smash.plugins.sysProxy;
 using System.Diagnostics;
-using System.Net;
 
 namespace smash.plugins
 {
-    public partial class SysProxySettingForm : Form
+    public partial class SysProxySettingForm : Form, ITabForm
     {
+        public int Order => 2;
+
         private readonly SysProxyConfig sysProxyConfig;
         public SysProxySettingForm(SysProxyConfig sysProxyConfig)
         {
@@ -17,26 +18,60 @@ namespace smash.plugins
             MinimizeBox = false;
             InitializeComponent();
 
-
+            sysProxysView.RowHeadersVisible = false;
             sysProxysView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            sysProxysView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            sysProxysView.SelectionMode = DataGridViewSelectionMode.RowHeaderSelect;
             sysProxysView.ContextMenuStrip = contextMenu;
             sysProxysView.CellMouseUp += SysProxysView_CellMouseUp; ;
             sysProxysView.SelectionChanged += SysProxysView_SelectionChanged;
+            sysProxysView.CellEndEdit += SysProxysView_CellEndEdit;
+            sysProxysView.CellContentClick += SysProxysView_CellContentClick;
             BindData();
+        }
+
+        private void SysProxysView_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex == 0)
+            {
+                int count = sysProxysView.Rows.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    if (i != e.RowIndex)
+                        sysProxysView.Rows[i].Cells[0].Value = false;
+                }
+                sysProxyConfig.SysProxys[e.RowIndex].Use = true;
+                sysProxyConfig.Save();
+            }
+        }
+
+        private void SysProxysView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            sysProxyConfig.Save();
         }
 
         private void BindData()
         {
             sysProxysView.DataSource = null;
             sysProxysView.DataSource = sysProxyConfig.SysProxys;
+
+            sysProxysView.Columns["Use"].HeaderText = "使用";
             sysProxysView.Columns["Name"].HeaderText = "名称";
-            sysProxysView.Columns["IsEnv"].HeaderText = "设置环境变量";
+            sysProxysView.Columns["IsEnv"].HeaderText = "环境变量";
             sysProxysView.Columns["IsPac"].HeaderText = "设置PAC";
             sysProxysView.Columns["Pac"].HeaderText = "Pac文件";
+            sysProxysView.Columns["Pac"].Visible = false;
 
-            cmbPac.DataSource = null;
-            cmbPac.DataSource = GetPacFiles();
+            DataGridViewComboBoxColumn c = new DataGridViewComboBoxColumn();
+            c.DataSource = GetPacFiles();
+            c.DataPropertyName = "Pac";
+            c.HeaderText = "pac文件";
+            c.DefaultCellStyle.NullValue = "default.pac";
+            sysProxysView.Columns.Add(c);
+
+            sysProxysView.Columns["Use"].FillWeight = 50;
+            sysProxysView.Columns["Name"].FillWeight = 50;
+            sysProxysView.Columns["IsEnv"].FillWeight = 50;
+            sysProxysView.Columns["IsPac"].FillWeight = 50;
 
             sysProxyConfig.Save();
         }
@@ -47,18 +82,10 @@ namespace smash.plugins
             if (sysProxysView.SelectedRows.Count > 0)
             {
                 proxy = sysProxysView.SelectedRows[0].DataBoundItem as SysProxyInfo;
-                inputName.Text = proxy.Name;
-                cbPac.Checked = proxy.IsPac;
-                cmbPac.SelectedItem = proxy.Pac;
-                cbEnv.Checked = proxy.IsEnv;
             }
             else
             {
                 proxy = null;
-                inputName.Text = string.Empty;
-                cbPac.Checked = false;
-                cmbPac.SelectedItem = string.Empty;
-                cbEnv.Checked = false;
             }
         }
         private void SysProxysView_CellMouseUp(object sender, DataGridViewCellMouseEventArgs e)
@@ -98,38 +125,14 @@ namespace smash.plugins
             sysProxysView.Rows[sysProxyConfig.SysProxys.Count - 1].Selected = true;
         }
 
-        private void btnSave_Click(object sender, EventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(inputName.Text))
-            {
-                MessageBox.Show("名称必填");
-                return;
-            }
-            if (cbPac.Checked && cmbPac.SelectedItem == null && string.IsNullOrWhiteSpace(cmbPac.SelectedItem.ToString()))
-            {
-                MessageBox.Show("pac文件必填");
-                return;
-            }
-            if (proxy != null)
-            {
-                proxy.Name = inputName.Text;
-                proxy.IsPac = cbPac.Checked;
-                proxy.Pac = cmbPac.SelectedItem.ToString();
-                proxy.IsEnv = cbEnv.Checked;
-                BindData();
-            }
-        }
         private void OnBtnPacPathClick(object sender, EventArgs e)
         {
             Process.Start("explorer.exe", $"{Path.GetFullPath(sysProxyConfig.PacRoot)}");
         }
 
-
         private List<string> GetPacFiles()
         {
             return Directory.GetFiles(sysProxyConfig.PacRoot).Select(c => Path.GetFileName(c)).Where(c => c.StartsWith("--") == false).ToList();
         }
-
-
     }
 }

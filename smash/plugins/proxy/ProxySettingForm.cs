@@ -1,12 +1,16 @@
 ﻿using common.libs;
+using smash.plugin;
 using smash.plugins.proxy;
+using smash.plugins.sysProxy;
 using System.Net;
 using System.Net.NetworkInformation;
 
 namespace smash.plugins
 {
-    public partial class ProxySettingForm : Form
+    public partial class ProxySettingForm : Form, ITabForm
     {
+        public int Order => 3;
+
         private readonly ProxyConfig proxyConfig;
         public ProxySettingForm(ProxyConfig proxyConfig)
         {
@@ -18,34 +22,60 @@ namespace smash.plugins
             InitializeComponent();
 
             BindData();
+
+            proxysView.RowHeadersVisible = false;
             proxysView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             proxysView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             proxysView.ContextMenuStrip = contextMenu;
             proxysView.CellMouseUp += ProxysView_CellMouseUp;
             proxysView.SelectionChanged += ProxysView_SelectionChanged;
             proxysView.CellFormatting += ProxysView_CellFormatting;
-
+            proxysView.CellEndEdit += ProxysView_CellEndEdit;
+            proxysView.CellContentClick += ProxysView_CellContentClick;
             Ping();
         }
 
+        private void ProxysView_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex == 0)
+            {
+                int count = proxysView.Rows.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    if (i != e.RowIndex)
+                        proxysView.Rows[i].Cells[0].Value = false;
+                }
+                proxyConfig.Proxys[e.RowIndex].Use = true;
+                proxyConfig.Save();
+            }
+        }
+
+        private void ProxysView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            proxyConfig.Save();
+        }
 
         private void BindData()
         {
             proxysView.DataSource = null;
             proxysView.DataSource = proxyConfig.Proxys;
+
+            proxysView.Columns["Use"].HeaderText = "使用";
             proxysView.Columns["Name"].HeaderText = "名称";
             proxysView.Columns["Host"].HeaderText = "主机";
             proxysView.Columns["Port"].HeaderText = "端口";
             proxysView.Columns["UserName"].HeaderText = "账号";
             proxysView.Columns["Password"].HeaderText = "密码";
             proxysView.Columns["Delay"].HeaderText = "延迟";
+            proxysView.Columns["Delay"].ReadOnly = true;
+
             proxyConfig.Save();
         }
 
         ProxyInfo proxy;
         private void ProxysView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-            if (e.ColumnIndex == 4)
+            if (e.ColumnIndex == 5)
             {
                 if (e.Value != null && e.Value.ToString().Length > 0)
                 {
@@ -58,20 +88,10 @@ namespace smash.plugins
             if (proxysView.SelectedRows.Count > 0)
             {
                 proxy = proxysView.SelectedRows[0].DataBoundItem as ProxyInfo;
-                inputName.Text = proxy.Name;
-                inputHost.Text = proxy.Host;
-                inputPort.Text = proxy.Port.ToString();
-                inputUserName.Text = proxy.UserName;
-                inputPassword.Text = proxy.Password;
             }
             else
             {
                 proxy = null;
-                inputName.Text = string.Empty;
-                inputHost.Text = string.Empty;
-                inputPort.Text = string.Empty;
-                inputUserName.Text = string.Empty;
-                inputPassword.Text = string.Empty;
             }
         }
         private void ProxysView_CellMouseUp(object sender, DataGridViewCellMouseEventArgs e)
@@ -85,52 +105,6 @@ namespace smash.plugins
                 }
             }
         }
-
-        private void btnSave_Click(object sender, EventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(inputHost.Text) || string.IsNullOrWhiteSpace(inputName.Text) || string.IsNullOrWhiteSpace(inputPort.Text))
-            {
-                MessageBox.Show("名称，主机，必填");
-                return;
-            }
-
-            IPAddress ip = NetworkHelper.GetDomainIp(inputHost.Text);
-            if (ip == null)
-            {
-                MessageBox.Show("主机无效");
-                return;
-            }
-            if (int.TryParse(inputPort.Text, out int port) == false)
-            {
-                MessageBox.Show("端口无效");
-                return;
-            }
-
-            if (proxy != null)
-            {
-                proxy.Name = inputName.Text;
-                proxy.Host = inputHost.Text;
-                proxy.Port = port;
-                proxy.UserName = inputUserName.Text;
-                proxy.Password = inputPassword.Text;
-            }
-            else
-            {
-                proxyConfig.Proxys.Add(new ProxyInfo
-                {
-                    Name = inputName.Text,
-                    Host = inputHost.Text,
-                    Port = port,
-                    UserName = inputUserName.Text,
-                    Password = inputPassword.Text
-                });
-
-            }
-            BindData();
-            proxysView.ClearSelection();
-            proxysView.Rows[proxysView.Rows.Count - 1].Selected = true;
-        }
-
 
         private bool isPing = false;
         CancellationTokenSource cts = new CancellationTokenSource();
@@ -177,11 +151,6 @@ namespace smash.plugins
         private void OnFormClosing(object sender, FormClosingEventArgs e)
         {
             CancelPing();
-        }
-
-        private void showPassword_CheckedChanged(object sender, EventArgs e)
-        {
-            inputPassword.PasswordChar = showPassword.Checked ? '\0' : '*';
         }
 
         private void MainMenuDelProxy_Click(object sender, EventArgs e)

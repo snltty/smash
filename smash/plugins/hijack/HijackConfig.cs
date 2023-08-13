@@ -13,44 +13,17 @@ namespace smash.plugins.hijack
         {
             this.configDataProvider = configDataProvider;
             HijackConfig _config = configDataProvider.Load().Result ?? new HijackConfig();
-            FilterTCP = _config.FilterTCP;
-            FilterUDP = _config.FilterUDP;
-            FilterDNS = _config.FilterDNS;
-            UseHijack = _config.UseHijack;
-            Process = _config.Process;
             Processs = _config.Processs;
             IntranetIpv4s = _config.IntranetIpv4s;
             Save();
 
         }
-        /// <summary>
-        /// 处理TCP
-        /// </summary>
-        public bool FilterTCP { get; set; } = true;
-        /// <summary>
-        /// 处理UDP
-        /// </summary>
-        public bool FilterUDP { get; set; } = true;
-        /// <summary>
-        /// 处理所有DNS查询包
-        /// </summary>
-        public bool FilterDNS { get; set; } = false;
 
-        /// <summary>
-        /// 是否进程劫持
-        /// </summary>
-        public bool UseHijack { get; set; }
-
-
-        /// <summary>
-        /// 当前使用进程配置
-        /// </summary>
-        public ProcessInfo Process { get; set; } = new ProcessInfo { Name = "浏览器", FileNames = new List<string> { "chrome.exe" } };
         /// <summary>
         /// 进程配置列表
         /// </summary>
         public List<ProcessInfo> Processs { get; set; } = new List<ProcessInfo> {
-            new ProcessInfo{ Name="浏览器", FileNames = new List<string>{"chrome.exe" } }
+            new ProcessInfo{ Name="浏览器", TCP = true,UDP = true,DNS = true, Use = true, FileNames = new List<string>{"chrome.exe" } }
         };
         /// <summary>
         /// 阻止内网ip列表
@@ -67,24 +40,57 @@ namespace smash.plugins.hijack
         /// 当前进程列表文件名，方便查询
         /// </summary>
         [JsonIgnore]
-        public string[] CurrentProcesss { get; private set; } = Array.Empty<string>();
+        public ProcessParseInfo[] CurrentProcesss { get; private set; } = Array.Empty<ProcessParseInfo>();
         public void ParseProcesss()
         {
-            if (Process != null)
+            List<ProcessParseInfo> res = new List<ProcessParseInfo>();
+            foreach (var process in Processs.Where(c => c.Use))
             {
-                CurrentProcesss = Process.FileNames.ToArray();
+                foreach (var item in process.FileNames)
+                {
+                    res.Add(new ProcessParseInfo
+                    {
+                        Name = item,
+                        Options = process
+                    });
+                }
             }
+            CurrentProcesss = res.ToArray();
         }
-        
+
         public void Save()
         {
             configDataProvider.Save(this).Wait();
         }
     }
 
-    public sealed class ProcessInfo
+    public sealed class ProcessParseInfo
     {
         public string Name { get; set; }
+        public ProcessInfo Options { get; set; }
+    }
+
+    public sealed class ProcessInfo
+    {
+        /// <summary>
+        /// 是否进程劫持
+        /// </summary>
+        public bool Use { get; set; }
+
+        public string Name { get; set; }
+        /// <summary>
+        /// 处理TCP
+        /// </summary>
+        public bool TCP { get; set; } = true;
+        /// <summary>
+        /// 处理UDP
+        /// </summary>
+        public bool UDP { get; set; } = true;
+        /// <summary>
+        /// 处理所有DNS查询包
+        /// </summary>
+        public bool DNS { get; set; } = true;
+
         public List<string> FileNames { get; set; } = new List<string>();
     }
 }

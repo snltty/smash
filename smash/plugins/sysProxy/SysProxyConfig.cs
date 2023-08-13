@@ -15,20 +15,15 @@ namespace smash.plugins.sysProxy
         {
             this.configDataProvider = configDataProvider;
             SysProxyConfig _config = configDataProvider.Load().Result ?? new SysProxyConfig();
-            UseSysProxy = _config.UseSysProxy;
             SysProxy = _config.SysProxy;
             SysProxys = _config.SysProxys;
             Save();
         }
 
-        /// <summary>
-        /// 是否设置系统代理
-        /// </summary>
-        public bool UseSysProxy { get; set; }
-        public SysProxyInfo SysProxy { get; set; } = new SysProxyInfo { Name = "默认", IsEnv = true, IsPac = true, Pac = "default.pac" };
+        public SysProxyInfo SysProxy { get; set; } = new SysProxyInfo { Use = true, Name = "默认", IsEnv = true, IsPac = true, Pac = "default.pac" };
         public List<SysProxyInfo> SysProxys { get; set; } = new List<SysProxyInfo>
         {
-            new SysProxyInfo { Name="默认", IsEnv = true, IsPac = true, Pac="default.pac" }
+            new SysProxyInfo {Use = true,  Name="默认", IsEnv = true, IsPac = true, Pac="default.pac" }
         };
 
         [JsonIgnore]
@@ -44,6 +39,7 @@ namespace smash.plugins.sysProxy
 
     public sealed class SysProxyInfo
     {
+        public bool Use { get; set; }
         public string Name { get; set; }
         public bool IsPac { get; set; }
         public string Pac { get; set; }

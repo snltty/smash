@@ -39,7 +39,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(76, 112);
+            label4.Location = new Point(232, 114);
             label4.Margin = new Padding(6, 0, 6, 0);
             label4.Name = "label4";
             label4.Size = new Size(145, 31);
@@ -49,7 +49,7 @@
             // linkLabel1
             // 
             linkLabel1.AutoSize = true;
-            linkLabel1.Location = new Point(335, 116);
+            linkLabel1.Location = new Point(491, 118);
             linkLabel1.Margin = new Padding(6, 0, 6, 0);
             linkLabel1.Name = "linkLabel1";
             linkLabel1.Size = new Size(110, 31);
@@ -61,7 +61,7 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(249, 116);
+            label3.Location = new Point(405, 118);
             label3.Margin = new Padding(6, 0, 6, 0);
             label3.Name = "label3";
             label3.Size = new Size(86, 31);
@@ -71,7 +71,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(74, 76);
+            label2.Location = new Point(230, 78);
             label2.Margin = new Padding(6, 0, 6, 0);
             label2.Name = "label2";
             label2.Size = new Size(374, 31);
@@ -81,7 +81,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(74, 45);
+            label1.Location = new Point(230, 47);
             label1.Margin = new Padding(6, 0, 6, 0);
             label1.Name = "label1";
             label1.Size = new Size(350, 31);
@@ -92,7 +92,7 @@
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(514, 215);
+            ClientSize = new Size(874, 215);
             Controls.Add(label4);
             Controls.Add(linkLabel1);
             Controls.Add(label1);

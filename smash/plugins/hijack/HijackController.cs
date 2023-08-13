@@ -27,30 +27,11 @@ public sealed class HijackController : IController
     public bool Validate(out string error)
     {
         error = string.Empty;
-        if (hijackConfig.UseHijack == false)
-        {
-            return false;
-        }
-        if (hijackConfig.FilterTCP == false && hijackConfig.FilterUDP == false && hijackConfig.FilterDNS == false)
-        {
-            error = ($"进程劫持:至少选择一项协议");
-            return false;
-        }
-        if (hijackConfig.Process == null || hijackConfig.Process.FileNames.Count == 0)
-        {
-            error = ($"进程劫持:至少选择一个程序对象");
-            return false;
-        }
-        
+
         return true;
     }
     public bool Start()
     {
-        if (hijackConfig.UseHijack == false)
-        {
-            return false;
-        }
-
         //初始化一些数据
         hijackConfig.ParseProcesss();
         Stop();

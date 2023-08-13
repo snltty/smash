@@ -14,7 +14,7 @@ namespace smash.plugins.proxy
         {
             services.AddSingleton<ProxyConfig>();
             services.AddSingleton<ProxyController>();
-            services.AddSingleton<ProxyForm>();
+            services.AddSingleton<ProxySettingForm>();
         }
     }
 }

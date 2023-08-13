@@ -32,6 +32,7 @@ namespace smash.plugins.sysProxy
         public bool Validate(out string error)
         {
             error = string.Empty;
+            sysProxyConfig.SysProxy = sysProxyConfig.SysProxys.FirstOrDefault(c => c.Use);
             if (sysProxyConfig.SysProxy == null) return false;
 
             if (sysProxyConfig.SysProxy.IsPac == false && sysProxyConfig.SysProxy.IsEnv == false)

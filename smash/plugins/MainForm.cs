@@ -26,6 +26,7 @@ namespace smash.plugins
             HideForm(startUpArgInfo.Args);
             this.config = config;
 
+            AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
@@ -177,6 +178,7 @@ namespace smash.plugins
                 form.Visible = true;
                 form.FormBorderStyle = FormBorderStyle.None;
                 form.Dock = DockStyle.Fill;
+                form.Width = 900;
                 TabPage tabPage = new TabPage();
                 tabPage.BackColor = Color.Black;
                 tabPage.Text = form.Text;
@@ -299,7 +301,7 @@ namespace smash.plugins
                 });
                 CommandHelper.Windows(string.Empty, new string[] { "ipconfig/flushdns" });
             });
-            
+
         }
 
         private void startBtn_Click(object sender, EventArgs e)

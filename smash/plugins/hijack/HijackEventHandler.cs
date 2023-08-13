@@ -46,26 +46,21 @@ namespace smash.plugins.hijack
         }
         public void tcpConnectRequest(ulong id, ref NF_TCP_CONN_INFO pConnInfo)
         {
-            if (hijackConfig.FilterTCP == false)
+            if (checkProcess(pConnInfo.processId, out string processName, out ProcessParseInfo options) == false)
             {
-                //NFAPI.nf_tcpDisableFiltering(pConnInfo.processId);
-                // return;
+                NFAPI.nf_tcpDisableFiltering(pConnInfo.processId);
+                return;
             }
-            if (checkProcess(pConnInfo.processId, out string processName) == false)
+            if (options.Options.TCP == false)
             {
-                //NFAPI.nf_tcpDisableFiltering(pConnInfo.processId);
-                // return;
+                NFAPI.nf_tcpDisableFiltering(pConnInfo.processId);
+                return;
             }
 
 
             //更改目标地址到tcp连接
             RemoteIPEndPint localEp = convertAddress(pConnInfo.localAddress);
             RemoteIPEndPint remoteEp = convertAddress(pConnInfo.remoteAddress);
-            //判断是否dns
-            if (remoteEp.Port == 53 && hijackConfig.FilterDNS == false)
-            {
-                //return;
-            }
 
 
             Debug.WriteLine($"tcp request {processName}->{localEp.IPEndPoint}->{remoteEp.IPEndPoint}");
@@ -94,42 +89,40 @@ namespace smash.plugins.hijack
         #endregion
         public void udpCreated(ulong id, NF_UDP_CONN_INFO pConnInfo)
         {
-            if (hijackConfig.FilterUDP == false)
+            if (checkProcess(pConnInfo.processId, out string processName, out ProcessParseInfo options) == false)
             {
-                //NFAPI.nf_udpDisableFiltering(pConnInfo.processId);
-                //return;
+                NFAPI.nf_udpDisableFiltering(pConnInfo.processId);
+                return;
             }
-            if (checkProcess(pConnInfo.processId, out string processName) == false)
+            if (options.Options.UDP == false && options.Options.DNS == false)
             {
-                // NFAPI.nf_udpDisableFiltering(pConnInfo.processId);
-                //return;
+                NFAPI.nf_udpDisableFiltering(pConnInfo.processId);
+                return;
             }
 
-            udpConnections.TryAdd(id, new UdpConnection { Id = id });
+            udpConnections.TryAdd(id, new UdpConnection { Id = id, DNS = options.Options.DNS });
         }
         public void udpClosed(ulong id, NF_UDP_CONN_INFO pConnInfo)
         {
             udpConnections.TryRemove(id, out _);
-            //删除udp对象缓存
         }
         public void udpSend(ulong id, nint remoteAddress, nint buf, int len, nint options, int optionsLen)
         {
             //是否有连接对象
             if (udpConnections.TryGetValue(id, out UdpConnection udpConnection) == false)
             {
-                //NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
-                //return;
+                NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
+                return;
             }
 
             byte[] remoteAddressBuf = new byte[(int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH];
             Marshal.Copy(remoteAddress, remoteAddressBuf, 0, (int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH);
             RemoteIPEndPint remoteEp = convertAddress(remoteAddressBuf);
-
             //判断是否dns
-            if (remoteEp.Port == 53 && hijackConfig.FilterDNS == false)
+            if (remoteEp.Port == 53 && udpConnection.DNS == false)
             {
-                //NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
-                //return;
+                NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
+                return;
             }
 
             udpConnection.Id = id;
@@ -138,38 +131,41 @@ namespace smash.plugins.hijack
             //构建socks5连接
             NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
 
-            // Debug.WriteLine($"udp send xxx->{remoteEp.IPEndPoint}");
+            Debug.WriteLine($"udp send xxx->{remoteEp.IPEndPoint}");
         }
 
 
-        private bool checkProcess(uint processId, out string processName)
+        private bool checkProcess(uint processId, out string processName, out ProcessParseInfo options)
         {
             processName = string.Empty;
+            options = null;
             if (currentProcessId == processId)
             {
                 return false;
             }
 
             processName = NFAPI.nf_getProcessName(processId);
-            if (currentProcessId == processId || checkProcessName(processName) == false)
+            if (currentProcessId == processId || checkProcessName(processName, out options) == false)
             {
                 return false;
             }
 
             return true;
         }
-        private bool checkProcessName(string path)
+        private bool checkProcessName(string path, out ProcessParseInfo options)
         {
+            options = null;
             for (int i = 0; i < hijackConfig.CurrentProcesss.Length; i++)
             {
-                if (hijackConfig.CurrentProcesss[i].Length > path.Length) break;
+                if (hijackConfig.CurrentProcesss[i].Name.Length > path.Length) break;
 
                 var pathSpan = path.AsSpan();
-                var nameSpan = hijackConfig.CurrentProcesss[i].AsSpan();
+                var nameSpan = hijackConfig.CurrentProcesss[i].Name.AsSpan();
                 try
                 {
                     if (pathSpan.Slice(pathSpan.Length - nameSpan.Length, nameSpan.Length).SequenceEqual(nameSpan))
                     {
+                        options = hijackConfig.CurrentProcesss[i];
                         return true;
                     }
                 }
@@ -221,14 +217,11 @@ namespace smash.plugins.hijack
         public uint IP { get; set; }
         public ushort Port { get; set; }
     }
-    public sealed class TcpConnection
-    {
-
-    }
     public sealed class UdpConnection
     {
         public ulong Id { get; set; }
         public nint Options { get; set; }
+        public bool DNS { get; set; }
     }
 
 }

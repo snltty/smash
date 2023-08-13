@@ -14,7 +14,7 @@ namespace smash.plugins.sysProxy
         {
             services.AddSingleton<SysProxyConfig>();
             services.AddSingleton<SysProxyController>();
-            services.AddSingleton<SysProxyForm>();
+            services.AddSingleton<SysProxySettingForm>();
         }
     }
 }

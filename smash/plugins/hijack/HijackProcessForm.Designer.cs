@@ -30,118 +30,106 @@
         {
             components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(HijackProcessForm));
-            groupBox1 = new GroupBox();
-            btnSaveGroup = new Button();
-            listProcess = new ListBox();
-            cmbGroup = new ComboBox();
             contextMenu = new ContextMenuStrip(components);
-            contextMenuAddProcess = new ToolStripMenuItem();
-            contextMenuDelProcess = new ToolStripMenuItem();
-            mainMenuDelGroup = new ToolStripMenuItem();
             mainMenuAddGroup = new ToolStripMenuItem();
-            groupBox1.SuspendLayout();
+            mainMenuDelGroup = new ToolStripMenuItem();
+            processView = new DataGridView();
+            processList = new ListBox();
+            contextMenuList = new ContextMenuStrip(components);
+            toolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripMenuItem2 = new ToolStripMenuItem();
             contextMenu.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)processView).BeginInit();
+            contextMenuList.SuspendLayout();
             SuspendLayout();
-            // 
-            // groupBox1
-            // 
-            groupBox1.Controls.Add(btnSaveGroup);
-            groupBox1.Controls.Add(listProcess);
-            groupBox1.Controls.Add(cmbGroup);
-            groupBox1.Location = new Point(12, 12);
-            groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(546, 612);
-            groupBox1.TabIndex = 0;
-            groupBox1.TabStop = false;
-            groupBox1.Text = "进程组";
-            // 
-            // btnSaveGroup
-            // 
-            btnSaveGroup.Location = new Point(382, 37);
-            btnSaveGroup.Name = "btnSaveGroup";
-            btnSaveGroup.Size = new Size(150, 46);
-            btnSaveGroup.TabIndex = 2;
-            btnSaveGroup.Text = "保存修改";
-            btnSaveGroup.UseVisualStyleBackColor = true;
-            btnSaveGroup.Click += OnBtnSaveGroupClick;
-            // 
-            // listProcess
-            // 
-            listProcess.FormattingEnabled = true;
-            listProcess.HorizontalScrollbar = true;
-            listProcess.ItemHeight = 31;
-            listProcess.Location = new Point(12, 91);
-            listProcess.Name = "listProcess";
-            listProcess.Size = new Size(520, 500);
-            listProcess.TabIndex = 1;
-            // 
-            // cmbGroup
-            // 
-            cmbGroup.FormattingEnabled = true;
-            cmbGroup.Location = new Point(12, 42);
-            cmbGroup.Name = "cmbGroup";
-            cmbGroup.Size = new Size(353, 39);
-            cmbGroup.TabIndex = 0;
             // 
             // contextMenu
             // 
             contextMenu.ImageScalingSize = new Size(32, 32);
-            contextMenu.Items.AddRange(new ToolStripItem[] { contextMenuAddProcess, contextMenuDelProcess, mainMenuAddGroup, mainMenuDelGroup });
+            contextMenu.Items.AddRange(new ToolStripItem[] { mainMenuAddGroup, mainMenuDelGroup });
             contextMenu.Name = "contextMenu";
-            contextMenu.Size = new Size(301, 200);
-            // 
-            // contextMenuAddProcess
-            // 
-            contextMenuAddProcess.Name = "contextMenuAddProcess";
-            contextMenuAddProcess.Size = new Size(300, 38);
-            contextMenuAddProcess.Text = "添加进程";
-            contextMenuAddProcess.Click += btnAddProcess_Click;
-            // 
-            // contextMenuDelProcess
-            // 
-            contextMenuDelProcess.Name = "contextMenuDelProcess";
-            contextMenuDelProcess.Size = new Size(300, 38);
-            contextMenuDelProcess.Text = "删除进程";
-            contextMenuDelProcess.Click += btnDelProcess_Click;
-            // 
-            // mainMenuDelGroup
-            // 
-            mainMenuDelGroup.Name = "mainMenuDelGroup";
-            mainMenuDelGroup.Size = new Size(300, 38);
-            mainMenuDelGroup.Text = "删除分组";
-            mainMenuDelGroup.Click += OnMainMenuDelGroup;
+            contextMenu.Size = new Size(137, 80);
             // 
             // mainMenuAddGroup
             // 
             mainMenuAddGroup.Name = "mainMenuAddGroup";
-            mainMenuAddGroup.Size = new Size(300, 38);
-            mainMenuAddGroup.Text = "添加分组";
+            mainMenuAddGroup.Size = new Size(136, 38);
+            mainMenuAddGroup.Text = "添加";
             mainMenuAddGroup.Click += OnMainMenuAddGroupClick;
+            // 
+            // mainMenuDelGroup
+            // 
+            mainMenuDelGroup.Name = "mainMenuDelGroup";
+            mainMenuDelGroup.Size = new Size(136, 38);
+            mainMenuDelGroup.Text = "删除";
+            mainMenuDelGroup.Click += OnMainMenuDelGroup;
+            // 
+            // processView
+            // 
+            processView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            processView.Dock = DockStyle.Left;
+            processView.Location = new Point(0, 0);
+            processView.Name = "processView";
+            processView.RowHeadersWidth = 82;
+            processView.RowTemplate.Height = 40;
+            processView.Size = new Size(580, 391);
+            processView.TabIndex = 1;
+            // 
+            // processList
+            // 
+            processList.Dock = DockStyle.Right;
+            processList.FormattingEnabled = true;
+            processList.ItemHeight = 31;
+            processList.Location = new Point(604, 0);
+            processList.Name = "processList";
+            processList.Size = new Size(240, 391);
+            processList.TabIndex = 2;
+            // 
+            // contextMenuList
+            // 
+            contextMenuList.ImageScalingSize = new Size(32, 32);
+            contextMenuList.Items.AddRange(new ToolStripItem[] { toolStripMenuItem1, toolStripMenuItem2 });
+            contextMenuList.Name = "contextMenu";
+            contextMenuList.Size = new Size(301, 124);
+            // 
+            // toolStripMenuItem1
+            // 
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Size = new Size(300, 38);
+            toolStripMenuItem1.Text = "添加";
+            toolStripMenuItem1.Click += btnAddProcess_Click;
+            // 
+            // toolStripMenuItem2
+            // 
+            toolStripMenuItem2.Name = "toolStripMenuItem2";
+            toolStripMenuItem2.Size = new Size(300, 38);
+            toolStripMenuItem2.Text = "删除";
+            toolStripMenuItem2.Click += btnDelProcess_Click;
             // 
             // HijackProcessForm
             // 
             AutoScaleDimensions = new SizeF(14F, 31F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(570, 636);
-            Controls.Add(groupBox1);
+            ClientSize = new Size(844, 391);
+            Controls.Add(processList);
+            Controls.Add(processView);
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "HijackProcessForm";
-            Text = "进程劫持进程设置";
-            groupBox1.ResumeLayout(false);
+            Text = "进程劫持";
             contextMenu.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)processView).EndInit();
+            contextMenuList.ResumeLayout(false);
             ResumeLayout(false);
         }
 
         #endregion
-
-        private GroupBox groupBox1;
-        private ListBox listProcess;
-        private ComboBox cmbGroup;
         private ContextMenuStrip contextMenu;
-        private ToolStripMenuItem contextMenuAddProcess;
-        private ToolStripMenuItem contextMenuDelProcess;
-        private Button btnSaveGroup;
         private ToolStripMenuItem mainMenuDelGroup;
         private ToolStripMenuItem mainMenuAddGroup;
+        private DataGridView processView;
+        private ListBox processList;
+        private ContextMenuStrip contextMenuList;
+        private ToolStripMenuItem toolStripMenuItem1;
+        private ToolStripMenuItem toolStripMenuItem2;
     }
 }

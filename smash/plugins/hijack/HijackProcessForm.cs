@@ -1,10 +1,14 @@
-﻿using smash.plugins.hijack;
+﻿using smash.plugin;
+using smash.plugins.hijack;
+using smash.plugins.proxy;
 using System.Diagnostics;
 
 namespace smash.plugins
 {
-    public partial class HijackProcessForm : Form
+    public partial class HijackProcessForm : Form, ITabForm
     {
+        public int Order => 0;
+
         private readonly HijackConfig hijackConfig;
         public HijackProcessForm(HijackConfig hijackConfig)
         {
@@ -15,56 +19,93 @@ namespace smash.plugins
             MinimizeBox = false;
             InitializeComponent();
 
-            listProcess.ContextMenuStrip = contextMenu;
-            listProcess.MouseUp += ListProcess_MouseClick;
-            cmbGroup.SelectedIndexChanged += CmbGroup_SelectedIndexChanged;
-            BindGroup();
-        }
+            BindData();
 
-        private void ListProcess_MouseClick(object sender, MouseEventArgs e)
+            processView.RowHeadersVisible = false;
+            processView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            processView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            processView.ContextMenuStrip = contextMenu;
+            processView.CellMouseUp += ProxysView_CellMouseUp;
+            processView.SelectionChanged += ProxysView_SelectionChanged;
+            processView.CellEndEdit += ProxysView_CellEndEdit;
+            processView.CellContentClick += ProxysView_CellContentClick;
+
+            processList.ContextMenuStrip = contextMenuList;
+        }
+        private void BindData()
+        {
+            processView.DataSource = null;
+            processView.DataSource = hijackConfig.Processs;
+
+            processView.Columns["Use"].HeaderText = "使用";
+            processView.Columns["Name"].HeaderText = "名称";
+            processView.Columns["TCP"].HeaderText = "TCP";
+            processView.Columns["UDP"].HeaderText = "UDP";
+            processView.Columns["DNS"].HeaderText = "DNS";
+
+            hijackConfig.Save();
+        }
+        private void ProxysView_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex == 0)
+            {
+                int count = processView.Rows.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    if (i != e.RowIndex)
+                        processView.Rows[i].Cells[0].Value = false;
+                }
+                hijackConfig.Processs[e.RowIndex].Use = true;
+                hijackConfig.Save();
+            }
+        }
+        private void ProxysView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            hijackConfig.Save();
+        }
+        private void ProxysView_CellMouseUp(object sender, DataGridViewCellMouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
             {
-                int currentIndex = e.Y / listProcess.ItemHeight;
-                if (currentIndex < listProcess.Items.Count)
+                if (e.RowIndex >= 0)
                 {
-                    listProcess.SelectedIndex = currentIndex;
+                    processView.ClearSelection();
+                    processView.Rows[e.RowIndex].Selected = true;
                 }
             }
         }
 
         ProcessInfo processInfo;
-        private void CmbGroup_SelectedIndexChanged(object sender, EventArgs e)
+        private void ProxysView_SelectionChanged(object sender, EventArgs e)
         {
-            if (cmbGroup.SelectedItem != null)
+            if (processView.SelectedRows.Count > 0)
             {
-                processInfo = hijackConfig.Processs.FirstOrDefault(c => c.Name == cmbGroup.SelectedItem.ToString());
-                editInfo = processInfo;
+                processInfo = processView.SelectedRows[0].DataBoundItem as ProcessInfo;
+            }
+            else
+            {
+                processInfo = null;
             }
             BindFileNames();
         }
 
-        private void BindGroup()
-        {
-            cmbGroup.DataSource = null;
-            cmbGroup.DataSource = hijackConfig.Processs.Select(c => c.Name).ToList();
-        }
+
         private void BindFileNames()
         {
-            listProcess.DataSource = null;
+            processList.DataSource = null;
             if (processInfo == null) return;
-            listProcess.DataSource = processInfo.FileNames;
+            processList.DataSource = processInfo.FileNames;
         }
 
-
-        ProcessInfo editInfo;
         private void btnDelProcess_Click(object sender, EventArgs e)
         {
-            if (processInfo != null && listProcess.SelectedItem != null)
+
+            if (processInfo != null && processList.SelectedItem != null)
             {
-                processInfo.FileNames.Remove(listProcess.SelectedItem.ToString());
+                processInfo.FileNames.Remove(processList.SelectedItem.ToString());
             }
             BindFileNames();
+
             hijackConfig.Save();
         }
         private void btnAddProcess_Click(object sender, EventArgs e)
@@ -90,52 +131,25 @@ namespace smash.plugins
         }
         private void OnMainMenuDelGroup(object sender, EventArgs e)
         {
-            if (processInfo == null) return;
             if (hijackConfig.Processs.Count <= 1) return;
-
-            int selectIndex = cmbGroup.SelectedIndex;
             hijackConfig.Processs.Remove(processInfo);
-            BindGroup();
-            if (selectIndex > hijackConfig.Processs.Count - 1)
-            {
-                selectIndex = hijackConfig.Processs.Count - 1;
-            }
-            if (selectIndex > 0)
-            {
-                cmbGroup.SelectedIndex = selectIndex;
-            }
             hijackConfig.Save();
-        }
-
-        private void OnBtnSaveGroupClick(object sender, EventArgs e)
-        {
-            if (editInfo != null)
-            {
-                editInfo.Name = cmbGroup.Text;
-                hijackConfig.Save();
-                BindGroup();
-            }
         }
 
         private void OnMainMenuAddGroupClick(object sender, EventArgs e)
         {
-            if(hijackConfig.Processs.FirstOrDefault(c=>c.Name == "新分组") != null)
+            if (hijackConfig.Processs.FirstOrDefault(c => c.Name == "新项") != null)
             {
-                MessageBox.Show("已存在一个新分组");
+                MessageBox.Show("已存在一个新项");
                 return;
             }
-
-            editInfo = new ProcessInfo { Name = "新分组", FileNames = new List<string>() };
-            hijackConfig.Processs.Add(editInfo);
-            int selectIndex = hijackConfig.Processs.Count - 1;
-
-            hijackConfig.Save();
-            BindGroup();
-
-            if (selectIndex > 0)
+            hijackConfig.Processs.Add(new ProcessInfo
             {
-                cmbGroup.SelectedIndex = selectIndex;
-            }
+                Name = "新项",
+            });
+            BindData();
+            processView.ClearSelection();
+            processView.Rows[hijackConfig.Processs.Count - 1].Selected = true;
         }
     }
 }

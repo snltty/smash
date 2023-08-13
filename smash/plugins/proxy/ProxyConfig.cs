@@ -22,12 +22,12 @@ namespace smash.plugins.proxy
         /// <summary>
         /// 当前使用代理
         /// </summary>
-        public ProxyInfo Proxy { get; set; } = new ProxyInfo { Host = "127.0.0.1", Port = 5413, Name = "默认", Password = string.Empty, UserName = string.Empty };
+        public ProxyInfo Proxy { get; set; } = new ProxyInfo { Use = true, Host = "127.0.0.1", Port = 5413, Name = "默认", Password = string.Empty, UserName = string.Empty };
         /// <summary>
         /// 代理配置列表
         /// </summary>
         public List<ProxyInfo> Proxys { get; set; } = new List<ProxyInfo> {
-            new ProxyInfo{ Host = "127.0.0.1", Port = 5413, Name = "默认", Password = string.Empty, UserName = string.Empty },
+            new ProxyInfo{ Use = true, Host = "127.0.0.1", Port = 5413, Name = "默认", Password = string.Empty, UserName = string.Empty },
         };
         #endregion
 
@@ -40,6 +40,7 @@ namespace smash.plugins.proxy
 
     public sealed class ProxyInfo
     {
+        public bool Use { get; set; }
         public string Name { get; set; }
         public string Host { get; set; }
         public int Port { get; set; }
