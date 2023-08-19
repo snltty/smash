@@ -36,6 +36,7 @@ public sealed class HijackController : IController
 
         return true;
     }
+
     public bool Start()
     {
         Debug.WriteLine(hijackConfig.CurrentProcesss.ToJson());
@@ -164,7 +165,14 @@ public sealed class HijackController : IController
     }
     private void FilterIPV4Lan(List<NF_RULE> rules)
     {
-        foreach (string item in hijackConfig.IntranetIpv4s)
+        List<string> intranetIpv4s = new List<string>() {
+            "10.0.0.0/8", "100.64.0.0/10",
+            "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12",
+            "192.0.0.0/24", "192.0.2.0/24","192.88.99.0/24","192.168.0.0/16",
+            "198.18.0.0/15","198.51.100.0/24",
+            "203.0.113.0/24","224.0.0.0/4", "240.0.0.0/4","255.255.255.255/32"
+        };
+        foreach (string item in intranetIpv4s)
         {
             string[] arr = item.Split('/');
             uint mask = BinaryPrimitives.ReverseEndianness(0xffffffff << (32 - byte.Parse(arr[1])));

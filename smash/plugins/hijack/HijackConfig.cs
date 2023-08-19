@@ -14,7 +14,6 @@ namespace smash.plugins.hijack
             this.configDataProvider = configDataProvider;
             HijackConfig _config = configDataProvider.Load().Result ?? new HijackConfig();
             Processs = _config.Processs;
-            IntranetIpv4s = _config.IntranetIpv4s;
             Save();
 
         }
@@ -24,16 +23,6 @@ namespace smash.plugins.hijack
         /// </summary>
         public List<ProcessInfo> Processs { get; set; } = new List<ProcessInfo> {
             new ProcessInfo{ Name="浏览器", TCP = true,UDP = true,DNS = true, Use = true, FileNames = new List<string>{"chrome.exe" } }
-        };
-        /// <summary>
-        /// 阻止内网ip列表
-        /// </summary>
-        public List<string> IntranetIpv4s = new List<string>() {
-            "10.0.0.0/8", "100.64.0.0/10",
-            "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12",
-            "192.0.0.0/24", "192.0.2.0/24","192.88.99.0/24","192.168.0.0/16",
-            "198.18.0.0/15","198.51.100.0/24",
-            "203.0.113.0/24","224.0.0.0/4", "240.0.0.0/4","255.255.255.255/32"
         };
 
         /// <summary>
