@@ -49,13 +49,7 @@ namespace smash.plugins
         {
             if (e.ColumnIndex == 0)
             {
-                int count = processView.Rows.Count;
-                for (int i = 0; i < count; i++)
-                {
-                    if (i != e.RowIndex)
-                        processView.Rows[i].Cells[0].Value = false;
-                }
-                hijackConfig.Processs[e.RowIndex].Use = true;
+                hijackConfig.Processs[e.RowIndex].Use = !hijackConfig.Processs[e.RowIndex].Use;
                 hijackConfig.Save();
             }
         }
@@ -133,7 +127,8 @@ namespace smash.plugins
         {
             if (hijackConfig.Processs.Count <= 1) return;
             hijackConfig.Processs.Remove(processInfo);
-            hijackConfig.Save();
+
+            BindData();
         }
 
         private void OnMainMenuAddGroupClick(object sender, EventArgs e)

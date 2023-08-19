@@ -1,5 +1,9 @@
-﻿using common.libs.database;
+﻿using common.libs;
+using common.libs.database;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Net;
+using System.Text;
+using System.Text.Json.Serialization;
 
 namespace smash.plugins.proxy
 {
@@ -31,10 +35,34 @@ namespace smash.plugins.proxy
         };
         #endregion
 
+        [JsonIgnore]
+        public IPAddress IPAddress { get; set; }
+        public byte[] IPAddressBytes { get; set; }
+        public Memory<byte> UserName { get; set; }
+        public Memory<byte> Password { get; set; }
+
         public void Save()
         {
             configDataProvider.Save(this).Wait();
         }
+
+        public void Parse()
+        {
+            Proxy = Proxys.FirstOrDefault(c => c.Use);
+            if (Proxy != null)
+            {
+                IPAddress = NetworkHelper.GetDomainIp(Proxy.Host);
+                IPAddressBytes = IPAddress.GetAddressBytes();
+                UserName = Encoding.UTF8.GetBytes(Proxy.UserName ?? string.Empty);
+                Password = Encoding.UTF8.GetBytes(Proxy.Password ?? string.Empty);
+            }
+            else
+            {
+                IPAddress = null;
+                IPAddressBytes = null;
+            }
+        }
+
     }
 
 

@@ -131,6 +131,7 @@ namespace smash.proxy.client
                 };
                 token.Saea = readEventArgs;
 
+                token.ClientSocket.KeepAlive();
                 token.ClientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
                 token.ClientSocket.SendTimeout = 5000;
                 token.PoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];

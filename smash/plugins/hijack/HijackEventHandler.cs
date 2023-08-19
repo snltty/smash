@@ -1,23 +1,31 @@
 ﻿using System.Net.Sockets;
 using System.Net;
 using System.Diagnostics;
-using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 using smash.plugins.proxy;
+using common.libs.socks5;
 
 namespace smash.plugins.hijack
 {
     public sealed class HijackEventHandler : NF_EventHandler
     {
         private readonly HijackConfig hijackConfig;
+        private readonly ProxyConfig proxyConfig;
+        private readonly HijackServer hijackServer;
         private readonly uint currentProcessId = 0;
         private readonly ConcurrentDictionary<ulong, UdpConnection> udpConnections = new ConcurrentDictionary<ulong, UdpConnection>();
+        private readonly byte[] ipaddress = IPAddress.Loopback.GetAddressBytes();
+        private ushort port;
 
-        public HijackEventHandler(HijackConfig hijackConfig)
+        public HijackEventHandler(HijackConfig hijackConfig, ProxyConfig proxyConfig, HijackServer hijackServer)
         {
             this.hijackConfig = hijackConfig;
+            this.proxyConfig = proxyConfig;
+            this.hijackServer = hijackServer;
             currentProcessId = (uint)Process.GetCurrentProcess().Id;
+
+            port = (ushort)hijackServer.Start();
         }
 
         #region tcp无需处理
@@ -38,13 +46,12 @@ namespace smash.plugins.hijack
         {
             NFAPI.nf_tcpPostReceive(id, buf, len);
         }
-        #endregion
-
         public void tcpClosed(ulong id, NF_TCP_CONN_INFO pConnInfo)
         {
             //删除tcp对象缓存
         }
-        public void tcpConnectRequest(ulong id, ref NF_TCP_CONN_INFO pConnInfo)
+        #endregion
+        public unsafe void tcpConnectRequest(ulong id, ref NF_TCP_CONN_INFO pConnInfo)
         {
             if (checkProcess(pConnInfo.processId, out string processName, out ProcessParseInfo options) == false)
             {
@@ -58,12 +65,20 @@ namespace smash.plugins.hijack
             }
 
 
-            //更改目标地址到tcp连接
-            RemoteIPEndPint localEp = convertAddress(pConnInfo.localAddress);
-            RemoteIPEndPint remoteEp = convertAddress(pConnInfo.remoteAddress);
-
-
-            Debug.WriteLine($"tcp request {processName}->{localEp.IPEndPoint}->{remoteEp.IPEndPoint}");
+            //更改目标地址到劫持服务器
+            if (proxyConfig.IPAddress != null)
+            {
+                fixed (void* p = &ipaddress[0])
+                {
+                    Marshal.Copy((IntPtr)p, pConnInfo.remoteAddress, 4, ipaddress.Length);
+                }
+                fixed (ushort* p = &port)
+                {
+                    byte* pp = (byte*)p;
+                    pConnInfo.remoteAddress[2] = *(pp + 1);
+                    pConnInfo.remoteAddress[3] = *(pp);
+                }
+            }
         }
 
         #region udp无需处理
@@ -87,13 +102,19 @@ namespace smash.plugins.hijack
             NFAPI.nf_udpPostReceive(id, remoteAddress, buf, len, options);
         }
         #endregion
+        public void udpClosed(ulong id, NF_UDP_CONN_INFO pConnInfo)
+        {
+            udpConnections.TryRemove(id, out _);
+        }
         public void udpCreated(ulong id, NF_UDP_CONN_INFO pConnInfo)
         {
+            //不是需要代理的进程
             if (checkProcess(pConnInfo.processId, out string processName, out ProcessParseInfo options) == false)
             {
                 NFAPI.nf_udpDisableFiltering(pConnInfo.processId);
                 return;
             }
+            //不代理UDP 且 不代理DNS
             if (options.Options.UDP == false && options.Options.DNS == false)
             {
                 NFAPI.nf_udpDisableFiltering(pConnInfo.processId);
@@ -101,10 +122,6 @@ namespace smash.plugins.hijack
             }
 
             udpConnections.TryAdd(id, new UdpConnection { Id = id, DNS = options.Options.DNS });
-        }
-        public void udpClosed(ulong id, NF_UDP_CONN_INFO pConnInfo)
-        {
-            udpConnections.TryRemove(id, out _);
         }
         public void udpSend(ulong id, nint remoteAddress, nint buf, int len, nint options, int optionsLen)
         {
@@ -115,25 +132,61 @@ namespace smash.plugins.hijack
                 return;
             }
 
-            byte[] remoteAddressBuf = new byte[(int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH];
-            Marshal.Copy(remoteAddress, remoteAddressBuf, 0, (int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH);
-            RemoteIPEndPint remoteEp = convertAddress(remoteAddressBuf);
-            //判断是否dns
-            if (remoteEp.Port == 53 && udpConnection.DNS == false)
+            //0 1 ip类型，2 3 端口，剩余的是根据ip类型的不同长度的ip数据
+            byte port0 = Marshal.ReadByte(remoteAddress, 2);
+            byte port1 = Marshal.ReadByte(remoteAddress, 3);
+            if (port0 == 0 && port1 == 53 && udpConnection.DNS == false)
             {
                 NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
                 return;
             }
 
-            udpConnection.Id = id;
-            udpConnection.Options = options;
-
             //构建socks5连接
-            NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
+            if (udpConnection.Socket == null)
+            {
+                udpConnection.RemoteAddress = remoteAddress;
+                udpConnection.Options = options;
+                udpConnection.Socket = hijackServer.CreateConnection(remoteAddress, Socks5EnumRequestCommand.UdpAssociate, out IPEndPoint ServerEP);
+                udpConnection.ServerEP = ServerEP;
 
-            Debug.WriteLine($"udp send xxx->{remoteEp.IPEndPoint}");
+                udpConnection.UdpSocket = hijackServer.CreateUdp(udpConnection.ServerEP);
+                SendToUdp(udpConnection, buf, len);
+                ReceiveUdp(udpConnection);
+                return;
+            }
+            SendToUdp(udpConnection, buf, len);
         }
+        private unsafe void SendToUdp(UdpConnection udpConnection, nint buf, int len)
+        {
+            udpConnection.UdpSocket.SendTo(new Span<byte>(buf.ToPointer(), len), udpConnection.ServerEP);
+        }
+        private void ReceiveUdp(UdpConnection udpConnection)
+        {
+            udpConnection.UdpBuffer = new byte[65535];
+            udpConnection.UdpSocket.BeginReceiveFrom(udpConnection.UdpBuffer, 0, udpConnection.UdpBuffer.Length, SocketFlags.None, ref udpConnection.TempEP, UdpCallback, udpConnection);
+        }
+        private unsafe void UdpCallback(IAsyncResult result)
+        {
+            try
+            {
+                UdpConnection udpConnection = result.AsyncState as UdpConnection;
+                int length = udpConnection.UdpSocket.EndReceiveFrom(result, ref udpConnection.TempEP);
 
+                Memory<byte> memory = udpConnection.UdpBuffer.AsMemory(0, length);
+                Memory<byte> data = Socks5Parser.GetUdpData(memory);
+
+                fixed (void* p = &data.Span[0])
+                {
+                    NFAPI.nf_udpPostReceive(udpConnection.Id, udpConnection.RemoteAddress, (IntPtr)p, length, udpConnection.Options);
+                }
+
+                udpConnection.UdpSocket.BeginReceiveFrom(udpConnection.UdpBuffer, 0, udpConnection.UdpBuffer.Length, SocketFlags.None, ref udpConnection.TempEP, UdpCallback, udpConnection);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex + "");
+            }
+        }
 
         private bool checkProcess(uint processId, out string processName, out ProcessParseInfo options)
         {
@@ -177,51 +230,22 @@ namespace smash.plugins.hijack
             }
             return false;
         }
-        private RemoteIPEndPint convertAddress(byte[] buf)
-        {
-            if (buf == null)
-            {
-                return null;
-            }
-
-            Span<byte> spsn = buf.AsSpan();
-            if ((AddressFamily)buf[0] == AddressFamily.InterNetwork)
-            {
-                ushort port = BinaryPrimitives.ReadUInt16BigEndian(spsn.Slice(2, 2));
-                return new RemoteIPEndPint
-                {
-                    IPEndPoint = new IPEndPoint(new IPAddress(spsn.Slice(4, 4)), port),
-                    Port = port,
-                    IP = BinaryPrimitives.ReadUInt16BigEndian(spsn.Slice(4, 4))
-                };
-            }
-            else if ((AddressFamily)buf[0] == AddressFamily.InterNetworkV6)
-            {
-                ushort port = BinaryPrimitives.ReadUInt16BigEndian(spsn.Slice(2, 2));
-                return new RemoteIPEndPint
-                {
-                    IPEndPoint = new IPEndPoint(new IPAddress(spsn.Slice(4, 16)), port),
-                    Port = port,
-                    IP = 0
-                };
-            }
-            return null;
-        }
-
     }
 
-
-    public sealed class RemoteIPEndPint
-    {
-        public IPEndPoint IPEndPoint { get; set; }
-        public uint IP { get; set; }
-        public ushort Port { get; set; }
-    }
     public sealed class UdpConnection
     {
         public ulong Id { get; set; }
+        public nint RemoteAddress { get; set; }
         public nint Options { get; set; }
+
         public bool DNS { get; set; }
+
+        public Socket Socket { get; set; }
+        public Socket UdpSocket { get; set; }
+        public byte[] UdpBuffer { get; set; }
+        public EndPoint TempEP;
+
+        public IPEndPoint ServerEP { get; set; }
     }
 
 }

@@ -15,6 +15,7 @@ namespace smash.plugins.hijack
             services.AddSingleton<HijackConfig>();
             services.AddSingleton<HijackProcessForm>();
             services.AddSingleton<HijackController>();
+            services.AddSingleton<HijackServer>();
         }
     }
 }

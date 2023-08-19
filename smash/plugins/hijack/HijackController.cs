@@ -1,4 +1,5 @@
 ﻿using common.libs;
+using common.libs.extends;
 using smash.plugin;
 using smash.plugins.proxy;
 using System.Buffers.Binary;
@@ -14,14 +15,12 @@ public sealed class HijackController : IController
     public const string NFDriver = "nfdriver.sys";
     public const string Name = "netfilter2";
     private readonly HijackConfig hijackConfig;
-    private readonly ProxyConfig proxyConfig;
     private readonly HijackEventHandler hijackEventHandler;
 
-    public HijackController(HijackConfig hijackConfig, ProxyConfig proxyConfig)
+    public HijackController(HijackConfig hijackConfig, ProxyConfig proxyConfig,HijackServer hijackServer)
     {
         this.hijackConfig = hijackConfig;
-        this.proxyConfig = proxyConfig;
-        hijackEventHandler = new HijackEventHandler(hijackConfig);
+        hijackEventHandler = new HijackEventHandler(hijackConfig, proxyConfig, hijackServer);
     }
 
     public bool Validate(out string error)
@@ -39,6 +38,7 @@ public sealed class HijackController : IController
     }
     public bool Start()
     {
+        Debug.WriteLine(hijackConfig.CurrentProcesss.ToJson());
         return true;
         //初始化一些数据
         Stop();
