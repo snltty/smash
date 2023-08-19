@@ -167,17 +167,12 @@ public sealed class HijackController : IController
         foreach (string item in hijackConfig.IntranetIpv4s)
         {
             string[] arr = item.Split('/');
-            uint ip = BinaryPrimitives.ReadUInt32LittleEndian(IPAddress.Parse(arr[0]).GetAddressBytes());
-            uint mask = BinaryPrimitives.ReverseEndianness(0xffffffff << 32 - byte.Parse(arr[1]));
-            byte[] ipBytes = new byte[16];
-            byte[] maskBytes = new byte[16];
-            BitConverter.GetBytes(ip).AsSpan().CopyTo(ipBytes);
-            BitConverter.GetBytes(mask).AsSpan().CopyTo(maskBytes);
+            uint mask = BinaryPrimitives.ReverseEndianness(0xffffffff << (32 - byte.Parse(arr[1])));
             rules.Add(new NF_RULE
             {
                 filteringFlag = (uint)NF_FILTERING_FLAG.NF_ALLOW,
                 ip_family = (ushort)AddressFamily.InterNetwork,
-                remoteIpAddress = BitConverter.GetBytes(ip),
+                remoteIpAddress = IPAddress.Parse(arr[0]).GetAddressBytes(),
                 remoteIpAddressMask = BitConverter.GetBytes(mask),
 
             });
