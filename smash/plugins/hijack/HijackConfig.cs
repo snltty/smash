@@ -1,5 +1,6 @@
 ﻿using common.libs.database;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace smash.plugins.hijack
@@ -33,6 +34,7 @@ namespace smash.plugins.hijack
         public void ParseProcesss()
         {
             List<ProcessParseInfo> res = new List<ProcessParseInfo>();
+
             foreach (var process in Processs.Where(c => c.Use))
             {
                 foreach (var item in process.FileNames)
@@ -42,7 +44,22 @@ namespace smash.plugins.hijack
                         Name = item,
                         Options = process
                     });
+
                 }
+            }
+
+            if (Processs.Count(c => c.Use && c.DNS) > 0)
+            {
+                res.Add(new ProcessParseInfo
+                {
+                    Name = "svchost.exe",
+                    Options = new ProcessInfo { DNS = true, UDP = false, TCP = false }
+                });
+                res.Add(new ProcessParseInfo
+                {
+                    Name = "System",
+                    Options = new ProcessInfo { DNS = true, UDP = false, TCP = false }
+                });
             }
             CurrentProcesss = res.ToArray();
         }

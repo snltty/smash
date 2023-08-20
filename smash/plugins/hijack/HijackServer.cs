@@ -31,9 +31,9 @@ namespace smash.plugins.hijack
             socket.WindowsUdpBug();
             return socket;
         }
-        public Socket CreateConnection(nint remoteAddress, Socks5EnumRequestCommand command, out IPEndPoint ServerEP)
+        public Socket CreateConnection(nint remoteAddress, Socks5EnumRequestCommand command, out IPEndPoint serverEP)
         {
-            ServerEP = null;
+            serverEP = null;
             byte[] buffer = ArrayPool<byte>.Shared.Rent(1024);
             try
             {
@@ -52,12 +52,12 @@ namespace smash.plugins.hijack
                     return null;
                 }
                 //密码认证
-                if (authType != 0x02 && Password(socket, buffer) == false)
+                if (authType == 0x02 && Password(socket, buffer) == false)
                 {
                     return null;
                 }
 
-                if (Command(socket, buffer, remoteAddress, command, out IPEndPoint serverEP) == false)
+                if (Command(socket, buffer, remoteAddress, command, out serverEP) == false)
                 {
                     return null;
                 }

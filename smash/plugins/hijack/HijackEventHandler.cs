@@ -5,6 +5,12 @@ using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 using smash.plugins.proxy;
 using common.libs.socks5;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using common.libs.extends;
+using System.Buffers.Binary;
+using System.Buffers;
+using static System.Windows.Forms.Design.AxImporter;
+using System.Drawing;
 
 namespace smash.plugins.hijack
 {
@@ -121,44 +127,132 @@ namespace smash.plugins.hijack
                 return;
             }
 
-            udpConnections.TryAdd(id, new UdpConnection { Id = id, DNS = options.Options.DNS });
+            udpConnections.TryAdd(id, new UdpConnection { Id = id, DNS = options.Options.DNS, UDP = options.Options.UDP });
         }
-        public void udpSend(ulong id, nint remoteAddress, nint buf, int len, nint options, int optionsLen)
+        public unsafe void udpSend(ulong id, nint remoteAddress, nint buf, int len, nint options, int optionsLen)
         {
-            //是否有连接对象
+            //没连接对象，那在udpCreated那里就已经被阻止了，直接发送数据即可
             if (udpConnections.TryGetValue(id, out UdpConnection udpConnection) == false)
             {
                 NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
                 return;
             }
-
-            //0 1 ip类型，2 3 端口，剩余的是根据ip类型的不同长度的ip数据
-            byte port0 = Marshal.ReadByte(remoteAddress, 2);
-            byte port1 = Marshal.ReadByte(remoteAddress, 3);
-            if (port0 == 0 && port1 == 53 && udpConnection.DNS == false)
+            //之前连接过服务器，失败了，直接提交数据
+            if (udpConnection.SocksFail)
             {
                 NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
                 return;
             }
 
-            //构建socks5连接
-            if (udpConnection.Socket == null)
+            //大端端口
+            byte* p = (byte*)remoteAddress;
+            ushort port = (ushort)((*(p + 2) << 8 & 0xFF00) | *(p + 3));
+            //是DNS但不代理， 或不是DNS也不代理
+            if ((port == 53 && udpConnection.DNS == false) || (port != 53 && udpConnection.UDP == false))
             {
-                udpConnection.RemoteAddress = remoteAddress;
-                udpConnection.Options = options;
-                udpConnection.Socket = hijackServer.CreateConnection(remoteAddress, Socks5EnumRequestCommand.UdpAssociate, out IPEndPoint ServerEP);
-                udpConnection.ServerEP = ServerEP;
+                if (udpConnection.DNS == false)
+                {
+                    NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
+                    return;
+                }
+            }
 
+            //连接代理服务器
+            if (udpConnection.Connected == false)
+            {
+                ConnectServer(udpConnection, remoteAddress, buf, len, options, optionsLen);
+                if (udpConnection.SocksFail)
+                {
+                    //服务器连接失败，直接提交数据
+                    NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
+                }
+                return;
+            }
+
+            SendToUdp(udpConnection, buf, len);
+        }
+        private void ConnectServer(UdpConnection udpConnection, nint remoteAddress, nint buf, int len, nint options, int optionsLen)
+        {
+            //缓存目标地址
+            udpConnection.RemoteAddress = new byte[(int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH];
+            Marshal.Copy(remoteAddress, udpConnection.RemoteAddress, 0, (int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH);
+            //缓存udp连接信息
+            udpConnection.Options = new byte[optionsLen];
+            Marshal.Copy(options, udpConnection.Options, 0, optionsLen);
+            //缓存一些其它信息，方便回复数据使用
+            udpConnection.AddressFamily = (AddressFamily)Marshal.ReadByte(remoteAddress);
+            if (udpConnection.AddressFamily == AddressFamily.InterNetwork)
+            {
+                udpConnection.AddressLength = 4;
+                udpConnection.AddressType = 0x01;
+                udpConnection.AddressIndex = 4;
+            }
+            else
+            {
+                udpConnection.AddressLength = 16;
+                udpConnection.AddressType = 0x04;
+                udpConnection.AddressIndex = 8;
+            }
+
+            udpConnection.Socket = hijackServer.CreateConnection(remoteAddress, Socks5EnumRequestCommand.UdpAssociate, out IPEndPoint ServerEP);
+            if (udpConnection.Socket != null)
+            {
+                udpConnection.ServerEP = ServerEP;
                 udpConnection.UdpSocket = hijackServer.CreateUdp(udpConnection.ServerEP);
                 SendToUdp(udpConnection, buf, len);
                 ReceiveUdp(udpConnection);
-                return;
             }
-            SendToUdp(udpConnection, buf, len);
+            else
+            {
+                udpConnection.SocksFail = true;
+            }
         }
         private unsafe void SendToUdp(UdpConnection udpConnection, nint buf, int len)
         {
-            udpConnection.UdpSocket.SendTo(new Span<byte>(buf.ToPointer(), len), udpConnection.ServerEP);
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(6 + udpConnection.AddressLength + len);
+            try
+            {
+                int index = 0;
+                //rsv
+                buffer[index] = 0;
+                index++;
+                buffer[index] = 0;
+                index++;
+                //flag
+                buffer[index] = 0;
+                index++;
+                //addrtype
+                buffer[index] = udpConnection.AddressType;
+                index++;
+
+                //addr
+                udpConnection.RemoteAddress.AsSpan(udpConnection.AddressIndex, udpConnection.AddressLength).CopyTo(buffer.AsSpan(index));
+                index += udpConnection.AddressLength;
+
+                //port
+                buffer[index] = udpConnection.RemoteAddress[2];
+                index++;
+                buffer[index] = udpConnection.RemoteAddress[3];
+                index++;
+
+                int headLength = index;
+
+                //data
+                Marshal.Copy(buf, buffer, index, len);
+                index += len;
+
+                Memory<byte> remote = Socks5Parser.GetRemoteEndPoint(buffer.AsMemory(), out Socks5EnumAddressType addressType, out ushort port, out int index1);
+                Debug.WriteLine($"udp proxy send to remote {new IPEndPoint(new IPAddress(remote.Span), port)} : {string.Join(",", buffer.AsMemory(0, headLength).ToArray())}");
+
+                udpConnection.UdpSocket.SendTo(buffer.AsSpan(0, index), udpConnection.ServerEP);
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
         private void ReceiveUdp(UdpConnection udpConnection)
         {
@@ -175,9 +269,17 @@ namespace smash.plugins.hijack
                 Memory<byte> memory = udpConnection.UdpBuffer.AsMemory(0, length);
                 Memory<byte> data = Socks5Parser.GetUdpData(memory);
 
+                Debug.WriteLine($"udp {(udpConnection.TempEP as IPEndPoint).ToString()} receive :{string.Join(",", data.ToArray())}");
+
                 fixed (void* p = &data.Span[0])
                 {
-                    NFAPI.nf_udpPostReceive(udpConnection.Id, udpConnection.RemoteAddress, (IntPtr)p, length, udpConnection.Options);
+                    fixed (void* pAddr = &udpConnection.RemoteAddress[0])
+                    {
+                        fixed (void* pOptions = &udpConnection.Options[0])
+                        {
+                            NFAPI.nf_udpPostReceive(udpConnection.Id, (nint)pAddr, (IntPtr)p, length, (nint)pOptions);
+                        }
+                    }
                 }
 
                 udpConnection.UdpSocket.BeginReceiveFrom(udpConnection.UdpBuffer, 0, udpConnection.UdpBuffer.Length, SocketFlags.None, ref udpConnection.TempEP, UdpCallback, udpConnection);
@@ -235,15 +337,23 @@ namespace smash.plugins.hijack
     public sealed class UdpConnection
     {
         public ulong Id { get; set; }
-        public nint RemoteAddress { get; set; }
-        public nint Options { get; set; }
+        public byte[] RemoteAddress { get; set; }
+        public AddressFamily AddressFamily { get; set; }
+        public byte AddressLength { get; set; }
+        public byte AddressType { get; set; }
+        public byte AddressIndex { get; set; }
+        public byte[] Options { get; set; }
 
+        public bool UDP { get; set; }
         public bool DNS { get; set; }
 
+        public bool SocksFail { get; set; }
+
+        public bool Connected => Socket != null && Socket.Connected;
         public Socket Socket { get; set; }
         public Socket UdpSocket { get; set; }
         public byte[] UdpBuffer { get; set; }
-        public EndPoint TempEP;
+        public EndPoint TempEP = new IPEndPoint(IPAddress.Any, 0);
 
         public IPEndPoint ServerEP { get; set; }
     }

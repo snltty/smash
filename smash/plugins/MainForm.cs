@@ -244,10 +244,10 @@ namespace smash.plugins
                                 throw new Exception(error);
                             }
                         }
-                    }
-                    foreach (IController controller in PluginLoader.Controllers)
-                    {
-                        controller.Start();
+                        else
+                        {
+                            controller.Start();
+                        }
                     }
 
                     starting = false;

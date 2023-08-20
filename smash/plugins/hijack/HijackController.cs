@@ -17,7 +17,7 @@ public sealed class HijackController : IController
     private readonly HijackConfig hijackConfig;
     private readonly HijackEventHandler hijackEventHandler;
 
-    public HijackController(HijackConfig hijackConfig, ProxyConfig proxyConfig,HijackServer hijackServer)
+    public HijackController(HijackConfig hijackConfig, ProxyConfig proxyConfig, HijackServer hijackServer)
     {
         this.hijackConfig = hijackConfig;
         hijackEventHandler = new HijackEventHandler(hijackConfig, proxyConfig, hijackServer);
@@ -28,7 +28,7 @@ public sealed class HijackController : IController
         error = string.Empty;
 
         hijackConfig.ParseProcesss();
-        if (hijackConfig.Processs.Count(c => c.Use) > 0 && hijackConfig.CurrentProcesss.Length == 0)
+        if (hijackConfig.CurrentProcesss.Length == 0)
         {
             error = "进程劫持:未选择任何进程";
             return false;
@@ -39,16 +39,13 @@ public sealed class HijackController : IController
 
     public bool Start()
     {
-        Debug.WriteLine(hijackConfig.CurrentProcesss.ToJson());
-        return true;
         //初始化一些数据
         Stop();
 
-        //检查安装驱动
+        //检查注册驱动
         CheckDriver();
         //给驱动获取进程权限
         NFAPI.nf_adjustProcessPriviledges();
-
         //初始化驱动
         NF_STATUS nF_STATUS = NFAPI.nf_init(Name, hijackEventHandler);
         if (nF_STATUS != NF_STATUS.NF_STATUS_SUCCESS)
@@ -74,7 +71,6 @@ public sealed class HijackController : IController
     private void DefaultRule()
     {
         List<NF_RULE> rules = new List<NF_RULE>();
-
         Filter53(rules);
         FilterIPV6Lan(rules);
         FilterIPV4Lan(rules);
@@ -237,7 +233,6 @@ public sealed class HijackController : IController
 
         if (File.Exists(SystemDriver) == false)
         {
-            // Install
             InstallDriver();
             return;
         }
@@ -246,17 +241,13 @@ public sealed class HijackController : IController
         if (Version.TryParse(binFileVersion, out var binResult) && Version.TryParse(systemFileVersion, out var systemResult))
         {
             if (binResult.CompareTo(systemResult) > 0)
-                // Update
                 reinstall = true;
             else if (systemResult.Major != binResult.Major)
-                // Downgrade when Major version different (may have breaking changes)
                 reinstall = true;
         }
         else
         {
-            // Parse File versionName to Version failed
             if (!systemFileVersion.Equals(binFileVersion))
-                // versionNames are different, Reinstall
                 reinstall = true;
         }
 

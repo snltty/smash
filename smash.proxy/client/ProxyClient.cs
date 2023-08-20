@@ -516,8 +516,18 @@ namespace smash.proxy.client
                 {
                     //解析出目标地址
                     GetRemoteEndPoint(info, out int index);
+                    if (info.TargetPort == 53)
+                    {
+                        Console.WriteLine($"udp dns {new IPEndPoint(new IPAddress(info.TargetAddress.Span), info.TargetPort)}");
+                        Console.WriteLine($"udp dns packet data:{string.Join(",", info.Data)}");
+                    }
                     //解析出udp包的数据部分
                     info.Data = Socks5Parser.GetUdpData(info.Data);
+
+                    if (info.TargetPort == 53)
+                    {
+                        Console.WriteLine($"udp dns raw data:{string.Join(",", info.Data)}");
+                    }
                 }
             }
 
