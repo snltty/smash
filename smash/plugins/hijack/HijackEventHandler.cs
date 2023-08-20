@@ -144,7 +144,7 @@ namespace smash.plugins.hijack
                 return;
             }
 
-            //大端端口
+            //大端端口，低地址存着高字节，那就把低地址的数据左移到高字节，把高地址的留在低字节，就成了小端
             byte* p = (byte*)remoteAddress;
             ushort port = (ushort)((*(p + 2) << 8 & 0xFF00) | *(p + 3));
             //是DNS但不代理， 或不是DNS也不代理
