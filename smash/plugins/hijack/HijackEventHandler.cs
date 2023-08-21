@@ -5,12 +5,7 @@ using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 using smash.plugins.proxy;
 using common.libs.socks5;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using common.libs.extends;
-using System.Buffers.Binary;
 using System.Buffers;
-using static System.Windows.Forms.Design.AxImporter;
-using System.Drawing;
 
 namespace smash.plugins.hijack
 {
@@ -150,11 +145,8 @@ namespace smash.plugins.hijack
             //是DNS但不代理， 或不是DNS也不代理
             if ((port == 53 && udpConnection.DNS == false) || (port != 53 && udpConnection.UDP == false))
             {
-                if (udpConnection.DNS == false)
-                {
-                    NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
-                    return;
-                }
+                NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
+                return;
             }
 
             //连接代理服务器
@@ -180,18 +172,18 @@ namespace smash.plugins.hijack
             udpConnection.Options = new byte[optionsLen];
             Marshal.Copy(options, udpConnection.Options, 0, optionsLen);
             //缓存一些其它信息，方便回复数据使用
-            udpConnection.AddressFamily = (AddressFamily)Marshal.ReadByte(remoteAddress);
-            if (udpConnection.AddressFamily == AddressFamily.InterNetwork)
+            AddressFamily addressFamily = (AddressFamily)Marshal.ReadByte(remoteAddress);
+            if (addressFamily == AddressFamily.InterNetwork)
             {
                 udpConnection.AddressLength = 4;
                 udpConnection.AddressType = 0x01;
-                udpConnection.AddressIndex = 4;
+                udpConnection.AddressOffset = 4;
             }
             else
             {
                 udpConnection.AddressLength = 16;
                 udpConnection.AddressType = 0x04;
-                udpConnection.AddressIndex = 8;
+                udpConnection.AddressOffset = 8;
             }
 
             udpConnection.Socket = hijackServer.CreateConnection(remoteAddress, Socks5EnumRequestCommand.UdpAssociate, out IPEndPoint ServerEP);
@@ -226,7 +218,7 @@ namespace smash.plugins.hijack
                 index++;
 
                 //addr
-                udpConnection.RemoteAddress.AsSpan(udpConnection.AddressIndex, udpConnection.AddressLength).CopyTo(buffer.AsSpan(index));
+                udpConnection.RemoteAddress.AsSpan(udpConnection.AddressOffset, udpConnection.AddressLength).CopyTo(buffer.AsSpan(index));
                 index += udpConnection.AddressLength;
 
                 //port
@@ -240,9 +232,6 @@ namespace smash.plugins.hijack
                 //data
                 Marshal.Copy(buf, buffer, index, len);
                 index += len;
-
-                Memory<byte> remote = Socks5Parser.GetRemoteEndPoint(buffer.AsMemory(), out Socks5EnumAddressType addressType, out ushort port, out int index1);
-                Debug.WriteLine($"udp proxy send to remote {new IPEndPoint(new IPAddress(remote.Span), port)} : {string.Join(",", buffer.AsMemory(0, headLength).ToArray())}");
 
                 udpConnection.UdpSocket.SendTo(buffer.AsSpan(0, index), udpConnection.ServerEP);
             }
@@ -268,9 +257,6 @@ namespace smash.plugins.hijack
 
                 Memory<byte> memory = udpConnection.UdpBuffer.AsMemory(0, length);
                 Memory<byte> data = Socks5Parser.GetUdpData(memory);
-
-                Debug.WriteLine($"udp {(udpConnection.TempEP as IPEndPoint).ToString()} receive :{string.Join(",", data.ToArray())}");
-
                 fixed (void* p = &data.Span[0])
                 {
                     fixed (void* pAddr = &udpConnection.RemoteAddress[0])
@@ -300,12 +286,7 @@ namespace smash.plugins.hijack
             }
 
             processName = NFAPI.nf_getProcessName(processId);
-            if (currentProcessId == processId || checkProcessName(processName, out options) == false)
-            {
-                return false;
-            }
-
-            return true;
+            return checkProcessName(processName, out options);
         }
         private bool checkProcessName(string path, out ProcessParseInfo options)
         {
@@ -336,25 +317,61 @@ namespace smash.plugins.hijack
 
     public sealed class UdpConnection
     {
+        /// <summary>
+        /// 连接id
+        /// </summary>
         public ulong Id { get; set; }
+        /// <summary>
+        /// 目标地址
+        /// </summary>
         public byte[] RemoteAddress { get; set; }
-        public AddressFamily AddressFamily { get; set; }
+        /// <summary>
+        /// ip数据偏移
+        /// </summary>
+        public byte AddressOffset { get; set; }
+        /// <summary>
+        /// 目标地址长度
+        /// </summary>
         public byte AddressLength { get; set; }
+        /// <summary>
+        /// 目标地址socks类型
+        /// </summary>
         public byte AddressType { get; set; }
-        public byte AddressIndex { get; set; }
+
+        /// <summary>
+        /// 连接选项
+        /// </summary>
         public byte[] Options { get; set; }
-
+        
+        /// <summary>
+        /// 是否代理udp
+        /// </summary>
         public bool UDP { get; set; }
+        /// <summary>
+        /// 是否代理dns
+        /// </summary>
         public bool DNS { get; set; }
-
+        /// <summary>
+        /// 是否服务端连接事变
+        /// </summary>
         public bool SocksFail { get; set; }
 
+        /// <summary>
+        /// TCP
+        /// </summary>
         public bool Connected => Socket != null && Socket.Connected;
         public Socket Socket { get; set; }
+
+        /// <summary>
+        /// UDP
+        /// </summary>
         public Socket UdpSocket { get; set; }
         public byte[] UdpBuffer { get; set; }
         public EndPoint TempEP = new IPEndPoint(IPAddress.Any, 0);
 
+        /// <summary>
+        /// 服务器地址，连接服务器后，通过socks获得数据转发地址
+        /// </summary>
         public IPEndPoint ServerEP { get; set; }
     }
 

@@ -230,7 +230,17 @@ namespace smash.proxy.server
 
                     proxyServerUserToken.TargetSocket = token.TargetSocket;
                     proxyServerUserToken.PoolBuffer = new byte[65535];
-                    proxyServerUserToken.TargetSocket.Bind(new IPEndPoint(IPAddress.Any, 0));
+                    if (token.TargerEP.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        proxyServerUserToken.TempRemoteEP = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort);
+                        proxyServerUserToken.TargetSocket.Bind(new IPEndPoint(IPAddress.Any, 0));
+                    }
+                    else
+                    {
+                        proxyServerUserToken.TempRemoteEP = new IPEndPoint(IPAddress.IPv6Any, IPEndPoint.MinPort);
+                        proxyServerUserToken.TargetSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, 0));
+                    }
+
 
                     if (info.Data.Length > 0)
                     {
@@ -435,7 +445,7 @@ namespace smash.proxy.server
 
         //udp
         public IPEndPoint TargerEP { get; set; }
-        public EndPoint TempRemoteEP = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort);
+        public EndPoint TempRemoteEP;
 
         //解包
         public bool IsProxy { get; set; }

@@ -207,7 +207,7 @@ namespace smash.proxy.client
         }
         private async void ProcessReceiveUdp(IAsyncResult result)
         {
-            IPEndPoint rep = null;
+            IPEndPoint rep = new IPEndPoint(IPAddress.Any, 0);
             ProxyClientUserToken receiveToken = result.AsyncState as ProxyClientUserToken;
             try
             {
@@ -256,7 +256,7 @@ namespace smash.proxy.client
                         }
                     }
                 }
-                result = UdpClient.BeginReceive(ProcessReceiveUdp, token);
+                result = UdpClient.BeginReceive(ProcessReceiveUdp, receiveToken);
             }
             catch (Exception ex)
             {
@@ -359,7 +359,6 @@ namespace smash.proxy.client
             try
             {
                 int length = token.ServerStream.EndRead(result);
-
                 token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
                 await InputData(token, token.Request);
                 token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
@@ -516,18 +515,8 @@ namespace smash.proxy.client
                 {
                     //解析出目标地址
                     GetRemoteEndPoint(info, out int index);
-                    if (info.TargetPort == 53)
-                    {
-                        Console.WriteLine($"udp dns {new IPEndPoint(new IPAddress(info.TargetAddress.Span), info.TargetPort)}");
-                        Console.WriteLine($"udp dns packet data:{string.Join(",", info.Data)}");
-                    }
                     //解析出udp包的数据部分
                     info.Data = Socks5Parser.GetUdpData(info.Data);
-
-                    if (info.TargetPort == 53)
-                    {
-                        Console.WriteLine($"udp dns raw data:{string.Join(",", info.Data)}");
-                    }
                 }
             }
 
