@@ -256,8 +256,8 @@ namespace smash.proxy.server
             }
             catch (Exception ex)
             {
-                //if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                Logger.Instance.Error($"connect server -> error " + ex);
+                if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
+                    Logger.Instance.Error($"connect server -> error " + ex);
 
                 CloseClientSocket(token);
             }
