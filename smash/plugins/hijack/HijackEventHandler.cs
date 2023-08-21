@@ -67,6 +67,7 @@ namespace smash.plugins.hijack
 
 
             //更改目标地址到劫持服务器
+            /*
             if (proxyConfig.IPAddress != null)
             {
                 fixed (void* p = &ipaddress[0])
@@ -80,6 +81,7 @@ namespace smash.plugins.hijack
                     pConnInfo.remoteAddress[3] = *(pp);
                 }
             }
+            */
         }
 
         #region udp无需处理
