@@ -66,7 +66,7 @@ namespace smash.plugins.hijack
                 return;
             }
             //缓存以下对应关系，等下服务端收到连接后，可以知道需要连哪个服务
-            ushort localPort = (ushort)((pConnInfo.localAddress[2] << 8 & 0xFF00) | pConnInfo.localAddress[3]);
+            ushort localPort = (ushort)((pConnInfo.localAddress[2] << 8 & 0xFF00) | pConnInfo.localAddress[3]); 
             byte[] remote = new byte[pConnInfo.remoteAddress.Length];
             pConnInfo.remoteAddress.AsSpan().CopyTo(remote);
             hijackServer.CacheEndPoint(localPort, remote); 
