@@ -69,7 +69,7 @@ namespace smash.plugins.hijack
             ushort localPort = (ushort)((pConnInfo.localAddress[2] << 8 & 0xFF00) | pConnInfo.localAddress[3]);
             byte[] remote = new byte[pConnInfo.remoteAddress.Length];
             pConnInfo.remoteAddress.AsSpan().CopyTo(remote);
-            hijackServer.CacheEndPoint(localPort, remote);
+            hijackServer.CacheEndPoint(localPort, remote); 
 
             //更改目标地址到劫持服务器
             fixed (void* p = &ipaddress[0])
