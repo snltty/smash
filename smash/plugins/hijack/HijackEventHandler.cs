@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using smash.plugins.proxy;
 using common.libs.socks5;
 using System.Buffers;
+using System.Buffers.Binary;
 
 namespace smash.plugins.hijack
 {
@@ -64,24 +65,25 @@ namespace smash.plugins.hijack
                 NFAPI.nf_tcpDisableFiltering(pConnInfo.processId);
                 return;
             }
-
+            //缓存以下对应关系，等下服务端收到连接后，可以知道需要连哪个服务
+            ushort localPort = (ushort)((pConnInfo.localAddress[2] << 8 & 0xFF00) | pConnInfo.localAddress[3]);
+            byte[] remote = new byte[pConnInfo.remoteAddress.Length];
+            pConnInfo.remoteAddress.AsSpan().CopyTo(remote);
+            hijackServer.CacheEndPoint(localPort, remote);
 
             //更改目标地址到劫持服务器
-            /*
-            if (proxyConfig.IPAddress != null)
+            fixed (void* p = &ipaddress[0])
             {
-                fixed (void* p = &ipaddress[0])
-                {
-                    Marshal.Copy((IntPtr)p, pConnInfo.remoteAddress, 4, ipaddress.Length);
-                }
-                fixed (ushort* p = &port)
-                {
-                    byte* pp = (byte*)p;
-                    pConnInfo.remoteAddress[2] = *(pp + 1);
-                    pConnInfo.remoteAddress[3] = *(pp);
-                }
+                //强行修改为ipv4
+                pConnInfo.remoteAddress[0] = (byte)AddressFamily.InterNetwork;
+                Marshal.Copy((IntPtr)p, pConnInfo.remoteAddress, 4, ipaddress.Length);
             }
-            */
+            fixed (ushort* p = &port)
+            {
+                byte* pp = (byte*)p;
+                pConnInfo.remoteAddress[2] = *(pp + 1);
+                pConnInfo.remoteAddress[3] = *(pp);
+            }
         }
 
         #region udp无需处理
@@ -315,6 +317,22 @@ namespace smash.plugins.hijack
             }
             return false;
         }
+
+        private IPEndPoint convertAddress(byte[] buf)
+        {
+            Span<byte> spsn = buf.AsSpan();
+            if ((AddressFamily)buf[0] == AddressFamily.InterNetwork)
+            {
+                ushort port = BinaryPrimitives.ReadUInt16BigEndian(spsn.Slice(2, 2));
+                return new IPEndPoint(new IPAddress(spsn.Slice(4, 4)), port);
+            }
+            else if ((AddressFamily)buf[0] == AddressFamily.InterNetworkV6)
+            {
+                ushort port = BinaryPrimitives.ReadUInt16BigEndian(spsn.Slice(2, 2));
+                return new IPEndPoint(new IPAddress(spsn.Slice(4, 16)), port);
+            }
+            return null;
+        }
     }
 
     public sealed class UdpConnection
@@ -344,7 +362,7 @@ namespace smash.plugins.hijack
         /// 连接选项
         /// </summary>
         public byte[] Options { get; set; }
-        
+
         /// <summary>
         /// 是否代理udp
         /// </summary>
