@@ -7,6 +7,9 @@ using smash.plugins.proxy;
 using common.libs.socks5;
 using System.Buffers;
 using System.Buffers.Binary;
+using System.Text;
+using System;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace smash.plugins.hijack
 {
@@ -53,7 +56,7 @@ namespace smash.plugins.hijack
             //删除tcp对象缓存
         }
         #endregion
-        public unsafe void tcpConnectRequest(ulong id, ref NF_TCP_CONN_INFO pConnInfo)
+        public void tcpConnectRequest(ulong id, ref NF_TCP_CONN_INFO pConnInfo)
         {
             if (checkProcess(pConnInfo.processId, out string processName, out ProcessParseInfo options) == false)
             {
@@ -66,24 +69,18 @@ namespace smash.plugins.hijack
                 return;
             }
             //缓存以下对应关系，等下服务端收到连接后，可以知道需要连哪个服务
-            ushort localPort = (ushort)((pConnInfo.localAddress[2] << 8 & 0xFF00) | pConnInfo.localAddress[3]); 
+            ushort localPort = (ushort)((pConnInfo.localAddress[2] << 8 & 0xFF00) | pConnInfo.localAddress[3]);
             byte[] remote = new byte[pConnInfo.remoteAddress.Length];
             pConnInfo.remoteAddress.AsSpan().CopyTo(remote);
-            hijackServer.CacheEndPoint(localPort, remote); 
+            hijackServer.CacheEndPoint(localPort, remote);
 
+            //强行修改为ipv4
+            pConnInfo.remoteAddress[0] = (byte)AddressFamily.InterNetwork;
             //更改目标地址到劫持服务器
-            fixed (void* p = &ipaddress[0])
-            {
-                //强行修改为ipv4
-                pConnInfo.remoteAddress[0] = (byte)AddressFamily.InterNetwork;
-                Marshal.Copy((IntPtr)p, pConnInfo.remoteAddress, 4, ipaddress.Length);
-            }
-            fixed (ushort* p = &port)
-            {
-                byte* pp = (byte*)p;
-                pConnInfo.remoteAddress[2] = *(pp + 1);
-                pConnInfo.remoteAddress[3] = *(pp);
-            }
+            ipaddress.AsSpan().CopyTo(pConnInfo.remoteAddress.AsSpan(4));
+
+            pConnInfo.remoteAddress[2] = (byte)(port >> 8 & 0xff);
+            pConnInfo.remoteAddress[3] = (byte)(port & 0xff);
         }
 
         #region udp无需处理
@@ -203,7 +200,7 @@ namespace smash.plugins.hijack
                 udpConnection.SocksFail = true;
             }
         }
-        private unsafe void SendToUdp(UdpConnection udpConnection, nint buf, int len)
+        private void SendToUdp(UdpConnection udpConnection, nint buf, int len)
         {
             byte[] buffer = ArrayPool<byte>.Shared.Rent(6 + udpConnection.AddressLength + len);
             try
@@ -259,15 +256,15 @@ namespace smash.plugins.hijack
                 UdpConnection udpConnection = result.AsyncState as UdpConnection;
                 int length = udpConnection.UdpSocket.EndReceiveFrom(result, ref udpConnection.TempEP);
 
-                Memory<byte> memory = udpConnection.UdpBuffer.AsMemory(0, length);
-                Memory<byte> data = Socks5Parser.GetUdpData(memory);
+                Memory<byte> data = Socks5Parser.GetUdpData(udpConnection.UdpBuffer.AsMemory(0, length));
+
                 fixed (void* p = &data.Span[0])
                 {
-                    fixed (void* pAddr = &udpConnection.RemoteAddress[0])
+                    fixed (void* pAddr = udpConnection.RemoteAddress)
                     {
                         fixed (void* pOptions = &udpConnection.Options[0])
                         {
-                            NFAPI.nf_udpPostReceive(udpConnection.Id, (nint)pAddr, (IntPtr)p, length, (nint)pOptions);
+                            NFAPI.nf_udpPostReceive(udpConnection.Id, (nint)pAddr, (IntPtr)p, data.Length, (nint)pOptions);
                         }
                     }
                 }

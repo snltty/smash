@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Text;
 using smash.proxy.protocol;
 using common.libs.socks5;
+using System.Diagnostics;
 
 namespace smash.proxy.server
 {
@@ -193,6 +194,10 @@ namespace smash.proxy.server
                     info.UnPackConnect(data, proxyServerConfig.KeyMemory);
                     token.TargerEP = ReadRemoteEndPoint(info);
                     token.IsProxy = true;
+                    if (token.TargerEP.Port == 53 && (info.TargetAddress.Span[0] == 192 || info.TargetAddress.Span[0] == 172))
+                    {
+                        token.TargerEP.Address = proxyServerConfig.GateWay;
+                    }
                 }
                 else
                 {
@@ -468,6 +473,18 @@ namespace smash.proxy.server
         public IPEndPoint FakeEP { get; set; }
 
         public EnumBufferSize BufferSize { get; set; } = EnumBufferSize.KB_8;
+
+
+        private IPAddress _gateWay = IPAddress.Any;
+        public IPAddress GateWay
+        {
+            get => _gateWay; set
+            {
+                _gateWay = value;
+                GateWayMemory = value.GetAddressBytes();
+            }
+        }
+        public Memory<byte> GateWayMemory { get; private set; }
     }
 }
 

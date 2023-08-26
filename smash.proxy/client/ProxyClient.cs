@@ -678,7 +678,7 @@ namespace smash.proxy.client
         public string Domain { get; set; }
 
 #if DEBUG
-        public bool IsSSL { get; set; } = true;
+        public bool IsSSL { get; set; } = false;
 #else
         public bool IsSSL { get; set; } = true;
 #endif

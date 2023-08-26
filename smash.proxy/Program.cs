@@ -83,7 +83,8 @@ namespace smash.proxy
                             BufferSize = (EnumBufferSize)byte.Parse(dic["buff"]),
                             Key = dic["key"],
                             ListenPort = ushort.Parse(dic["port"]),
-                            FakeEP = IPEndPoint.Parse($"{NetworkHelper.GetDomainIp(arr[0])}:{port}")
+                            FakeEP = IPEndPoint.Parse($"{NetworkHelper.GetDomainIp(arr[0])}:{port}"),
+                            GateWay = IPAddress.Parse(dic["gateway"])
                         };
                         ProxyServer proxyServer = new ProxyServer(proxyServerConfig);
                         proxyServer.Start();
@@ -93,6 +94,7 @@ namespace smash.proxy
                         Logger.Instance.Info($"fake {proxyServerConfig.FakeEP}");
                         Logger.Instance.Info($"buff {proxyServerConfig.BufferSize}");
                         Logger.Instance.Info($"key {proxyServerConfig.KeyMemory.GetString()}");
+                        Logger.Instance.Info($"gateway {proxyServerConfig.GateWay}");
                         Logger.Instance.Info(string.Empty.PadLeft(32, '='));
                     }
                     break;

@@ -1,5 +1,8 @@
 ﻿using common.libs;
+using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 
 namespace smash.proxy.argument
 {
@@ -37,7 +40,9 @@ namespace smash.proxy.argument
              ValidateFake(dic, out error) &&
              ValidatePort(dic) &&
              ValidateKey(dic, out error) &&
-             ValidateBuff(dic);
+             ValidateBuff(dic) && ValidateGateWay(dic);
+
+            //ip route show default | awk '{print $3}'
         }
         static bool ValidateMode(Dictionary<string, string> dic)
         {
@@ -75,7 +80,7 @@ namespace smash.proxy.argument
                 if (dic.ContainsKey("fake") == false || string.IsNullOrWhiteSpace(dic["fake"]))
                 {
 #if DEBUG
-                    dic["fake"] = "127.0.0.1:8200";
+                    dic["fake"] = "127.0.0.1:8100";
 #else
                     error = $"server mode need fake endpoint";
                     return false;
@@ -130,6 +135,60 @@ namespace smash.proxy.argument
                 dic["buff"] = "3";
             }
             return true;
+        }
+
+        static bool ValidateGateWay(Dictionary<string, string> dic)
+        {
+            //连接缓冲区大小(buffsize)
+            if (dic.ContainsKey("gateway") == false && dic["mode"] == "server")
+            {
+                try
+                {
+                    dic["gateway"] = GetGateWay();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Error($"get dateway error，maybe need --gateway param : {ex}");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        static string GetGateWay()
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return GetGateWayWindows();
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                return GetGateWayLinux();
+            }
+            return string.Empty;
+        }
+
+        static string GetGateWayWindows()
+        {
+            IPAddress ip = Dns.GetHostEntry("www.baidu.com").AddressList[0];
+            var socket = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            socket.Connect(new IPEndPoint(ip, 80));
+            string ipStr = (socket.LocalEndPoint as IPEndPoint).Address.ToString();
+
+            string[] res = CommandHelper.Windows(string.Empty, new string[] { "ipconfig" }).Split('\n');
+            for (int i = 0; i < res.Length; i++)
+            {
+                if (res[i].IndexOf(ipStr) >= 0)
+                {
+                    string _ip = res[i + 2].Split(':')[1];
+                    return _ip.Substring(1, _ip.Length - 2);
+                }
+            }
+            return string.Empty;
+        }
+        static string GetGateWayLinux()
+        {
+            return CommandHelper.Windows(string.Empty, new string[] { "ip route show default | awk '{print $3}'" });
         }
     }
 }

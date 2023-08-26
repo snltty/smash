@@ -28,7 +28,7 @@ public sealed class HijackController : IController
         error = string.Empty;
 
         hijackConfig.ParseProcesss();
-        if (hijackConfig.Processs.Count(c=>c.Use) > 0 && hijackConfig.CurrentProcesss.Length == 0)
+        if (hijackConfig.Processs.Count(c => c.Use) > 0 && hijackConfig.CurrentProcesss.Length == 0)
         {
             error = "进程劫持:未选择任何进程";
             return false;
@@ -274,11 +274,11 @@ public sealed class HijackController : IController
         // 注册驱动文件
         if (NFAPI.nf_registerDriver(Name) == NF_STATUS.NF_STATUS_SUCCESS)
         {
-            Console.WriteLine($"Install {Name} driver finished");
+            throw new Exception($"Install {Name} driver finished");
         }
         else
         {
-            Console.WriteLine($"Register {Name} failed");
+            throw new Exception($"Register {Name} failed");
         }
     }
     private bool UninstallDriver()
