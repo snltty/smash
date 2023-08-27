@@ -189,8 +189,6 @@ namespace smash.proxy.argument
         static string GetGateWayLinux()
         {
             string res = CommandHelper.Linux(string.Empty, new string[] { "ip route show default | awk '{print $3}'" });
-            Console.WriteLine(res);
-            Console.WriteLine($"--{res.Split(new char[] { '\r', '\n' })[0]}--");
             return res.Split(new char[] { '\r', '\n' })[0];
         }
     }
