@@ -29,6 +29,7 @@ namespace smash.proxy
             if (string.IsNullOrWhiteSpace(error) == false)
             {
                 Logger.Instance.Error(error);
+                return;
             }
             else
             {
@@ -84,7 +85,7 @@ namespace smash.proxy
                             Key = dic["key"],
                             ListenPort = ushort.Parse(dic["port"]),
                             FakeEP = IPEndPoint.Parse($"{NetworkHelper.GetDomainIp(arr[0])}:{port}"),
-                            GateWay = IPAddress.Parse(dic["gateway"])
+                            Dns = IPAddress.Parse(dic["dns"])
                         };
                         ProxyServer proxyServer = new ProxyServer(proxyServerConfig);
                         proxyServer.Start();
@@ -94,7 +95,7 @@ namespace smash.proxy
                         Logger.Instance.Info($"fake {proxyServerConfig.FakeEP}");
                         Logger.Instance.Info($"buff {proxyServerConfig.BufferSize}");
                         Logger.Instance.Info($"key {proxyServerConfig.KeyMemory.GetString()}");
-                        Logger.Instance.Info($"gateway {proxyServerConfig.GateWay}");
+                        Logger.Instance.Info($"dns {proxyServerConfig.Dns}");
                         Logger.Instance.Info(string.Empty.PadLeft(32, '='));
                     }
                     break;

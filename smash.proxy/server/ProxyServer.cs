@@ -196,7 +196,7 @@ namespace smash.proxy.server
                     token.IsProxy = true;
                     if (token.TargerEP.Port == 53 && (info.TargetAddress.Span[0] == 192 || info.TargetAddress.Span[0] == 172))
                     {
-                        token.TargerEP.Address = proxyServerConfig.GateWay;
+                        token.TargerEP.Address = proxyServerConfig.Dns;
                     }
                 }
                 else
@@ -475,16 +475,16 @@ namespace smash.proxy.server
         public EnumBufferSize BufferSize { get; set; } = EnumBufferSize.KB_8;
 
 
-        private IPAddress _gateWay = IPAddress.Any;
-        public IPAddress GateWay
+        private IPAddress _dns = IPAddress.Any;
+        public IPAddress Dns
         {
-            get => _gateWay; set
+            get => _dns; set
             {
-                _gateWay = value;
-                GateWayMemory = value.GetAddressBytes();
+                _dns = value;
+                DNSMemory = value.GetAddressBytes();
             }
         }
-        public Memory<byte> GateWayMemory { get; private set; }
+        public Memory<byte> DNSMemory { get; private set; }
     }
 }
 

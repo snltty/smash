@@ -40,7 +40,7 @@ namespace smash.proxy.argument
              ValidateFake(dic, out error) &&
              ValidatePort(dic) &&
              ValidateKey(dic, out error) &&
-             ValidateBuff(dic) && ValidateGateWay(dic);
+             ValidateBuff(dic) && ValidateDns(dic);
 
             //ip route show default | awk '{print $3}'
         }
@@ -137,38 +137,36 @@ namespace smash.proxy.argument
             return true;
         }
 
-        static bool ValidateGateWay(Dictionary<string, string> dic)
+        static bool ValidateDns(Dictionary<string, string> dic)
         {
             //连接缓冲区大小(buffsize)
-            if (dic.ContainsKey("gateway") == false && dic["mode"] == "server")
+            if (dic.ContainsKey("dns") == false && dic["mode"] == "server")
             {
                 try
                 {
-                    dic["gateway"] = GetGateWay();
+                    dic["dns"] = GetDns();
                 }
                 catch (Exception ex)
                 {
-                    Logger.Instance.Error($"get dateway error，maybe need --gateway param : {ex}");
+                    Logger.Instance.Error($"get dns error，maybe need --dns param : {ex}");
                     return false;
                 }
             }
             return true;
         }
-
-        static string GetGateWay()
+        static string GetDns()
         {
             if (OperatingSystem.IsWindows())
             {
-                return GetGateWayWindows();
+                return GetDnsWindows();
             }
             else if (OperatingSystem.IsLinux())
             {
-                return GetGateWayLinux();
+                return GetDnsLinux();
             }
             return string.Empty;
         }
-
-        static string GetGateWayWindows()
+        static string GetDnsWindows()
         {
             IPAddress ip = Dns.GetHostEntry("www.baidu.com").AddressList[0];
             var socket = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -186,10 +184,18 @@ namespace smash.proxy.argument
             }
             return string.Empty;
         }
-        static string GetGateWayLinux()
+        static string GetDnsLinux()
         {
-            string res = CommandHelper.Linux(string.Empty, new string[] { "ip route show default | awk '{print $3}'" });
-            return res.Split(new char[] { '\r', '\n' })[0];
+            string res = CommandHelper.Linux(string.Empty, new string[] { "cat /etc/resolv.conf" });
+            string[] arr =  res.Split(new char[] { '\r', '\n' });
+            for (int i = 0; i < arr.Length; i++)
+            {
+                if (arr[i].StartsWith("nameserver"))
+                {
+                    return arr[i].Split(' ')[1];
+                }
+            }
+            return string.Empty;
         }
     }
 }
