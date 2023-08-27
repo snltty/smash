@@ -196,6 +196,7 @@ namespace smash.proxy.server
                     token.IsProxy = true;
                     if (token.TargerEP.Port == 53 && (info.TargetAddress.Span[0] == 192 || info.TargetAddress.Span[0] == 172))
                     {
+                        Console.WriteLine($"dns proxy to {proxyServerConfig.GateWay}");
                         token.TargerEP.Address = proxyServerConfig.GateWay;
                     }
                 }
