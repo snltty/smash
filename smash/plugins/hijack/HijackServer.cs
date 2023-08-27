@@ -81,7 +81,7 @@ namespace smash.plugins.hijack
                 Socket socket = e.AcceptSocket;
                 ProxyClientUserToken acceptToken = (e.UserToken as ProxyClientUserToken);
                 IPEndPoint local = socket.RemoteEndPoint as IPEndPoint;
-                if (endpointMap.TryRemove((ushort)local.Port, out byte[] remote) == false)
+                if (endpointMap.TryGetValue((ushort)local.Port, out byte[] remote) == false)
                 {
                     socket.SafeClose();
                     return;
@@ -89,18 +89,10 @@ namespace smash.plugins.hijack
 
                 ProxyClientUserToken token = new ProxyClientUserToken
                 {
-                    ClientSocket = socket
+                    ClientSocket = socket,
+                    Remote = remote,
                 };
-                fixed (void* p = &remote[0])
-                {
-                    token.ServerSocket = CreateConnection((nint)p, Socks5EnumRequestCommand.Connect, out IPEndPoint serverEP);
-                    if (token.ServerSocket == null)
-                    {
-                        socket.SafeClose();
-                        return;
-                    }
-                }
-
+               
                 SocketAsyncEventArgs readEventArgs = new SocketAsyncEventArgs
                 {
                     UserToken = token,
@@ -119,7 +111,7 @@ namespace smash.plugins.hijack
                     ProcessReceive(readEventArgs);
                 }
 
-                BindReceiveServer(token);
+               
             }
             catch (Exception ex)
             {
@@ -139,6 +131,11 @@ namespace smash.plugins.hijack
                 }
 
                 int length = e.BytesTransferred;
+                if(token.ServerSocket == null)
+                {
+                    ConnectServer(token);
+                }
+
                 await token.ServerSocket.SendAsync(e.Buffer.AsMemory(0, length));
 
                 if (token.ClientSocket.Available > 0)
@@ -174,6 +171,19 @@ namespace smash.plugins.hijack
         }
 
 
+        private unsafe void ConnectServer(ProxyClientUserToken token)
+        {
+            fixed (void* p = &token.Remote[0])
+            {
+                token.ServerSocket = CreateConnection((nint)p, Socks5EnumRequestCommand.Connect, out IPEndPoint serverEP);
+                if (token.ServerSocket == null)
+                {
+                    token.ClientSocket.SafeClose();
+                    return;
+                }
+            }
+            BindReceiveServer(token);
+        }
         private void BindReceiveServer(ProxyClientUserToken token)
         {
             SocketAsyncEventArgs readEventArgs = new SocketAsyncEventArgs
@@ -455,5 +465,6 @@ namespace smash.plugins.hijack
 
         public Socket ServerSocket { get; set; }
         public byte[] ServerPoolBuffer { get; set; }
+        public byte[] Remote { get; set; }
     }
 }

@@ -185,6 +185,7 @@ namespace smash.proxy.server
 
         private async Task<bool> ConnectTarget(ProxyServerUserToken token, Memory<byte> data)
         {
+            IPEndPoint target = new IPEndPoint(IPAddress.Any, 0);
             try
             {
                 ProxyInfo info = new ProxyInfo();
@@ -220,6 +221,7 @@ namespace smash.proxy.server
                 {
                     token.TargetSocket = new Socket(token.TargerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                     proxyServerUserToken.TargetSocket = token.TargetSocket;
+                    target = proxyServerUserToken.TargerEP;
                     await proxyServerUserToken.TargetSocket.ConnectAsync(proxyServerUserToken.TargerEP).WaitAsync(TimeSpan.FromSeconds(5));
                     if (info.Data.Length > 0)
                     {
@@ -262,7 +264,7 @@ namespace smash.proxy.server
             catch (Exception ex)
             {
                 if (Logger.Instance.LoggerLevel <= LoggerTypes.DEBUG)
-                    Logger.Instance.Error($"connect server -> error " + ex);
+                    Logger.Instance.Error($"connect server -> error {target} " + ex);
 
                 CloseClientSocket(token);
             }
@@ -373,6 +375,7 @@ namespace smash.proxy.server
             try
             {
                 int length = token.TargetSocket.EndReceiveFrom(result, ref token.TempRemoteEP);
+
                 if (length > 0)
                 {
                     await Response(token, token.PoolBuffer.AsMemory(0, length));
