@@ -118,13 +118,12 @@ namespace smash.plugins.sysProxy
                             string path = request.Url.AbsolutePath;
                             //默认页面
                             if (path == "/") path = "default.pac";
-
                             byte[] bytes = Read(path, out DateTime last);
                             if (bytes.Length > 0)
                             {
                                 response.ContentLength64 = bytes.Length;
                                 response.ContentType = GetContentType(path);
-                                //response.Headers.Set("Last-Modified", last.ToString());
+                                //  response.Headers.Set("Last-Modified", last.ToString());
                                 stream.Write(bytes, 0, bytes.Length);
                             }
                             else

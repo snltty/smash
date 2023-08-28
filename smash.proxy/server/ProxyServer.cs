@@ -101,10 +101,9 @@ namespace smash.proxy.server
                     SocketFlags = SocketFlags.None
                 };
                 token.Saea = readEventArgs;
-
                 token.ClientSocket.KeepAlive();
-                token.ClientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
-                token.ClientSocket.SendTimeout = 5000;
+                //token.ClientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
+                //token.ClientSocket.SendTimeout = 5000;
                 token.PoolBuffer = new byte[(1 << (byte)proxyServerConfig.BufferSize) * 1024];
                 readEventArgs.SetBuffer(token.PoolBuffer, 0, (1 << (byte)proxyServerConfig.BufferSize) * 1024);
                 readEventArgs.Completed += IO_Completed;
@@ -139,7 +138,6 @@ namespace smash.proxy.server
                 if (token.Step <= Socks5EnumStep.Command)
                 {
                     await ConnectTarget(token, data);
-
                 }
                 else
                 {
@@ -214,12 +212,13 @@ namespace smash.proxy.server
                     TargerEP = token.TargerEP,
                     TargetSocket = token.TargetSocket,
                     Command = token.Command,
-                    IsProxy = token.IsProxy
+                    IsProxy = token.IsProxy,
                 };
 
                 if (info.Command == Socks5EnumRequestCommand.Connect)
                 {
                     token.TargetSocket = new Socket(token.TargerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                    token.TargetSocket.KeepAlive();
                     proxyServerUserToken.TargetSocket = token.TargetSocket;
                     target = proxyServerUserToken.TargerEP;
                     await proxyServerUserToken.TargetSocket.ConnectAsync(proxyServerUserToken.TargerEP).WaitAsync(TimeSpan.FromSeconds(5));
@@ -308,12 +307,12 @@ namespace smash.proxy.server
                     int length = e.BytesTransferred;
 
                     await Response(token, e.Buffer.AsMemory(0, length));
-                    while (token.ClientSocket.Available > 0)
+                    while (token.TargetSocket.Available > 0)
                     {
-                        length = await token.ClientSocket.ReceiveAsync(e.Buffer.AsMemory(e.Offset));
+                        length = await token.TargetSocket.ReceiveAsync(e.Buffer.AsMemory(0));
                         if (length > 0)
                         {
-                            await SendToRemote(e, token, e.Buffer.AsMemory(0, length));
+                            await Response(token, e.Buffer.AsMemory(0, length));
                         }
                     }
 
@@ -443,7 +442,6 @@ namespace smash.proxy.server
     {
         public Socket ClientSocket { get; set; }
         public SocketAsyncEventArgs Saea { get; set; }
-
 
         public byte[] PoolBuffer { get; set; }
         public Socks5EnumStep Step { get; set; } = Socks5EnumStep.Command;

@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Buffers;
 using smash.proxy.protocol;
 using common.libs.socks5;
+using System.Threading;
 
 namespace smash.proxy.client
 {
@@ -132,8 +133,8 @@ namespace smash.proxy.client
                 token.Saea = readEventArgs;
 
                 token.ClientSocket.KeepAlive();
-                token.ClientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
-                token.ClientSocket.SendTimeout = 5000;
+                //token.ClientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
+                //token.ClientSocket.SendTimeout = 5000;
                 token.PoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
                 readEventArgs.SetBuffer(token.PoolBuffer, 0, (1 << (byte)proxyClientConfig.BufferSize) * 1024);
                 readEventArgs.Completed += IO_Completed;
@@ -213,7 +214,6 @@ namespace smash.proxy.client
             {
                 receiveToken.Request.Data = UdpClient.EndReceive(result, ref rep);
                 receiveToken.SourceEP = rep;
-
                 if (udpConnections.TryGetValue(rep, out ProxyClientUserToken token) == false)
                 {
                     token = new ProxyClientUserToken
@@ -293,6 +293,7 @@ namespace smash.proxy.client
             try
             {
                 token.ServerSocket = new Socket(proxyClientConfig.ServerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                token.ServerSocket.KeepAlive();
                 await token.ServerSocket.ConnectAsync(proxyClientConfig.ServerEP);
                 if (proxyClientConfig.IsSSL)
                 {
@@ -300,11 +301,8 @@ namespace smash.proxy.client
                     await sslStream.AuthenticateAsClientAsync(proxyClientConfig.Domain);
                     token.ServerStream = sslStream;
                 }
-
                 token.BuildConnectData(info, proxyClientConfig.KeyMemory);
-
                 BindServerReceive(token);
-
                 return true;
             }
             catch (Exception ex)
@@ -326,7 +324,11 @@ namespace smash.proxy.client
                 if (token.ServerStream == null || token.ServerStream.CanRead == false) return;
 
                 token.ServerPoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
-                token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
+                IAsyncResult result = token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
+                if (result.CompletedSynchronously)
+                {
+                    ServerReceiveCallback(result);
+                }
             }
             else
             {
@@ -359,6 +361,12 @@ namespace smash.proxy.client
             try
             {
                 int length = token.ServerStream.EndRead(result);
+                if (length == 0)
+                {
+                    CloseClientSocket(token);
+                    return;
+                }
+
                 token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
                 await InputData(token, token.Request);
                 token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
@@ -398,11 +406,6 @@ namespace smash.proxy.client
         }
         private async Task<bool> Request(ProxyClientUserToken token)
         {
-            if (proxyClientConfig.IsSSL && (token.ServerStream == null || token.ServerStream.CanWrite == false))
-            {
-                return false;
-            }
-
             Memory<byte> data = token.Request.Data;
             byte[] bytes = Helper.EmptyArray;
             if (token.ConnectDataLength > 0)
@@ -413,6 +416,8 @@ namespace smash.proxy.client
                 token.ReturnConnectData();
             }
 
+
+            byte[] packData = Helper.EmptyArray;
             try
             {
                 if (proxyClientConfig.IsSSL)
@@ -429,6 +434,10 @@ namespace smash.proxy.client
                 if (bytes.Length > 0)
                 {
                     ArrayPool<byte>.Shared.Return(bytes);
+                }
+                if (packData.Length > 0)
+                {
+                    ArrayPool<byte>.Shared.Return(packData);
                 }
             }
 
@@ -547,7 +556,18 @@ namespace smash.proxy.client
                         {
                             token.FirstPack = true;
                             if (info.Data.Length < 2048)
-                                info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
+                            {
+                                try
+                                {
+                                    info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
+                                }
+                                catch (Exception)
+                                {
+                                    Console.WriteLine("///////////////////////////////////////////");
+                                    Console.WriteLine($"tcp {info.Data.Length} -> {info.Data.ToUInt32()}");
+                                    Console.WriteLine("///////////////////////////////////////////");
+                                }
+                            }
                         }
                     }
                     break;
@@ -558,7 +578,18 @@ namespace smash.proxy.client
                         {
                             token.FirstPack = true;
                             if (info.Data.Length < 2048)
-                                info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
+                            {
+                                try
+                                {
+                                    info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
+                                }
+                                catch (Exception)
+                                {
+                                    Console.WriteLine("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
+                                    Console.WriteLine($"udp {info.Data.Length} -> {info.Data.ToUInt32()}");
+                                    Console.WriteLine("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
+                                }
+                            }
                         }
                     }
                     break;
@@ -678,7 +709,7 @@ namespace smash.proxy.client
         public string Domain { get; set; }
 
 #if DEBUG
-        public bool IsSSL { get; set; } = false;
+        public bool IsSSL { get; set; } = true;
 #else
         public bool IsSSL { get; set; } = true;
 #endif

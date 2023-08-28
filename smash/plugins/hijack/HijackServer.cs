@@ -81,7 +81,7 @@ namespace smash.plugins.hijack
                 Socket socket = e.AcceptSocket;
                 ProxyClientUserToken acceptToken = (e.UserToken as ProxyClientUserToken);
                 IPEndPoint local = socket.RemoteEndPoint as IPEndPoint;
-                if (endpointMap.TryGetValue((ushort)local.Port, out byte[] remote) == false)
+                if (endpointMap.TryRemove((ushort)local.Port, out byte[] remote) == false)
                 {
                     socket.SafeClose();
                     return;
@@ -92,18 +92,18 @@ namespace smash.plugins.hijack
                     ClientSocket = socket,
                     Remote = remote,
                 };
-               
+
                 SocketAsyncEventArgs readEventArgs = new SocketAsyncEventArgs
                 {
                     UserToken = token,
                     SocketFlags = SocketFlags.None
                 };
                 token.Saea = readEventArgs;
-                token.ClientSocket.KeepAlive();
-                token.ClientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
-                token.ClientSocket.SendTimeout = 5000;
+                //token.ClientSocket.KeepAlive();
+                //token.ClientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
+                //token.ClientSocket.SendTimeout = 5000;
                 token.PoolBuffer = new byte[8 * 1024];
-                readEventArgs.SetBuffer(token.PoolBuffer, 0, 8 * 1024);
+                readEventArgs.SetBuffer(token.PoolBuffer, 0, token.PoolBuffer.Length);
                 readEventArgs.Completed += IO_Completed;
 
                 if (token.ClientSocket.ReceiveAsync(readEventArgs) == false)
@@ -111,7 +111,7 @@ namespace smash.plugins.hijack
                     ProcessReceive(readEventArgs);
                 }
 
-               
+
             }
             catch (Exception ex)
             {
@@ -131,9 +131,14 @@ namespace smash.plugins.hijack
                 }
 
                 int length = e.BytesTransferred;
-                if(token.ServerSocket == null)
+                if (token.ServerSocket == null)
                 {
                     ConnectServer(token);
+                    if (token.ServerSocket == null)
+                    {
+                        CloseClientSocket(e);
+                        return;
+                    }
                 }
 
                 await token.ServerSocket.SendAsync(e.Buffer.AsMemory(0, length));
@@ -148,7 +153,7 @@ namespace smash.plugins.hijack
                             CloseClientSocket(e);
                             return;
                         }
-                        await token.ServerSocket.SendAsync(e.Buffer.AsMemory(0, length));
+                        await token.ServerSocket.SendAsync(e.Buffer.AsMemory(0, length), SocketFlags.None);
                     }
                 }
 
@@ -173,7 +178,7 @@ namespace smash.plugins.hijack
 
         private unsafe void ConnectServer(ProxyClientUserToken token)
         {
-            fixed (void* p = &token.Remote[0])
+            fixed (void* p = token.Remote)
             {
                 token.ServerSocket = CreateConnection((nint)p, Socks5EnumRequestCommand.Connect, out IPEndPoint serverEP);
                 if (token.ServerSocket == null)
@@ -191,12 +196,12 @@ namespace smash.plugins.hijack
                 UserToken = token,
                 SocketFlags = SocketFlags.None
             };
-            token.Saea = readEventArgs;
+            token.ServerSaea = readEventArgs;
             token.ServerSocket.KeepAlive();
-            token.ServerSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
-            token.ServerSocket.SendTimeout = 5000;
+            //token.ServerSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
+            //token.ServerSocket.SendTimeout = 5000;
             token.ServerPoolBuffer = new byte[8 * 1024];
-            readEventArgs.SetBuffer(token.ServerPoolBuffer, 0, 8 * 1024);
+            readEventArgs.SetBuffer(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length);
             readEventArgs.Completed += IO_CompletedServer;
 
             if (token.ServerSocket.ReceiveAsync(readEventArgs) == false)
@@ -228,19 +233,21 @@ namespace smash.plugins.hijack
                 }
 
                 int length = e.BytesTransferred;
-                await token.ClientSocket.SendAsync(e.Buffer.AsMemory(0, length));
+                await token.ClientSocket.SendAsync(e.Buffer.AsMemory(0, length), SocketFlags.None);
+                Debug.WriteLine($"receive time");
+
 
                 if (token.ServerSocket.Available > 0)
                 {
                     while (token.ServerSocket.Available > 0)
                     {
-                        length = await token.ServerSocket.ReceiveAsync(e.Buffer.AsMemory(), SocketFlags.None);
+                        length = token.ServerSocket.Receive(e.Buffer, SocketFlags.None);
                         if (length == 0)
                         {
                             CloseClientSocket(e);
                             return;
                         }
-                        await token.ClientSocket.SendAsync(e.Buffer.AsMemory(0, length));
+                        await token.ClientSocket.SendAsync(e.Buffer.AsMemory(0, length), SocketFlags.None);
                     }
                 }
 
@@ -274,6 +281,7 @@ namespace smash.plugins.hijack
             token.PoolBuffer = null;
             token.ServerPoolBuffer = null;
             token.Saea?.Dispose();
+            token.ServerSaea?.Dispose();
             GC.Collect();
         }
 
@@ -461,8 +469,10 @@ namespace smash.plugins.hijack
     {
         public Socket ClientSocket { get; set; }
         public SocketAsyncEventArgs Saea { get; set; }
+
         public byte[] PoolBuffer { get; set; }
 
+        public SocketAsyncEventArgs ServerSaea { get; set; }
         public Socket ServerSocket { get; set; }
         public byte[] ServerPoolBuffer { get; set; }
         public byte[] Remote { get; set; }

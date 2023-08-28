@@ -91,6 +91,7 @@ namespace smash.proxy.protocol
             Command = (Socks5EnumRequestCommand)(span[index] & 0b0000_1111);
             index += 1;
 
+
             byte targetepLength = span[index];
             index += 1;
             TargetAddress = data.Slice(index, targetepLength);

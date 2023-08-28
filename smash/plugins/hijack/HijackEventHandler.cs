@@ -8,8 +8,7 @@ using common.libs.socks5;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Text;
-using System;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using common.libs.extends;
 
 namespace smash.plugins.hijack
 {
@@ -149,7 +148,7 @@ namespace smash.plugins.hijack
                 NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
                 return;
             }
-
+            //PrintRequestDns(id,buf,len);
             //连接代理服务器
             if (udpConnection.Connected == false)
             {
@@ -186,8 +185,12 @@ namespace smash.plugins.hijack
                 udpConnection.AddressType = 0x04;
                 udpConnection.AddressOffset = 8;
             }
-
+            var sw = new Stopwatch();
+            sw.Start();
             udpConnection.Socket = hijackServer.CreateConnection(remoteAddress, Socks5EnumRequestCommand.UdpAssociate, out IPEndPoint ServerEP);
+            sw.Stop();
+            Debug.WriteLine($"connect server : {sw.ElapsedMilliseconds}");
+
             if (udpConnection.Socket != null)
             {
                 udpConnection.ServerEP = ServerEP;
@@ -246,6 +249,7 @@ namespace smash.plugins.hijack
         }
         private void ReceiveUdp(UdpConnection udpConnection)
         {
+            //Debug.WriteLine($"{udpConnection.Id} begin receive");
             udpConnection.UdpBuffer = new byte[65535];
             udpConnection.UdpSocket.BeginReceiveFrom(udpConnection.UdpBuffer, 0, udpConnection.UdpBuffer.Length, SocketFlags.None, ref udpConnection.TempEP, UdpCallback, udpConnection);
         }
@@ -262,7 +266,7 @@ namespace smash.plugins.hijack
                 {
                     fixed (void* pAddr = udpConnection.RemoteAddress)
                     {
-                        fixed (void* pOptions = &udpConnection.Options[0])
+                        fixed (void* pOptions = udpConnection.Options)
                         {
                             NFAPI.nf_udpPostReceive(udpConnection.Id, (nint)pAddr, (IntPtr)p, data.Length, (nint)pOptions);
                         }
@@ -330,6 +334,7 @@ namespace smash.plugins.hijack
             }
             return null;
         }
+
     }
 
     public sealed class UdpConnection
