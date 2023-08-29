@@ -147,7 +147,7 @@ namespace smash.plugins.hijack
                 hijackServer.ConnectServer(udpConnection, remoteAddress, buf, len, options, optionsLen);
                 if (udpConnection.SocksFail)
                 {
-                    //服务器连接失败，直接提交数据
+                    //服务器连接失败，直接提交数据1
                     NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
                 }
                 return;
