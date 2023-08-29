@@ -45,7 +45,7 @@
 1. windows 可以使用nssm部署为windows service
 2. docker镜像 **snltty/smash.proxy-alpine-x64** or **snltty/smash.proxy-alpine-arm64**
 ```
-docker run -it -d --name="smash.proxy.server" -p 5413:5413/tcp snltty/smash.proxy-alpine-x64 \
+docker run -it -d --name="smash.proxy.server" -p 5413:5413/tcp -p 5413:5413/udp snltty/smash.proxy-alpine-x64 \
 --entrypoint ./smash.proxy.run --mode server --key SNLTTY --fake 127.0.0.1:8080
 ```
 3. linux 使用 systemd 托管
