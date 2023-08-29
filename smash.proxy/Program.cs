@@ -71,6 +71,7 @@ namespace smash.proxy
                         Logger.Instance.Info($"server {dic["server"]}");
                         Logger.Instance.Info($"buff {proxyClientConfig.BufferSize}");
                         Logger.Instance.Info($"key {proxyClientConfig.KeyMemory.GetString()}");
+                        Logger.Instance.Info($"time 2023-08-29 23:43");
                         Logger.Instance.Info(string.Empty.PadLeft(32, '='));
                     }
                     break;
@@ -96,6 +97,7 @@ namespace smash.proxy
                         Logger.Instance.Info($"buff {proxyServerConfig.BufferSize}");
                         Logger.Instance.Info($"key {proxyServerConfig.KeyMemory.GetString()}");
                         Logger.Instance.Info($"dns {proxyServerConfig.Dns}");
+                        Logger.Instance.Info($"time 2023-08-29 23:43");
                         Logger.Instance.Info(string.Empty.PadLeft(32, '='));
                     }
                     break;
