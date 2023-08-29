@@ -1,7 +1,6 @@
 ﻿using common.libs;
 using smash.plugin;
 using smash.plugins.proxy;
-using smash.plugins.sysProxy;
 using System.Net;
 using System.Net.NetworkInformation;
 
@@ -21,8 +20,7 @@ namespace smash.plugins
             MinimizeBox = false;
             InitializeComponent();
 
-            BindData();
-
+           
             proxysView.RowHeadersVisible = false;
             proxysView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             proxysView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
@@ -32,6 +30,8 @@ namespace smash.plugins
             proxysView.CellFormatting += ProxysView_CellFormatting;
             proxysView.CellEndEdit += ProxysView_CellEndEdit;
             proxysView.CellContentClick += ProxysView_CellContentClick;
+
+            BindData();
             Ping();
         }
 
@@ -68,6 +68,7 @@ namespace smash.plugins
             proxysView.Columns["Password"].HeaderText = "密码";
             proxysView.Columns["Delay"].HeaderText = "延迟";
             proxysView.Columns["Delay"].ReadOnly = true;
+            proxysView.Update();
 
             proxyConfig.Save();
         }

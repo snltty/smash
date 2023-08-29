@@ -1,14 +1,8 @@
 ﻿using System.Net.Sockets;
 using System.Net;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Collections.Concurrent;
 using smash.plugins.proxy;
-using common.libs.socks5;
-using System.Buffers;
 using System.Buffers.Binary;
-using System.Text;
-using common.libs.extends;
 
 namespace smash.plugins.hijack
 {
@@ -18,7 +12,6 @@ namespace smash.plugins.hijack
         private readonly ProxyConfig proxyConfig;
         private readonly HijackServer hijackServer;
         private readonly uint currentProcessId = 0;
-        private readonly ConcurrentDictionary<ulong, UdpConnection> udpConnections = new ConcurrentDictionary<ulong, UdpConnection>();
         private readonly byte[] ipaddress = IPAddress.Loopback.GetAddressBytes();
         private ushort port;
 
@@ -105,7 +98,7 @@ namespace smash.plugins.hijack
         #endregion
         public void udpClosed(ulong id, NF_UDP_CONN_INFO pConnInfo)
         {
-            udpConnections.TryRemove(id, out _);
+            hijackServer.RemoveConnection(id);
         }
         public void udpCreated(ulong id, NF_UDP_CONN_INFO pConnInfo)
         {
@@ -122,12 +115,12 @@ namespace smash.plugins.hijack
                 return;
             }
 
-            udpConnections.TryAdd(id, new UdpConnection { Id = id, DNS = options.Options.DNS, UDP = options.Options.UDP });
+            hijackServer.AddConnection(id, new UdpConnection { Id = id, DNS = options.Options.DNS, UDP = options.Options.UDP });
         }
         public unsafe void udpSend(ulong id, nint remoteAddress, nint buf, int len, nint options, int optionsLen)
         {
             //没连接对象，那在udpCreated那里就已经被阻止了，直接发送数据即可
-            if (udpConnections.TryGetValue(id, out UdpConnection udpConnection) == false)
+            if (hijackServer.GetConnection(id, out UdpConnection udpConnection) == false)
             {
                 NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
                 return;
@@ -148,11 +141,10 @@ namespace smash.plugins.hijack
                 NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
                 return;
             }
-            //PrintRequestDns(id,buf,len);
             //连接代理服务器
             if (udpConnection.Connected == false)
             {
-                ConnectServer(udpConnection, remoteAddress, buf, len, options, optionsLen);
+                hijackServer.ConnectServer(udpConnection, remoteAddress, buf, len, options, optionsLen);
                 if (udpConnection.SocksFail)
                 {
                     //服务器连接失败，直接提交数据
@@ -161,125 +153,9 @@ namespace smash.plugins.hijack
                 return;
             }
 
-            SendToUdp(udpConnection, buf, len);
+            hijackServer.SendToUdp(udpConnection, buf, len);
         }
-        private void ConnectServer(UdpConnection udpConnection, nint remoteAddress, nint buf, int len, nint options, int optionsLen)
-        {
-            //缓存目标地址
-            udpConnection.RemoteAddress = new byte[(int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH];
-            Marshal.Copy(remoteAddress, udpConnection.RemoteAddress, 0, (int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH);
-            //缓存udp连接信息
-            udpConnection.Options = new byte[optionsLen];
-            Marshal.Copy(options, udpConnection.Options, 0, optionsLen);
-            //缓存一些其它信息，方便回复数据使用
-            AddressFamily addressFamily = (AddressFamily)Marshal.ReadByte(remoteAddress);
-            if (addressFamily == AddressFamily.InterNetwork)
-            {
-                udpConnection.AddressLength = 4;
-                udpConnection.AddressType = 0x01;
-                udpConnection.AddressOffset = 4;
-            }
-            else
-            {
-                udpConnection.AddressLength = 16;
-                udpConnection.AddressType = 0x04;
-                udpConnection.AddressOffset = 8;
-            }
-            var sw = new Stopwatch();
-            sw.Start();
-            udpConnection.Socket = hijackServer.CreateConnection(remoteAddress, Socks5EnumRequestCommand.UdpAssociate, out IPEndPoint ServerEP);
-            sw.Stop();
-            Debug.WriteLine($"connect server : {sw.ElapsedMilliseconds}");
-
-            if (udpConnection.Socket != null)
-            {
-                udpConnection.ServerEP = ServerEP;
-                udpConnection.UdpSocket = hijackServer.CreateUdp(udpConnection.ServerEP);
-                SendToUdp(udpConnection, buf, len);
-                ReceiveUdp(udpConnection);
-            }
-            else
-            {
-                udpConnection.SocksFail = true;
-            }
-        }
-        private void SendToUdp(UdpConnection udpConnection, nint buf, int len)
-        {
-            byte[] buffer = ArrayPool<byte>.Shared.Rent(6 + udpConnection.AddressLength + len);
-            try
-            {
-                int index = 0;
-                //rsv
-                buffer[index] = 0;
-                index++;
-                buffer[index] = 0;
-                index++;
-                //flag
-                buffer[index] = 0;
-                index++;
-                //addrtype
-                buffer[index] = udpConnection.AddressType;
-                index++;
-
-                //addr
-                udpConnection.RemoteAddress.AsSpan(udpConnection.AddressOffset, udpConnection.AddressLength).CopyTo(buffer.AsSpan(index));
-                index += udpConnection.AddressLength;
-
-                //port
-                buffer[index] = udpConnection.RemoteAddress[2];
-                index++;
-                buffer[index] = udpConnection.RemoteAddress[3];
-                index++;
-
-                int headLength = index;
-
-                //data
-                Marshal.Copy(buf, buffer, index, len);
-                index += len;
-
-                udpConnection.UdpSocket.SendTo(buffer.AsSpan(0, index), udpConnection.ServerEP);
-            }
-            catch (Exception)
-            {
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(buffer);
-            }
-        }
-        private void ReceiveUdp(UdpConnection udpConnection)
-        {
-            //Debug.WriteLine($"{udpConnection.Id} begin receive");
-            udpConnection.UdpBuffer = new byte[65535];
-            udpConnection.UdpSocket.BeginReceiveFrom(udpConnection.UdpBuffer, 0, udpConnection.UdpBuffer.Length, SocketFlags.None, ref udpConnection.TempEP, UdpCallback, udpConnection);
-        }
-        private unsafe void UdpCallback(IAsyncResult result)
-        {
-            try
-            {
-                UdpConnection udpConnection = result.AsyncState as UdpConnection;
-                int length = udpConnection.UdpSocket.EndReceiveFrom(result, ref udpConnection.TempEP);
-
-                Memory<byte> data = Socks5Parser.GetUdpData(udpConnection.UdpBuffer.AsMemory(0, length));
-
-                fixed (void* p = &data.Span[0])
-                {
-                    fixed (void* pAddr = udpConnection.RemoteAddress)
-                    {
-                        fixed (void* pOptions = udpConnection.Options)
-                        {
-                            NFAPI.nf_udpPostReceive(udpConnection.Id, (nint)pAddr, (IntPtr)p, data.Length, (nint)pOptions);
-                        }
-                    }
-                }
-
-                udpConnection.UdpSocket.BeginReceiveFrom(udpConnection.UdpBuffer, 0, udpConnection.UdpBuffer.Length, SocketFlags.None, ref udpConnection.TempEP, UdpCallback, udpConnection);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex + "");
-            }
-        }
+     
 
         private bool checkProcess(uint processId, out string processName, out ProcessParseInfo options)
         {
@@ -319,82 +195,5 @@ namespace smash.plugins.hijack
             return false;
         }
 
-        private IPEndPoint convertAddress(byte[] buf)
-        {
-            Span<byte> spsn = buf.AsSpan();
-            if ((AddressFamily)buf[0] == AddressFamily.InterNetwork)
-            {
-                ushort port = BinaryPrimitives.ReadUInt16BigEndian(spsn.Slice(2, 2));
-                return new IPEndPoint(new IPAddress(spsn.Slice(4, 4)), port);
-            }
-            else if ((AddressFamily)buf[0] == AddressFamily.InterNetworkV6)
-            {
-                ushort port = BinaryPrimitives.ReadUInt16BigEndian(spsn.Slice(2, 2));
-                return new IPEndPoint(new IPAddress(spsn.Slice(4, 16)), port);
-            }
-            return null;
-        }
-
     }
-
-    public sealed class UdpConnection
-    {
-        /// <summary>
-        /// 连接id
-        /// </summary>
-        public ulong Id { get; set; }
-        /// <summary>
-        /// 目标地址
-        /// </summary>
-        public byte[] RemoteAddress { get; set; }
-        /// <summary>
-        /// ip数据偏移
-        /// </summary>
-        public byte AddressOffset { get; set; }
-        /// <summary>
-        /// 目标地址长度
-        /// </summary>
-        public byte AddressLength { get; set; }
-        /// <summary>
-        /// 目标地址socks类型
-        /// </summary>
-        public byte AddressType { get; set; }
-
-        /// <summary>
-        /// 连接选项
-        /// </summary>
-        public byte[] Options { get; set; }
-
-        /// <summary>
-        /// 是否代理udp
-        /// </summary>
-        public bool UDP { get; set; }
-        /// <summary>
-        /// 是否代理dns
-        /// </summary>
-        public bool DNS { get; set; }
-        /// <summary>
-        /// 是否服务端连接事变
-        /// </summary>
-        public bool SocksFail { get; set; }
-
-        /// <summary>
-        /// TCP
-        /// </summary>
-        public bool Connected => Socket != null && Socket.Connected;
-        public Socket Socket { get; set; }
-
-        /// <summary>
-        /// UDP
-        /// </summary>
-        public Socket UdpSocket { get; set; }
-        public byte[] UdpBuffer { get; set; }
-        public EndPoint TempEP = new IPEndPoint(IPAddress.Any, 0);
-
-        /// <summary>
-        /// 服务器地址，连接服务器后，通过socks获得数据转发地址
-        /// </summary>
-        public IPEndPoint ServerEP { get; set; }
-    }
-
 }

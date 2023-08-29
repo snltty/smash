@@ -1,6 +1,8 @@
 ﻿using common.libs;
 using common.libs.database;
+using common.libs.extends;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -37,8 +39,11 @@ namespace smash.plugins.proxy
 
         [JsonIgnore]
         public IPAddress IPAddress { get; set; }
+        [JsonIgnore]
         public byte[] IPAddressBytes { get; set; }
+        [JsonIgnore]
         public Memory<byte> UserName { get; set; }
+        [JsonIgnore]
         public Memory<byte> Password { get; set; }
 
         public void Save()

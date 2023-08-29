@@ -10,13 +10,13 @@ using System.Runtime.InteropServices;
 using System.Text;
 using common.libs.extends;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 
 namespace smash.plugins.hijack
 {
     public sealed class HijackServer
     {
-        ConcurrentDictionary<ushort, byte[]> endpointMap = new ConcurrentDictionary<ushort, byte[]>();
+        private readonly ConcurrentDictionary<ushort, byte[]> endpointMap = new ConcurrentDictionary<ushort, byte[]>();
+        private readonly ConcurrentDictionary<ulong, UdpConnection> udpConnections = new ConcurrentDictionary<ulong, UdpConnection>();
         private Socket Socket;
         private readonly ProxyConfig proxyConfig;
         public HijackServer(ProxyConfig proxyConfig)
@@ -36,8 +36,9 @@ namespace smash.plugins.hijack
             StartAccept(acceptEventArg);
 
             return (Socket.LocalEndPoint as IPEndPoint).Port;
-
         }
+
+        #region TCP
         private void StartAccept(SocketAsyncEventArgs acceptEventArg)
         {
             try
@@ -87,6 +88,7 @@ namespace smash.plugins.hijack
                     return;
                 }
 
+
                 ProxyClientUserToken token = new ProxyClientUserToken
                 {
                     ClientSocket = socket,
@@ -99,9 +101,7 @@ namespace smash.plugins.hijack
                     SocketFlags = SocketFlags.None
                 };
                 token.Saea = readEventArgs;
-                //token.ClientSocket.KeepAlive();
-                //token.ClientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
-                //token.ClientSocket.SendTimeout = 5000;
+                token.ClientSocket.KeepAlive();
                 token.PoolBuffer = new byte[8 * 1024];
                 readEventArgs.SetBuffer(token.PoolBuffer, 0, token.PoolBuffer.Length);
                 readEventArgs.Completed += IO_Completed;
@@ -133,10 +133,10 @@ namespace smash.plugins.hijack
                 int length = e.BytesTransferred;
                 if (token.ServerSocket == null)
                 {
+
                     ConnectServer(token);
                     if (token.ServerSocket == null)
                     {
-                        CloseClientSocket(e);
                         return;
                     }
                 }
@@ -157,11 +157,6 @@ namespace smash.plugins.hijack
                     }
                 }
 
-                if (token.ClientSocket.Connected == false)
-                {
-                    CloseClientSocket(e);
-                    return;
-                }
                 if (token.ClientSocket.ReceiveAsync(e) == false)
                 {
                     ProcessReceive(e);
@@ -175,7 +170,19 @@ namespace smash.plugins.hijack
             }
         }
 
-
+        /// <summary>
+        /// 缓存四元组对应关系，本机，所以不需要本机ip，端口即可
+        /// </summary>
+        /// <param name="localPort"></param>
+        /// <param name="remote"></param>
+        public void CacheEndPoint(ushort localPort, byte[] remote)
+        {
+            endpointMap.TryAdd(localPort, remote);
+        }
+        /// <summary>
+        /// 连接socks5服务
+        /// </summary>
+        /// <param name="token"></param>
         private unsafe void ConnectServer(ProxyClientUserToken token)
         {
             fixed (void* p = token.Remote)
@@ -183,12 +190,17 @@ namespace smash.plugins.hijack
                 token.ServerSocket = CreateConnection((nint)p, Socks5EnumRequestCommand.Connect, out IPEndPoint serverEP);
                 if (token.ServerSocket == null)
                 {
-                    token.ClientSocket.SafeClose();
+                    CloseClientSocket(token);
                     return;
                 }
             }
             BindReceiveServer(token);
+
         }
+        /// <summary>
+        /// socks5服务接收数据
+        /// </summary>
+        /// <param name="token"></param>
         private void BindReceiveServer(ProxyClientUserToken token)
         {
             SocketAsyncEventArgs readEventArgs = new SocketAsyncEventArgs
@@ -198,8 +210,6 @@ namespace smash.plugins.hijack
             };
             token.ServerSaea = readEventArgs;
             token.ServerSocket.KeepAlive();
-            //token.ServerSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
-            //token.ServerSocket.SendTimeout = 5000;
             token.ServerPoolBuffer = new byte[8 * 1024];
             readEventArgs.SetBuffer(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length);
             readEventArgs.Completed += IO_CompletedServer;
@@ -234,31 +244,25 @@ namespace smash.plugins.hijack
 
                 int length = e.BytesTransferred;
                 await token.ClientSocket.SendAsync(e.Buffer.AsMemory(0, length), SocketFlags.None);
-                Debug.WriteLine($"receive time");
-
 
                 if (token.ServerSocket.Available > 0)
                 {
                     while (token.ServerSocket.Available > 0)
                     {
-                        length = token.ServerSocket.Receive(e.Buffer, SocketFlags.None);
+                        length = await token.ServerSocket.ReceiveAsync(e.Buffer.AsMemory(0), SocketFlags.None);
                         if (length == 0)
                         {
                             CloseClientSocket(e);
                             return;
                         }
+
                         await token.ClientSocket.SendAsync(e.Buffer.AsMemory(0, length), SocketFlags.None);
                     }
                 }
 
-                if (token.ServerSocket.Connected == false)
-                {
-                    CloseClientSocket(e);
-                    return;
-                }
                 if (token.ServerSocket.ReceiveAsync(e) == false)
                 {
-                    ProcessReceive(e);
+                    ProcessReceiveServer(e);
                 }
             }
             catch (Exception ex)
@@ -268,7 +272,10 @@ namespace smash.plugins.hijack
                     Logger.Instance.Error(ex);
             }
         }
-
+        /// <summary>
+        /// 关闭连接
+        /// </summary>
+        /// <param name="e"></param>
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
             ProxyClientUserToken token = e.UserToken as ProxyClientUserToken;
@@ -284,18 +291,194 @@ namespace smash.plugins.hijack
             token.ServerSaea?.Dispose();
             GC.Collect();
         }
+        #endregion
 
-        public void CacheEndPoint(ushort localPort, byte[] remote)
+        #region UDP
+        /// <summary>
+        /// 连接socks5服务
+        /// </summary>
+        /// <param name="udpConnection"></param>
+        /// <param name="remoteAddress"></param>
+        /// <param name="buf"></param>
+        /// <param name="len"></param>
+        /// <param name="options"></param>
+        /// <param name="optionsLen"></param>
+        public void ConnectServer(UdpConnection udpConnection, nint remoteAddress, nint buf, int len, nint options, int optionsLen)
         {
-            endpointMap.TryAdd(localPort, remote);
+
+            //缓存目标地址
+            udpConnection.RemoteAddress = new byte[(int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH];
+            Marshal.Copy(remoteAddress, udpConnection.RemoteAddress, 0, (int)NF_CONSTS.NF_MAX_ADDRESS_LENGTH);
+            //缓存udp连接信息
+            udpConnection.Options = new byte[optionsLen];
+            Marshal.Copy(options, udpConnection.Options, 0, optionsLen);
+            //缓存一些其它信息，方便回复数据使用
+            AddressFamily addressFamily = (AddressFamily)Marshal.ReadByte(remoteAddress);
+            if (addressFamily == AddressFamily.InterNetwork)
+            {
+                udpConnection.AddressLength = 4;
+                udpConnection.AddressType = 0x01;
+                udpConnection.AddressOffset = 4;
+            }
+            else
+            {
+                udpConnection.AddressLength = 16;
+                udpConnection.AddressType = 0x04;
+                udpConnection.AddressOffset = 8;
+            }
+
+            udpConnection.Socket = CreateConnection(remoteAddress, Socks5EnumRequestCommand.UdpAssociate, out IPEndPoint ServerEP);
+
+
+            if (udpConnection.Socket != null)
+            {
+                udpConnection.ServerEP = ServerEP;
+                udpConnection.UdpSocket = CreateUdp(udpConnection.ServerEP);
+                SendToUdp(udpConnection, buf, len);
+                ReceiveUdp(udpConnection);
+            }
+            else
+            {
+                udpConnection.SocksFail = true;
+            }
+
         }
+        /// <summary>
+        /// 发送udp数据
+        /// </summary>
+        /// <param name="udpConnection"></param>
+        /// <param name="buf"></param>
+        /// <param name="len"></param>
+        public void SendToUdp(UdpConnection udpConnection, nint buf, int len)
+        {
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(6 + udpConnection.AddressLength + len);
+            try
+            {
+                int index = 0;
+                //rsv
+                buffer[index] = 0;
+                index++;
+                buffer[index] = 0;
+                index++;
+                //flag
+                buffer[index] = 0;
+                index++;
+                //addrtype
+                buffer[index] = udpConnection.AddressType;
+                index++;
+
+                //addr
+                udpConnection.RemoteAddress.AsSpan(udpConnection.AddressOffset, udpConnection.AddressLength).CopyTo(buffer.AsSpan(index));
+                index += udpConnection.AddressLength;
+
+                //port
+                buffer[index] = udpConnection.RemoteAddress[2];
+                index++;
+                buffer[index] = udpConnection.RemoteAddress[3];
+                index++;
+
+                int headLength = index;
+
+                //data
+                Marshal.Copy(buf, buffer, index, len);
+                index += len;
+
+                udpConnection.UdpSocket.SendTo(buffer.AsSpan(0, index), udpConnection.ServerEP);
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
+        /// <summary>
+        /// 接收udp数据
+        /// </summary>
+        /// <param name="udpConnection"></param>
+        private void ReceiveUdp(UdpConnection udpConnection)
+        {
+            udpConnection.UdpBuffer = new byte[65535];
+            udpConnection.UdpSocket.BeginReceiveFrom(udpConnection.UdpBuffer, 0, udpConnection.UdpBuffer.Length, SocketFlags.None, ref udpConnection.TempEP, UdpCallback, udpConnection);
+        }
+        /// <summary>
+        /// 接收udp callback
+        /// </summary>
+        /// <param name="result"></param>
+        private unsafe void UdpCallback(IAsyncResult result)
+        {
+            try
+            {
+                UdpConnection udpConnection = result.AsyncState as UdpConnection;
+                int length = udpConnection.UdpSocket.EndReceiveFrom(result, ref udpConnection.TempEP);
+
+                Memory<byte> data = Socks5Parser.GetUdpData(udpConnection.UdpBuffer.AsMemory(0, length));
+
+                fixed (void* p = &data.Span[0])
+                {
+                    fixed (void* pAddr = udpConnection.RemoteAddress)
+                    {
+                        fixed (void* pOptions = udpConnection.Options)
+                        {
+                            NFAPI.nf_udpPostReceive(udpConnection.Id, (nint)pAddr, (IntPtr)p, data.Length, (nint)pOptions);
+                        }
+                    }
+                }
+
+                udpConnection.UdpSocket.BeginReceiveFrom(udpConnection.UdpBuffer, 0, udpConnection.UdpBuffer.Length, SocketFlags.None, ref udpConnection.TempEP, UdpCallback, udpConnection);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex + "");
+            }
+        }
+        /// <summary>
+        /// 创建一个udp socket
+        /// </summary>
+        /// <param name="serverEP"></param>
+        /// <returns></returns>
         public Socket CreateUdp(IPEndPoint serverEP)
         {
             Socket socket = new Socket(serverEP.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             socket.WindowsUdpBug();
             return socket;
         }
-        public Socket CreateConnection(nint remoteAddress, Socks5EnumRequestCommand command, out IPEndPoint serverEP)
+
+        /// <summary>
+        /// 缓存一个连接对象
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="udpConnection"></param>
+        /// <returns></returns>
+        public bool AddConnection(ulong id, UdpConnection udpConnection)
+        {
+            return udpConnections.TryAdd(id, udpConnection);
+        }
+        /// <summary>
+        /// 删除连接对象
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool RemoveConnection(ulong id)
+        {
+            return udpConnections.TryRemove(id, out _);
+        }
+        /// <summary>
+        /// 获取连接对象
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="udpConnection"></param>
+        /// <returns></returns>
+        public bool GetConnection(ulong id, out UdpConnection udpConnection)
+        {
+            return udpConnections.TryGetValue(id, out udpConnection);
+        }
+
+        #endregion
+
+        #region socks5
+        private Socket CreateConnection(nint remoteAddress, Socks5EnumRequestCommand command, out IPEndPoint serverEP)
         {
             serverEP = null;
             byte[] buffer = ArrayPool<byte>.Shared.Rent(1024);
@@ -461,20 +644,84 @@ namespace smash.plugins.hijack
             serverEP = new IPEndPoint(ip, BinaryPrimitives.ReadUInt16BigEndian(span.Slice(index, 2)));
             return true;
         }
+        #endregion
     }
 
+    public sealed class UdpConnection
+    {
+        /// <summary>
+        /// 连接id
+        /// </summary>
+        public ulong Id { get; set; }
+        /// <summary>
+        /// 目标地址
+        /// </summary>
+        public byte[] RemoteAddress { get; set; }
+        /// <summary>
+        /// ip数据偏移
+        /// </summary>
+        public byte AddressOffset { get; set; }
+        /// <summary>
+        /// 目标地址长度
+        /// </summary>
+        public byte AddressLength { get; set; }
+        /// <summary>
+        /// 目标地址socks类型
+        /// </summary>
+        public byte AddressType { get; set; }
 
+        /// <summary>
+        /// 连接选项
+        /// </summary>
+        public byte[] Options { get; set; }
+
+        /// <summary>
+        /// 是否代理udp
+        /// </summary>
+        public bool UDP { get; set; }
+        /// <summary>
+        /// 是否代理dns
+        /// </summary>
+        public bool DNS { get; set; }
+        /// <summary>
+        /// 是否服务端连接事变
+        /// </summary>
+        public bool SocksFail { get; set; }
+
+        /// <summary>
+        /// TCP
+        /// </summary>
+        public bool Connected => Socket != null && Socket.Connected;
+        public Socket Socket { get; set; }
+
+        /// <summary>
+        /// UDP
+        /// </summary>
+        public Socket UdpSocket { get; set; }
+        public byte[] UdpBuffer { get; set; }
+        public EndPoint TempEP = new IPEndPoint(IPAddress.Any, 0);
+
+        /// <summary>
+        /// 服务器地址，连接服务器后，通过socks获得数据转发地址
+        /// </summary>
+        public IPEndPoint ServerEP { get; set; }
+    }
 
     internal sealed class ProxyClientUserToken
     {
+        /// <summary>
+        /// 客户端socket，进程劫持那边的
+        /// </summary>
         public Socket ClientSocket { get; set; }
         public SocketAsyncEventArgs Saea { get; set; }
-
         public byte[] PoolBuffer { get; set; }
 
-        public SocketAsyncEventArgs ServerSaea { get; set; }
+        /// <summary>
+        /// 服务端socket。socks5服务那边的
+        /// </summary>
         public Socket ServerSocket { get; set; }
         public byte[] ServerPoolBuffer { get; set; }
+        public SocketAsyncEventArgs ServerSaea { get; set; }
         public byte[] Remote { get; set; }
     }
 }

@@ -27,6 +27,10 @@ namespace smash.proxy.protocol
         public Memory<byte> Data { get; set; }
 
 
+        [System.Text.Json.Serialization.JsonIgnore]
+        public Memory<byte> ResponseData { get; set; }
+
+
         public bool ValidateKey(Memory<byte> data, Memory<byte> key)
         {
             return data.Length >= key.Length && data.Span.Slice(0, key.Length).SequenceEqual(key.Span);

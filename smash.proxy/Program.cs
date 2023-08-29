@@ -111,6 +111,7 @@ namespace smash.proxy
             {
                 Directory.CreateDirectory("log");
             }
+            //Logger.Instance.LoggerLevel = LoggerTypes.DEBUG;
             Logger.Instance.OnLogger += (model) =>
             {
                 ConsoleColor currentForeColor = Console.ForegroundColor;

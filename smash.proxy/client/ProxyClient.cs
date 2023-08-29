@@ -10,7 +10,6 @@ using System.Collections.Concurrent;
 using System.Buffers;
 using smash.proxy.protocol;
 using common.libs.socks5;
-using System.Threading;
 
 namespace smash.proxy.client
 {
@@ -133,8 +132,6 @@ namespace smash.proxy.client
                 token.Saea = readEventArgs;
 
                 token.ClientSocket.KeepAlive();
-                //token.ClientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, true);
-                //token.ClientSocket.SendTimeout = 5000;
                 token.PoolBuffer = new byte[(1 << (byte)proxyClientConfig.BufferSize) * 1024];
                 readEventArgs.SetBuffer(token.PoolBuffer, 0, (1 << (byte)proxyClientConfig.BufferSize) * 1024);
                 readEventArgs.Completed += IO_Completed;
@@ -189,11 +186,6 @@ namespace smash.proxy.client
                     }
                 }
 
-                if (token.ClientSocket.Connected == false)
-                {
-                    CloseClientSocket(e);
-                    return;
-                }
                 if (token.ClientSocket.ReceiveAsync(e) == false)
                 {
                     ProcessReceive(e);
@@ -295,6 +287,7 @@ namespace smash.proxy.client
                 token.ServerSocket = new Socket(proxyClientConfig.ServerEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 token.ServerSocket.KeepAlive();
                 await token.ServerSocket.ConnectAsync(proxyClientConfig.ServerEP);
+
                 if (proxyClientConfig.IsSSL)
                 {
                     SslStream sslStream = new SslStream(new NetworkStream(token.ServerSocket), true, ValidateServerCertificate, null);
@@ -316,7 +309,6 @@ namespace smash.proxy.client
         {
             return true;
         }
-
         private void BindServerReceive(ProxyClientUserToken token)
         {
             if (proxyClientConfig.IsSSL)
@@ -343,7 +335,7 @@ namespace smash.proxy.client
             {
                 int length = token.ServerSocket.EndReceive(result);
 
-                token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
+                token.Request.ResponseData = token.ServerPoolBuffer.AsMemory(0, length);
                 await InputData(token, token.Request);
 
                 token.ServerSocket.BeginReceive(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, SocketFlags.None, ServerReceiveRawCallback, token);
@@ -367,7 +359,7 @@ namespace smash.proxy.client
                     return;
                 }
 
-                token.Request.Data = token.ServerPoolBuffer.AsMemory(0, length);
+                token.Request.ResponseData = token.ServerPoolBuffer.AsMemory(0, length);
                 await InputData(token, token.Request);
                 token.ServerStream.BeginRead(token.ServerPoolBuffer, 0, token.ServerPoolBuffer.Length, ServerReceiveCallback, token);
             }
@@ -416,7 +408,6 @@ namespace smash.proxy.client
                 token.ReturnConnectData();
             }
 
-
             byte[] packData = Helper.EmptyArray;
             try
             {
@@ -447,7 +438,7 @@ namespace smash.proxy.client
         {
             try
             {
-                if (info.Data.Length == 0)
+                if (info.ResponseData.Length == 0)
                 {
                     CloseClientSocket(token);
                     return;
@@ -458,13 +449,13 @@ namespace smash.proxy.client
                     if (token.Step == Socks5EnumStep.ForwardUdp)
                     {
                         //组装udp包
-                        byte[] bytes = Socks5Parser.MakeUdpResponse(new IPEndPoint(new IPAddress(info.TargetAddress.Span), info.TargetPort), info.Data, out int legnth);
+                        byte[] bytes = Socks5Parser.MakeUdpResponse(new IPEndPoint(new IPAddress(info.TargetAddress.Span), info.TargetPort), info.ResponseData, out int legnth);
                         await UdpClient.SendAsync(bytes.AsMemory(0, legnth), token.SourceEP);
                         Socks5Parser.Return(bytes);
                     }
                     else
                     {
-                        int length = await token.ClientSocket.SendAsync(info.Data, SocketFlags.None);
+                        int length = await token.ClientSocket.SendAsync(info.ResponseData, SocketFlags.None);
                     }
                 }
             }
@@ -482,7 +473,7 @@ namespace smash.proxy.client
             //request  auth 的 直接通过,跳过验证部分
             if (token.Step < Socks5EnumStep.Command)
             {
-                info.Data = new byte[] { 0x00 };
+                info.ResponseData = new byte[] { 0x00 };
                 token.Step++;
                 await InputData(token, info);
                 return false;
@@ -494,7 +485,7 @@ namespace smash.proxy.client
                 //将socks5的command转化未通用command
                 if (command == Socks5EnumRequestCommand.Bind)
                 {
-                    info.Data = new byte[] { (byte)Socks5EnumResponseCommand.CommandNotAllow };
+                    info.ResponseData = new byte[] { (byte)Socks5EnumResponseCommand.CommandNotAllow };
                     await InputData(token, info);
                     return false;
                 }
@@ -507,14 +498,14 @@ namespace smash.proxy.client
                     bool res = await ConnectServer(token, info);
                     if (res == false)
                     {
-                        info.Data = new byte[] { (byte)Socks5EnumResponseCommand.NetworkError };
+                        info.ResponseData = new byte[] { (byte)Socks5EnumResponseCommand.NetworkError };
                         await InputData(token, info);
                         return false;
                     }
 
                 }
 
-                info.Data = new byte[] { (byte)Socks5EnumResponseCommand.ConnecSuccess };
+                info.ResponseData = new byte[] { (byte)Socks5EnumResponseCommand.ConnecSuccess };
                 await InputData(token, info);
                 return false;
             }
@@ -536,7 +527,7 @@ namespace smash.proxy.client
             //request auth 步骤的，只需回复一个字节的状态码
             if (token.Step < Socks5EnumStep.Command)
             {
-                info.Data = new byte[] { 5, info.Data.Span[0] };
+                info.ResponseData = new byte[] { 5, info.ResponseData.Span[0] };
                 token.Step++;
                 return true;
             }
@@ -545,7 +536,7 @@ namespace smash.proxy.client
                 case Socks5EnumStep.Command:
                     {
                         //command的，需要区分成功和失败，成功则回复指定数据，失败则关闭连接
-                        info.Data = Socks5Parser.MakeConnectResponse(new IPEndPoint(IPAddress.Any, proxyClientConfig.ListenPort), info.Data.Span[0]);
+                        info.ResponseData = Socks5Parser.MakeConnectResponse(new IPEndPoint(IPAddress.Any, proxyClientConfig.ListenPort), info.ResponseData.Span[0]);
                         token.Step = Socks5EnumStep.Forward;
                     }
                     break;
@@ -555,18 +546,9 @@ namespace smash.proxy.client
                         if (token.FirstPack == false)
                         {
                             token.FirstPack = true;
-                            if (info.Data.Length < 2048)
+                            if (info.ResponseData.Length < 2048)
                             {
-                                try
-                                {
-                                    info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
-                                }
-                                catch (Exception)
-                                {
-                                    Console.WriteLine("///////////////////////////////////////////");
-                                    Console.WriteLine($"tcp {info.Data.Length} -> {info.Data.ToUInt32()}");
-                                    Console.WriteLine("///////////////////////////////////////////");
-                                }
+                                info.ResponseData = ProxyInfo.UnPackFirstResponse(info.ResponseData);
                             }
                         }
                     }
@@ -577,18 +559,9 @@ namespace smash.proxy.client
                         if (token.FirstPack == false)
                         {
                             token.FirstPack = true;
-                            if (info.Data.Length < 2048)
+                            if (info.ResponseData.Length < 2048)
                             {
-                                try
-                                {
-                                    info.Data = ProxyInfo.UnPackFirstResponse(info.Data);
-                                }
-                                catch (Exception)
-                                {
-                                    Console.WriteLine("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
-                                    Console.WriteLine($"udp {info.Data.Length} -> {info.Data.ToUInt32()}");
-                                    Console.WriteLine("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
-                                }
+                                info.ResponseData = ProxyInfo.UnPackFirstResponse(info.ResponseData);
                             }
                         }
                     }
@@ -660,14 +633,16 @@ namespace smash.proxy.client
 
     internal sealed class ProxyClientUserToken
     {
+        #region 客户端
         public Socket ClientSocket { get; set; }
         public SocketAsyncEventArgs Saea { get; set; }
         public byte[] PoolBuffer { get; set; }
         public ProxyInfo Request { get; set; } = new ProxyInfo { };
         public Socks5EnumStep Step { get; set; } = Socks5EnumStep.Request;
-
         public IPEndPoint SourceEP { get; set; }
+        #endregion
 
+        #region 服务端
         public Socket ServerSocket { get; set; }
         public SslStream ServerStream { get; set; }
         public byte[] ServerPoolBuffer { get; set; }
@@ -686,6 +661,7 @@ namespace smash.proxy.client
             Request.Return(ConnectData);
             ConnectData = Helper.EmptyArray;
         }
+        #endregion
     }
 
     public sealed class ProxyClientConfig
