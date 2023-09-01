@@ -551,7 +551,7 @@ namespace smash.plugins.hijack
             }
 
             int index = 0;
-            buffer[index] = 0x05;
+            buffer[index] = 0x01;
 
             index++;
             //账号
@@ -571,7 +571,7 @@ namespace smash.plugins.hijack
             Memory<byte> memory = buffer.AsMemory(0, length);
             Span<byte> span = memory.Span;
 
-            return length >= 2 && span[1] == 0x00;
+            return length >= 2 && span[0] == 0x01 && span[1] == 0x00;
         }
         private bool Command(Socket socket, byte[] buffer, nint remoteAddress, Socks5EnumRequestCommand command, out IPEndPoint serverEP)
         {
