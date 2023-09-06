@@ -117,6 +117,7 @@ namespace smash.plugins.hijack
 
             hijackServer.AddConnection(id, new UdpConnection { Id = id, DNS = options.Options.DNS, UDP = options.Options.UDP });
         }
+
         public unsafe void udpSend(ulong id, nint remoteAddress, nint buf, int len, nint options, int optionsLen)
         {
             //没连接对象，那在udpCreated那里就已经被阻止了，直接发送数据即可
@@ -141,6 +142,8 @@ namespace smash.plugins.hijack
                 NFAPI.nf_udpPostSend(id, remoteAddress, buf, len, options);
                 return;
             }
+            
+
             //连接代理服务器
             if (udpConnection.Connected == false)
             {

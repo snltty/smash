@@ -75,7 +75,7 @@ namespace smash.plugins.hijack
             BindReceive(e);
             StartAccept(e);
         }
-        private unsafe void BindReceive(SocketAsyncEventArgs e)
+        private void BindReceive(SocketAsyncEventArgs e)
         {
             try
             {
@@ -573,9 +573,24 @@ namespace smash.plugins.hijack
 
             return length >= 2 && span[0] == 0x01 && span[1] == 0x00;
         }
-        private bool Command(Socket socket, byte[] buffer, nint remoteAddress, Socks5EnumRequestCommand command, out IPEndPoint serverEP)
+
+       
+        private unsafe bool Command(Socket socket, byte[] buffer, nint remoteAddress, Socks5EnumRequestCommand command, out IPEndPoint serverEP)
         {
             serverEP = null;
+
+            byte* p = (byte*)remoteAddress;
+            ushort port = (ushort)((*(p + 2) << 8 & 0xFF00) | *(p + 3));
+            if (port == 53)
+            {
+                //强行修改为ipv4
+                *p = (byte)AddressFamily.InterNetwork;
+                *(p + 4) = 8;
+                *(p + 5) = 8;
+                *(p + 6) = 8;
+                *(p + 7) = 8;
+            }
+
             AddressFamily addrFamily = (AddressFamily)Marshal.ReadByte(remoteAddress, 0);
 
             int index = 0;
@@ -586,6 +601,7 @@ namespace smash.plugins.hijack
             buffer[index] = 0x00; //rsv
             index++;
             index++;//addr type
+
 
             if (addrFamily == AddressFamily.InterNetwork)
             {
@@ -602,16 +618,21 @@ namespace smash.plugins.hijack
             Marshal.Copy(remoteAddress + 2, buffer, index, 2);
             index += 2;
 
+            //Debug.WriteLine($"command:{string.Join(",",buffer.AsMemory(0,index).ToArray())} -{socket.RemoteEndPoint}");
+
             socket.Send(buffer.AsMemory(0, index).Span, SocketFlags.None);
 
             int length = socket.Receive(buffer, SocketFlags.None);
             Memory<byte> memory = buffer.AsMemory(0, length);
             Span<byte> span = memory.Span;
+           // Debug.WriteLine($"command response:{string.Join(",", span.ToArray())}");
             if (length < 6 || span[1] != 0x00)
             {
                 return false;
             }
 
+            serverEP = socket.RemoteEndPoint as IPEndPoint;
+            return true;
             index = 3;
             IPAddress ip = IPAddress.Any;
             switch ((Socks5EnumAddressType)span[index])
