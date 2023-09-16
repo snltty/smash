@@ -39,6 +39,7 @@ public sealed class HijackController : IController
 
     public bool Start()
     {
+        if (hijackConfig.Processs.Count(c => c.Use) == 0) return true;
         //初始化一些数据
         Stop();
 
