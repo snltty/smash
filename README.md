@@ -50,17 +50,17 @@
 1. --mode client --buff 3 --port 5413 --key SNLTTY --server xxx.xxx.com:443
 2. --mode server --buff 3 --port 5413 --key SNLTTY --fake 127.0.0.1:8080 --dns 8.8.8.8
 
-###### windows
+###### 在windows部署客户端或服务端
 1. 可以使用nssm部署为windows service
 
-###### linux
-1. docker镜像 **snltty/smash.proxy-alpine-x64** or **snltty/smash.proxy-alpine-arm64**
+###### 在linux部署客户端或服务端
+1. 使用 docker **snltty/smash.proxy-alpine-x64** or **snltty/smash.proxy-alpine-arm64**
 ```
 docker run -it -d --name="smash.proxy.server" \
 -p 5413:5413/tcp -p 5413:5413/udp snltty/smash.proxy-alpine-x64 \
 --entrypoint ./smash.proxy.run --mode server --key SNLTTY --fake 127.0.0.1:8080
 ```
-3. linux 使用 systemd 托管
+3. 使用 systemd
 ```
 //1、下载linux版本程序，放到 /usr/local/smash.proxy 文件夹
 
@@ -88,7 +88,7 @@ systemctl start smash.proxy
 systemctl restart smash.proxy
 ```
 
-##### nginx
+##### 在服务端部署nginx
 ```
 user www-data;
 worker_processes auto;
