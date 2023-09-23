@@ -1,0 +1,86 @@
+<mxfile host="Electron" modified="2023-09-23T12:05:42.704Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.1.2 Chrome/106.0.5249.199 Electron/21.4.3 Safari/537.36" etag="IojtHdY5KP-Z2qvPa9Io" version="21.1.2" type="device">
+  <diagram name="第 1 页" id="qxy7PTkrkRWBJip-XQkC">
+    <mxGraphModel dx="1101" dy="824" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="none" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-18" value="" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="880" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-1" value="嘿嘿嘿~~" style="image;html=1;image=img/lib/clip_art/general/Earth_globe_128x128.png;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;imageBorder=default;" vertex="1" parent="1">
+          <mxGeometry x="800" y="120" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-3" value="你" style="image;html=1;image=img/lib/clip_art/people/Telesales_Man_128x128.png;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;imageBorder=default;" vertex="1" parent="1">
+          <mxGeometry x="80" y="120" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-4" value="smash客户端 5413" style="image;html=1;image=img/lib/clip_art/computers/Network_128x128.png;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Comic Sans MS;fontSize=20;imageBorder=default;" vertex="1" parent="1">
+          <mxGeometry x="260" y="280" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-5" value="smash服务端5413" style="image;html=1;image=img/lib/clip_art/computers/Network_128x128.png;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Comic Sans MS;fontSize=20;imageBorder=default;" vertex="1" parent="1">
+          <mxGeometry x="610" y="280" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-6" value="fake网站" style="image;html=1;image=img/lib/clip_art/general/Earth_globe_128x128.png;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Comic Sans MS;fontSize=20;imageBorder=default;" vertex="1" parent="1">
+          <mxGeometry x="800" y="280" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-7" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;entryX=-0.025;entryY=0.669;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.988;exitY=0.419;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="-7WvzRuf6vwB1JUuuRD8-3" target="-7WvzRuf6vwB1JUuuRD8-4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="280" y="350" as="sourcePoint" />
+            <mxPoint x="330" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-15" value="socks5" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Comic Sans MS;" vertex="1" connectable="0" parent="-7WvzRuf6vwB1JUuuRD8-7">
+          <mxGeometry x="-0.1722" y="4" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-8" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;entryX=1;entryY=0.75;entryDx=0;entryDy=0;exitX=-0.025;exitY=0.344;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="-7WvzRuf6vwB1JUuuRD8-13" target="-7WvzRuf6vwB1JUuuRD8-4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="480" y="410" as="sourcePoint" />
+            <mxPoint x="530" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-16" value="smash.procy" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Comic Sans MS;" vertex="1" connectable="0" parent="-7WvzRuf6vwB1JUuuRD8-8">
+          <mxGeometry x="0.1551" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-9" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=-0.019;entryY=0.594;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="-7WvzRuf6vwB1JUuuRD8-5" target="-7WvzRuf6vwB1JUuuRD8-1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="640" y="270" as="sourcePoint" />
+            <mxPoint x="690" y="220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-12" value="是代理" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" vertex="1" connectable="0" parent="-7WvzRuf6vwB1JUuuRD8-9">
+          <mxGeometry x="-0.2011" y="-5" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-10" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="-7WvzRuf6vwB1JUuuRD8-5" target="-7WvzRuf6vwB1JUuuRD8-6">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="620" y="420" as="sourcePoint" />
+            <mxPoint x="670" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-11" value="不是代理" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" vertex="1" connectable="0" parent="-7WvzRuf6vwB1JUuuRD8-10">
+          <mxGeometry x="0.2057" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-13" value="nginx ssl 443" style="image;html=1;image=img/lib/clip_art/networking/Print_Server_128x128.png;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Comic Sans MS;fontSize=20;imageBorder=default;" vertex="1" parent="1">
+          <mxGeometry x="410" y="120" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-14" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;entryX=-0.044;entryY=0.65;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="-7WvzRuf6vwB1JUuuRD8-13" target="-7WvzRuf6vwB1JUuuRD8-5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="540" y="200" as="sourcePoint" />
+            <mxPoint x="590" y="150" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-7WvzRuf6vwB1JUuuRD8-17" value="stream" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Comic Sans MS;" vertex="1" connectable="0" parent="-7WvzRuf6vwB1JUuuRD8-14">
+          <mxGeometry x="0.1273" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

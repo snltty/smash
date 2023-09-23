@@ -16,36 +16,48 @@
 
 </div>
 
-## smash 进程劫持，系统代理
+## 1、smash 进程劫持，系统代理
 一个winform，运行exe即可
 
-## smash.proxy 代理协议
+## 2、smash.proxy 代理协议
 1. nginx转发
 2. tls over tls
 3. ssl hello padding，下层tls hello随机填充长度
 4. fake，非代理协议正常请求网站
 
-#### 参数
+<p><img src="./readme/smash.jpg"></p>
 
-**--mode client | server** 客户端或服务端，**默认server**
+## 2.1、运行参数
 
-**--server 127.0.0.1:5413** 客户端填写服务器地址，必填，使用域名，将会作为SNI
+1. **【--mode】 client | server** 客户端或服务端，**默认server**
 
-**--fake 127.0.0.1:8080** 服务端填写伪装地址，必填
+2. **【--server】 xxx.xxx.com:443** 客户端填写服务器地址，必填，使用域名，将会作为SNI
 
-**--dns 8.8.8.8** dns ip,会自动获取系统dns ip，如果失败，可以手动填写
+3. **【--fake】 127.0.0.1:8080** 服务端填写伪装地址，必填
 
-**--port 5413** 运行在哪个端口，**默认5413**
+4. **【--dns】 8.8.8.8** dns ip,会自动获取系统dns ip，如果失败，可以手动填写
 
-**--key SNLTTY** 需要两端一致，客户端必填，服务端**默认随机**
+5. **【--port】 5413** 运行在哪个端口，**默认5413**
 
-**--buff 3** bufferSize 0-10，2^n次方，**默认3**
+6. **【--key】 SNLTTY** 需要两端一致，客户端必填，服务端**默认随机**
 
-#### 托管
-1. windows 可以使用nssm部署为windows service
-2. docker镜像 **snltty/smash.proxy-alpine-x64** or **snltty/smash.proxy-alpine-arm64**
+7. **【--buff】 3** bufferSize 0-10，2^n次方，**默认3**
+
+## 2.2、托管示例
+
+###### 参数示例
+
+1. --mode client --buff 3 --port 5413 --key SNLTTY --server xxx.xxx.com:443
+2. --mode server --buff 3 --port 5413 --key SNLTTY --fake 127.0.0.1:8080 --dns 8.8.8.8
+
+###### windows
+1. 可以使用nssm部署为windows service
+
+###### linux
+1. docker镜像 **snltty/smash.proxy-alpine-x64** or **snltty/smash.proxy-alpine-arm64**
 ```
-docker run -it -d --name="smash.proxy.server" -p 5413:5413/tcp -p 5413:5413/udp snltty/smash.proxy-alpine-x64 \
+docker run -it -d --name="smash.proxy.server" \
+-p 5413:5413/tcp -p 5413:5413/udp snltty/smash.proxy-alpine-x64 \
 --entrypoint ./smash.proxy.run --mode server --key SNLTTY --fake 127.0.0.1:8080
 ```
 3. linux 使用 systemd 托管
@@ -76,11 +88,7 @@ systemctl start smash.proxy
 systemctl restart smash.proxy
 ```
 
-#### nginx
-1. wordpress站点  127.0.0.1:8080
-2. 协议服务端      127.0.0.1:5413  **--fake 127.0.0.1:8080**
-3. nginx **proxy_pass 127.0.0.1:5413**
-
+##### nginx
 ```
 user www-data;
 worker_processes auto;
@@ -102,7 +110,7 @@ stream {
     	ssl_certificate_key /usr/local/smash.proxy/key.key;
         	
 		proxy_ssl_session_reuse on;
-		proxy_pass 127.0.0.1:5413;
+		proxy_pass 127.0.0.1:5413; #smash.proxy 服务端
 		
 	}
 }
