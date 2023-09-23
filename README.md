@@ -46,12 +46,15 @@
 ## 2.2、托管示例
 
 ###### 参数示例
-
+```
 1. --mode client --buff 3 --port 5413 --key SNLTTY --server xxx.xxx.com:443
 2. --mode server --buff 3 --port 5413 --key SNLTTY --fake 127.0.0.1:8080 --dns 8.8.8.8
+```
 
 ###### 在windows部署客户端或服务端
+```
 1. 可以使用nssm部署为windows service
+```
 
 ###### 在linux部署客户端或服务端
 1. 使用 docker **snltty/smash.proxy-alpine-x64** or **snltty/smash.proxy-alpine-arm64**
@@ -114,6 +117,4 @@ stream {
 		
 	}
 }
-
-
 ```
